@@ -16,11 +16,15 @@
 .root {
     -fx-background-color: #36393f;
     -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-min-width: 100%;
+    -fx-min-height: 100%;
 }
 
 .login-background {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #36393f 0%, #2f3136 50%, #202225 100%);
     -fx-padding: 40px;
+    -fx-min-width: 100%;
+    -fx-min-height: 100%;
 }
 
 /* ===== LOGIN CARD ===== */
@@ -32,6 +36,8 @@
     -fx-border-color: rgba(255, 255, 255, 0.05);
     -fx-border-width: 1px;
     -fx-border-radius: 12px;
+    -fx-max-width: 450px;
+    -fx-max-height: 650px;
 }
 
 /* ===== TYPOGRAPHY ===== */

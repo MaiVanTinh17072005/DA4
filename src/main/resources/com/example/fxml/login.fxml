@@ -8,10 +8,18 @@
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.example.ui.LoginScene"
-           styleClass="root">
+           styleClass="root"
+           minWidth="-Infinity"
+           minHeight="-Infinity"
+           maxWidth="Infinity"
+           maxHeight="Infinity">
 
     <!-- Background -->
-    <VBox alignment="CENTER" spacing="0" styleClass="login-background">
+    <VBox alignment="CENTER" spacing="0" styleClass="login-background"
+          minWidth="-Infinity"
+          minHeight="-Infinity"
+          maxWidth="Infinity"
+          maxHeight="Infinity">
 
         <!-- Login/Register Card -->
         <VBox alignment="CENTER" spacing="25" styleClass="login-card" maxWidth="400" maxHeight="500">

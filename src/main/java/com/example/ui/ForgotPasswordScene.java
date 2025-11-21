@@ -1,16 +1,12 @@
 package com.example.ui;
 
+import com.example.util.SceneManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -77,22 +73,9 @@ public class ForgotPasswordScene {
      */
     @FXML
     private void handleBackToLogin() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/fxml/login.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) emailField.getScene().getWindow();
-            Scene scene = new Scene(root, 450, 650);
-            scene.getStylesheets().add(getClass().getResource("/com/example/css/login.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Discord Mini - Login");
-            stage.centerOnScreen();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            showError("Failed to load login scene: " + e.getMessage());
-        }
+        // Swap content using SceneManager
+        SceneManager.setTitle("Discord Mini - Login");
+        SceneManager.loadContent("content/login-content.fxml");
     }
 
     // ===== Business Logic =====
@@ -160,25 +143,11 @@ public class ForgotPasswordScene {
      * Navigate to OTP verification scene
      */
     private void navigateToOTPVerification(String email) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/fxml/otp-verification.fxml"));
-            Parent root = loader.load();
-
-            // Pass email to OTP scene controller
-            OTPVerificationScene controller = loader.getController();
+        // Swap content using SceneManager
+        SceneManager.setTitle("Discord Mini - Verify OTP");
+        OTPVerificationScene controller = (OTPVerificationScene) SceneManager.loadContent("content/otp-verification-content.fxml");
+        if (controller != null) {
             controller.setEmail(email);
-
-            Stage stage = (Stage) emailField.getScene().getWindow();
-            Scene scene = new Scene(root, 450, 650);
-            scene.getStylesheets().add(getClass().getResource("/com/example/css/otp-verification.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Discord Mini - Verify OTP");
-            stage.centerOnScreen();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            showError("Failed to load OTP verification: " + e.getMessage());
         }
     }
 

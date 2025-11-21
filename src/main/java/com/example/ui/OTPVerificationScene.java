@@ -1,16 +1,12 @@
 package com.example.ui;
 
+import com.example.util.SceneManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -159,22 +155,9 @@ public class OTPVerificationScene {
      */
     @FXML
     private void handleBack() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/fxml/forgot-password.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) otpField1.getScene().getWindow();
-            Scene scene = new Scene(root, 450, 650);
-            scene.getStylesheets().add(getClass().getResource("/com/example/css/forgot-password.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Discord Mini - Forgot Password");
-            stage.centerOnScreen();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            showError("Failed to load forgot password scene: " + e.getMessage());
-        }
+        // Swap content using SceneManager
+        SceneManager.setTitle("Discord Mini - Forgot Password");
+        SceneManager.loadContent("content/forgot-password-content.fxml");
     }
 
     // ===== Business Logic =====
@@ -299,25 +282,11 @@ public class OTPVerificationScene {
      * Navigate to change password scene
      */
     private void navigateToChangePassword() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/fxml/change-password.fxml"));
-            Parent root = loader.load();
-
-            // Pass email to change password controller
-            ChangePasswordScene controller = loader.getController();
+        // Swap content using SceneManager
+        SceneManager.setTitle("Discord Mini - Change Password");
+        ChangePasswordScene controller = (ChangePasswordScene) SceneManager.loadContent("content/change-password-content.fxml");
+        if (controller != null) {
             controller.setEmail(email);
-
-            Stage stage = (Stage) otpField1.getScene().getWindow();
-            Scene scene = new Scene(root, 450, 700);
-            scene.getStylesheets().add(getClass().getResource("/com/example/css/change-password.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Discord Mini - Change Password");
-            stage.centerOnScreen();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            showError("Failed to load change password scene: " + e.getMessage());
         }
     }
 

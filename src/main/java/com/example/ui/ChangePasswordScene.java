@@ -1,16 +1,12 @@
 package com.example.ui;
 
+import com.example.util.SceneManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -89,22 +85,9 @@ public class ChangePasswordScene {
      */
     @FXML
     private void handleBackToLogin() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/fxml/login.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) newPasswordField.getScene().getWindow();
-            Scene scene = new Scene(root, 450, 650);
-            scene.getStylesheets().add(getClass().getResource("/com/example/css/login.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Discord Mini - Login");
-            stage.centerOnScreen();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            showError("Failed to load login scene: " + e.getMessage());
-        }
+        // Swap content using SceneManager
+        SceneManager.setTitle("Discord Mini - Login");
+        SceneManager.loadContent("content/login-content.fxml");
     }
 
     // ===== Business Logic =====

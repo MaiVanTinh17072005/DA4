@@ -1,5 +1,6 @@
 package com.example.ui;
 
+import com.example.util.SceneManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -107,22 +108,9 @@ public class LoginScene {
      */
     @FXML
     private void handleForgotPassword() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/fxml/forgot-password.fxml"));
-            Parent root = loader.load();
-
-            Stage stage = (Stage) emailField.getScene().getWindow();
-            Scene scene = new Scene(root, 450, 650);
-            scene.getStylesheets().add(getClass().getResource("/com/example/css/forgot-password.css").toExternalForm());
-
-            stage.setScene(scene);
-            stage.setTitle("Discord Mini - Forgot Password");
-            stage.centerOnScreen();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            showError("Failed to load forgot password scene: " + e.getMessage());
-        }
+        // Swap content using SceneManager (no scene reload needed)
+        SceneManager.setTitle("Discord Mini - Forgot Password");
+        SceneManager.loadContent("content/forgot-password-content.fxml");
     }
 
     // ===== Authentication Logic =====
@@ -259,14 +247,15 @@ public class LoginScene {
             // Get current stage
             Stage stage = (Stage) emailField.getScene().getWindow();
 
-            // Create new scene
-            Scene scene = new Scene(root, 1200, 800);
+            // Create new scene (full screen)
+            Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/css/chat.css").toExternalForm());
 
-            // Set scene and show
+            // Set scene and show (full screen)
             stage.setScene(scene);
             stage.setTitle("Discord Mini - Chat");
-            stage.centerOnScreen();
+            stage.setMaximized(true);
+            stage.setResizable(true);
 
         } catch (IOException e) {
             e.printStackTrace();
