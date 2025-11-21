@@ -1,0 +1,293 @@
+/* ========================================
+   DISCORD MINI - LOGIN SCENE CSS
+   Dark Theme with Modern Design
+   ======================================== */
+
+/* ===== Discord Color Palette ===== */
+/*
+  Background: #36393f (main), #2f3136 (secondary), #202225 (dark)
+  Primary: #5865f2 (blurple), #4752c4 (hover)
+  Success: #43b581 (green)
+  Danger: #f04747 (red)
+  Text: #ffffff (white), #dcddde (normal), #b9bbbe (muted), #72767d (disabled)
+*/
+
+/* ===== ROOT & BACKGROUND ===== */
+.root {
+    -fx-background-color: #36393f;
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.login-background {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #36393f 0%, #2f3136 50%, #202225 100%);
+    -fx-padding: 40px;
+}
+
+/* ===== LOGIN CARD ===== */
+.login-card {
+    -fx-background-color: #2f3136;
+    -fx-background-radius: 12px;
+    -fx-padding: 45px 40px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 25, 0.3, 0, 8);
+    -fx-border-color: rgba(255, 255, 255, 0.05);
+    -fx-border-width: 1px;
+    -fx-border-radius: 12px;
+}
+
+/* ===== TYPOGRAPHY ===== */
+.app-title {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-fill: linear-gradient(to right, #5865f2, #7289da);
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.3), 10, 0.5, 0, 2);
+}
+
+.welcome-text {
+    -fx-font-size: 18px;
+    -fx-fill: #b9bbbe;
+    -fx-font-weight: 500;
+}
+
+.form-label {
+    -fx-text-fill: #b9bbbe;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 0.5px;
+}
+
+.secondary-text {
+    -fx-fill: #b9bbbe;
+    -fx-font-size: 14px;
+}
+
+/* ===== FORM INPUTS ===== */
+.form-input {
+    -fx-background-color: #202225;
+    -fx-text-fill: #dcddde;
+    -fx-prompt-text-fill: #72767d;
+    -fx-font-size: 15px;
+    -fx-padding: 14px 12px;
+    -fx-background-radius: 6px;
+    -fx-border-color: transparent;
+    -fx-border-width: 2px;
+    -fx-border-radius: 6px;
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.2), 5, 0, 0, 1);
+}
+
+.form-input:focused {
+    -fx-border-color: #5865f2;
+    -fx-background-color: #1e1f22;
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.3), 8, 0.4, 0, 0);
+}
+
+.form-input:hover {
+    -fx-background-color: #1a1b1e;
+    -fx-border-color: rgba(88, 101, 242, 0.3);
+}
+
+/* ===== PRIMARY BUTTON ===== */
+.primary-button {
+    -fx-background-color: linear-gradient(to bottom, #5865f2, #4752c4);
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 14px 24px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.4), 10, 0.3, 0, 4);
+}
+
+.primary-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #4752c4, #3c45a5);
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.6), 15, 0.4, 0, 6);
+    -fx-scale-y: 1.02;
+    -fx-scale-x: 1.02;
+}
+
+.primary-button:pressed {
+    -fx-background-color: #3c45a5;
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 5, 0.3, 0, 2);
+    -fx-scale-y: 0.98;
+    -fx-scale-x: 0.98;
+}
+
+.primary-button:disabled {
+    -fx-background-color: #4e5058;
+    -fx-text-fill: #72767d;
+    -fx-cursor: default;
+    -fx-effect: none;
+    -fx-opacity: 0.6;
+}
+
+/* ===== HYPERLINKS ===== */
+.link-text {
+    -fx-text-fill: #00a8fc;
+    -fx-font-size: 13px;
+    -fx-underline: false;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.link-text:hover {
+    -fx-text-fill: #4fc3f7;
+    -fx-underline: true;
+}
+
+.link-text:pressed {
+    -fx-text-fill: #0288d1;
+}
+
+.link-text-bold {
+    -fx-text-fill: #00a8fc;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-underline: false;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.link-text-bold:hover {
+    -fx-text-fill: #4fc3f7;
+    -fx-underline: true;
+}
+
+/* ===== ERROR & SUCCESS MESSAGES ===== */
+.error-text {
+    -fx-text-fill: #f04747;
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-padding: 10px 12px;
+    -fx-background-color: rgba(240, 71, 71, 0.15);
+    -fx-background-radius: 4px;
+    -fx-border-color: rgba(240, 71, 71, 0.3);
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+}
+
+.success-text {
+    -fx-text-fill: #43b581;
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-padding: 10px 12px;
+    -fx-background-color: rgba(67, 181, 129, 0.15);
+    -fx-background-radius: 4px;
+    -fx-border-color: rgba(67, 181, 129, 0.3);
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+}
+
+/* ===== PROGRESS INDICATOR (Loading Spinner) ===== */
+.progress-indicator {
+    -fx-progress-color: #5865f2;
+}
+
+.progress-indicator .indicator {
+    -fx-background-color: transparent;
+}
+
+.progress-indicator .percentage {
+    -fx-fill: null;
+}
+
+.progress-indicator .arc {
+    -fx-stroke: #5865f2;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+    -fx-padding: 35px 0 0 0;
+}
+
+.footer-text {
+    -fx-fill: #72767d;
+    -fx-font-size: 12px;
+    -fx-font-weight: 500;
+}
+
+.footer-link {
+    -fx-text-fill: #72767d;
+    -fx-font-size: 12px;
+    -fx-underline: false;
+    -fx-border-color: transparent;
+    -fx-padding: 0 4px;
+}
+
+.footer-link:hover {
+    -fx-text-fill: #b9bbbe;
+    -fx-underline: true;
+}
+
+/* ===== SCROLLBAR (for future use) ===== */
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #202225;
+    -fx-background-radius: 6px;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #36393f;
+}
+
+.scroll-bar .track {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+/* ===== FORM CONTAINER ===== */
+.form-container {
+    -fx-padding: 0;
+    -fx-spacing: 18px;
+}
+
+/* ===== CUSTOM HOVER EFFECTS ===== */
+.login-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 30, 0.35, 0, 10);
+}
+
+/* ===== SMOOTH TRANSITIONS ===== */
+* {
+    -fx-smooth: true;
+}
+
+/* ===== PASSWORD FIELD SPECIFIC ===== */
+.password-field {
+    -fx-background-color: #202225;
+    -fx-text-fill: #dcddde;
+    -fx-prompt-text-fill: #72767d;
+}
+
+/* ===== LABEL SPACING ===== */
+.form-label {
+    -fx-padding: 0 0 4px 0;
+}
+
+/* ===== ALERT DIALOGS (for forgot password popup) ===== */
+.alert {
+    -fx-background-color: #2f3136;
+}
+
+.alert .header-panel {
+    -fx-background-color: #202225;
+}
+
+.alert .content {
+    -fx-background-color: #2f3136;
+    -fx-text-fill: #dcddde;
+}
+
+.alert .button {
+    -fx-background-color: #5865f2;
+    -fx-text-fill: white;
+}
+
+.alert .button:hover {
+    -fx-background-color: #4752c4;
+}

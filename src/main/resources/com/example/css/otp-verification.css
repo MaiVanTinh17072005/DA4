@@ -1,0 +1,36 @@
+/* ========================================
+   DISCORD MINI - OTP VERIFICATION SCENE CSS
+   Dark Theme with Modern Design
+   ======================================== */
+
+/* Reuse login.css styles */
+@import url("login.css");
+
+/* ===== OTP INPUT FIELDS ===== */
+.otp-input {
+    -fx-background-color: #202225;
+    -fx-text-fill: #dcddde;
+    -fx-prompt-text-fill: #72767d;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-padding: 14px;
+    -fx-background-radius: 6px;
+    -fx-border-color: transparent;
+    -fx-border-width: 2px;
+    -fx-border-radius: 6px;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.2), 5, 0, 0, 1);
+}
+
+.otp-input:focused {
+    -fx-border-color: #5865f2;
+    -fx-background-color: #1e1f22;
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.3), 8, 0.4, 0, 0);
+}
+
+.otp-input:hover {
+    -fx-background-color: #1a1b1e;
+    -fx-border-color: rgba(88, 101, 242, 0.3);
+}
+
