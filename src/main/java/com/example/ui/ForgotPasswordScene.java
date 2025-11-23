@@ -1,6 +1,8 @@
 package com.example.ui;
 
 import com.example.util.SceneManager;
+import com.example.util.ValidationUtil;
+import com.example.util.ValidationUtil.ValidationResult;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -81,20 +83,15 @@ public class ForgotPasswordScene {
     // ===== Business Logic =====
 
     /**
-     * Validate user input
+     * Validate user input using ValidationUtil
      */
     private boolean validateInput(String email) {
-        if (email.isEmpty()) {
-            showError("Please enter your email address");
+        ValidationResult emailResult = ValidationUtil.validateEmail(email);
+        if (!emailResult.isValid()) {
+            showError(emailResult.getErrorMessage());
             return false;
         }
-
-        // Basic email validation
-        if (!email.contains("@") || !email.contains(".")) {
-            showError("Please enter a valid email address");
-            return false;
-        }
-
+        
         return true;
     }
 

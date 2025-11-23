@@ -23,11 +23,11 @@
     <!-- Form Container -->
     <VBox spacing="20" styleClass="form-container">
 
-        <!-- Email Field (Login: Email/Username, Register: Email only) -->
+        <!-- Email Field (Login: Email only, Register: Email only) -->
         <VBox spacing="8">
-            <Label fx:id="emailLabel" text="EMAIL OR USERNAME" styleClass="form-label"/>
+            <Label fx:id="emailLabel" text="EMAIL" styleClass="form-label"/>
             <TextField fx:id="emailField"
-                       promptText="Enter your email or username"
+                       promptText="Enter your email address"
                        styleClass="form-input"/>
         </VBox>
 

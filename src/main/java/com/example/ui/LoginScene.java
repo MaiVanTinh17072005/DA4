@@ -1,6 +1,8 @@
 package com.example.ui;
 
 import com.example.util.SceneManager;
+import com.example.util.ValidationUtil;
+import com.example.util.ValidationUtil.ValidationResult;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -225,45 +227,53 @@ public class LoginScene {
     // ===== Authentication Logic =====
 
     /**
-     * Validate user input
+     * Validate user input using ValidationUtil
      */
     private boolean validateInput(String email, String username, String password) {
         if (isLoginMode) {
-            // Login mode: email/username and password required
-            if (email.isEmpty() || password.isEmpty()) {
-                showError("Please fill in all fields");
+            // Login mode: email and password required (email only, no username)
+            ValidationResult emailResult = ValidationUtil.validateEmail(email);
+            if (!emailResult.isValid()) {
+                showError(emailResult.getErrorMessage());
+                return false;
+            }
+            
+            ValidationResult passwordResult = ValidationUtil.validatePasswordForLogin(password);
+            if (!passwordResult.isValid()) {
+                showError(passwordResult.getErrorMessage());
                 return false;
             }
         } else {
             // Register mode: email, username, password, and confirm password required
-            if (email.isEmpty() || username.isEmpty() || password.isEmpty()) {
-                showError("Please fill in all fields");
-                return false;
-            }
-            
             // Email validation
-            if (!email.contains("@") || !email.contains(".")) {
-                showError("Please enter a valid email address");
+            ValidationResult emailResult = ValidationUtil.validateEmail(email);
+            if (!emailResult.isValid()) {
+                showError(emailResult.getErrorMessage());
                 return false;
             }
             
             // Username validation
-            if (username.length() < 3) {
-                showError("Username must be at least 3 characters");
+            ValidationResult usernameResult = ValidationUtil.validateUsername(username);
+            if (!usernameResult.isValid()) {
+                showError(usernameResult.getErrorMessage());
                 return false;
             }
             
             // Password validation
+            ValidationResult passwordResult = ValidationUtil.validatePassword(password);
+            if (!passwordResult.isValid()) {
+                showError(passwordResult.getErrorMessage());
+                return false;
+            }
+            
+            // Confirm password validation
             String confirmPass = isConfirmPasswordVisible && confirmPasswordTextField != null
                 ? confirmPasswordTextField.getText()
                 : confirmPasswordField.getText();
             
-            if (!password.equals(confirmPass)) {
-                showError("Passwords do not match");
-                return false;
-            }
-            if (password.length() < 6) {
-                showError("Password must be at least 6 characters");
+            ValidationResult passwordMatchResult = ValidationUtil.validatePasswordMatch(password, confirmPass);
+            if (!passwordMatchResult.isValid()) {
+                showError(passwordMatchResult.getErrorMessage());
                 return false;
             }
         }
@@ -418,7 +428,10 @@ public class LoginScene {
         togglePromptText.setText("Need an account?");
         toggleLink.setText("Register");
         if (emailLabel != null) {
-            emailLabel.setText("EMAIL OR USERNAME");
+            emailLabel.setText("EMAIL");
+        }
+        if (emailField != null) {
+            emailField.setPromptText("Enter your email address");
         }
 
         usernameBox.setVisible(false);

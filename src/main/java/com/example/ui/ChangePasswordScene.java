@@ -1,6 +1,7 @@
 package com.example.ui;
 
 import com.example.util.SceneManager;
+import com.example.util.ValidationUtil;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -196,21 +197,20 @@ public class ChangePasswordScene {
     // ===== Business Logic =====
 
     /**
-     * Validate user input
+     * Validate user input using ValidationUtil
      */
     private boolean validateInput(String newPassword, String confirmPassword) {
-        if (newPassword.isEmpty() || confirmPassword.isEmpty()) {
-            showError("Please fill in all fields");
+        // Password strength validation
+        ValidationUtil.ValidationResult passwordResult = ValidationUtil.validatePassword(newPassword);
+        if (!passwordResult.isValid()) {
+            showError(passwordResult.getErrorMessage());
             return false;
         }
-
-        if (newPassword.length() < 6) {
-            showError("Password must be at least 6 characters");
-            return false;
-        }
-
-        if (!newPassword.equals(confirmPassword)) {
-            showError("Passwords do not match");
+        
+        // Password match validation
+        ValidationUtil.ValidationResult passwordMatchResult = ValidationUtil.validatePasswordMatch(newPassword, confirmPassword);
+        if (!passwordMatchResult.isValid()) {
+            showError(passwordMatchResult.getErrorMessage());
             return false;
         }
 
