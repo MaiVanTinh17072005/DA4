@@ -17,8 +17,12 @@ public class ChangePasswordScene {
 
     // ===== FXML Components =====
     @FXML private PasswordField newPasswordField;
+    @FXML private TextField newPasswordTextField;
     @FXML private PasswordField confirmPasswordField;
+    @FXML private TextField confirmPasswordTextField;
     @FXML private Button submitButton;
+    @FXML private Button newPasswordToggleButton;
+    @FXML private Button confirmPasswordToggleButton;
     @FXML private Hyperlink backToLoginLink;
     @FXML private Label errorLabel;
     @FXML private ProgressIndicator loadingIndicator;
@@ -27,6 +31,8 @@ public class ChangePasswordScene {
 
     // ===== State =====
     private String email;
+    private boolean isNewPasswordVisible = false;
+    private boolean isConfirmPasswordVisible = false;
 
     /**
      * Initialize controller - called after FXML is loaded
@@ -34,6 +40,7 @@ public class ChangePasswordScene {
     @FXML
     public void initialize() {
         setupEnterKeyHandlers();
+        setupPasswordVisibilitySync();
         hideError();
     }
 
@@ -48,7 +55,99 @@ public class ChangePasswordScene {
      * Setup Enter key to submit form
      */
     private void setupEnterKeyHandlers() {
+        newPasswordField.setOnAction(e -> handleSubmit());
+        if (newPasswordTextField != null) {
+            newPasswordTextField.setOnAction(e -> handleSubmit());
+        }
         confirmPasswordField.setOnAction(e -> handleSubmit());
+        if (confirmPasswordTextField != null) {
+            confirmPasswordTextField.setOnAction(e -> handleSubmit());
+        }
+    }
+    
+    /**
+     * Sync password between PasswordField and TextField
+     */
+    private void setupPasswordVisibilitySync() {
+        if (newPasswordTextField != null && newPasswordField != null) {
+            newPasswordField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (!isNewPasswordVisible) {
+                    newPasswordTextField.setText(newVal);
+                }
+            });
+            
+            newPasswordTextField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (isNewPasswordVisible) {
+                    newPasswordField.setText(newVal);
+                }
+            });
+        }
+        
+        if (confirmPasswordTextField != null && confirmPasswordField != null) {
+            confirmPasswordField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (!isConfirmPasswordVisible) {
+                    confirmPasswordTextField.setText(newVal);
+                }
+            });
+            
+            confirmPasswordTextField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (isConfirmPasswordVisible) {
+                    confirmPasswordField.setText(newVal);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Toggle new password visibility
+     */
+    @FXML
+    private void toggleNewPasswordVisibility() {
+        if (newPasswordField == null || newPasswordTextField == null) return;
+        
+        isNewPasswordVisible = !isNewPasswordVisible;
+        
+        if (isNewPasswordVisible) {
+            newPasswordTextField.setText(newPasswordField.getText());
+            newPasswordField.setVisible(false);
+            newPasswordField.setManaged(false);
+            newPasswordTextField.setVisible(true);
+            newPasswordTextField.setManaged(true);
+            newPasswordToggleButton.setText("🙈");
+        } else {
+            newPasswordField.setText(newPasswordTextField.getText());
+            newPasswordTextField.setVisible(false);
+            newPasswordTextField.setManaged(false);
+            newPasswordField.setVisible(true);
+            newPasswordField.setManaged(true);
+            newPasswordToggleButton.setText("👁");
+        }
+    }
+    
+    /**
+     * Toggle confirm password visibility
+     */
+    @FXML
+    private void toggleConfirmPasswordVisibility() {
+        if (confirmPasswordField == null || confirmPasswordTextField == null) return;
+        
+        isConfirmPasswordVisible = !isConfirmPasswordVisible;
+        
+        if (isConfirmPasswordVisible) {
+            confirmPasswordTextField.setText(confirmPasswordField.getText());
+            confirmPasswordField.setVisible(false);
+            confirmPasswordField.setManaged(false);
+            confirmPasswordTextField.setVisible(true);
+            confirmPasswordTextField.setManaged(true);
+            confirmPasswordToggleButton.setText("🙈");
+        } else {
+            confirmPasswordField.setText(confirmPasswordTextField.getText());
+            confirmPasswordTextField.setVisible(false);
+            confirmPasswordTextField.setManaged(false);
+            confirmPasswordField.setVisible(true);
+            confirmPasswordField.setManaged(true);
+            confirmPasswordToggleButton.setText("👁");
+        }
     }
 
     // ===== Action Handlers =====
@@ -58,8 +157,12 @@ public class ChangePasswordScene {
      */
     @FXML
     private void handleSubmit() {
-        String newPassword = newPasswordField.getText();
-        String confirmPassword = confirmPasswordField.getText();
+        String newPassword = isNewPasswordVisible && newPasswordTextField != null
+            ? newPasswordTextField.getText()
+            : newPasswordField.getText();
+        String confirmPassword = isConfirmPasswordVisible && confirmPasswordTextField != null
+            ? confirmPasswordTextField.getText()
+            : confirmPasswordField.getText();
 
         // Validation
         if (!validateInput(newPassword, confirmPassword)) {
@@ -192,7 +295,19 @@ public class ChangePasswordScene {
         loadingIndicator.setManaged(loading);
         submitButton.setDisable(loading);
         newPasswordField.setDisable(loading);
+        if (newPasswordTextField != null) {
+            newPasswordTextField.setDisable(loading);
+        }
         confirmPasswordField.setDisable(loading);
+        if (confirmPasswordTextField != null) {
+            confirmPasswordTextField.setDisable(loading);
+        }
+        if (newPasswordToggleButton != null) {
+            newPasswordToggleButton.setDisable(loading);
+        }
+        if (confirmPasswordToggleButton != null) {
+            confirmPasswordToggleButton.setDisable(loading);
+        }
         backToLoginLink.setDisable(loading);
     }
 
