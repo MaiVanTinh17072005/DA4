@@ -80,6 +80,13 @@
     -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.2), 5, 0, 0, 1);
 }
 
+/* Password field in StackPane (with toggle button) */
+.stack-pane .form-input {
+    -fx-background-radius: 6px 0 0 6px;
+    -fx-border-width: 2px 0 2px 2px;
+    -fx-border-radius: 6px 0 0 6px;
+}
+
 .form-input:focused {
     -fx-border-color: #5865f2;
     -fx-background-color: #1e1f22;
@@ -268,6 +275,35 @@
     -fx-background-color: #202225;
     -fx-text-fill: #dcddde;
     -fx-prompt-text-fill: #72767d;
+}
+
+/* ===== PASSWORD TOGGLE BUTTON ===== */
+.password-toggle-button {
+    -fx-background-color: #202225;
+    -fx-background-radius: 0 6px 6px 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 2px 2px 2px 0;
+    -fx-border-radius: 0 6px 6px 0;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+    -fx-text-fill: #b9bbbe;
+    -fx-font-size: 16px;
+}
+
+.password-toggle-button:hover {
+    -fx-background-color: #1a1b1e;
+    -fx-text-fill: #dcddde;
+}
+
+.password-toggle-button:focused {
+    -fx-border-color: #5865f2;
+}
+
+/* Password field with toggle button */
+.password-field.form-input:not(:only-child) {
+    -fx-background-radius: 6px 0 0 6px;
+    -fx-border-width: 2px 0 2px 2px;
+    -fx-border-radius: 6px 0 0 6px;
 }
 
 /* ===== LABEL SPACING ===== */

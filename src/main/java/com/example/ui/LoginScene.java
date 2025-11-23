@@ -23,17 +23,28 @@ public class LoginScene {
 
     // ===== FXML Components =====
     @FXML private TextField emailField;
+    @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
+    @FXML private TextField passwordTextField; // For showing password
     @FXML private PasswordField confirmPasswordField;
+    @FXML private TextField confirmPasswordTextField; // For showing password
     @FXML private Button actionButton;
+    @FXML private Button passwordToggleButton;
+    @FXML private Button confirmPasswordToggleButton;
     @FXML private Hyperlink toggleLink;
     @FXML private Hyperlink forgotPasswordLink;
     @FXML private Label errorLabel;
+    @FXML private Label emailLabel;
     @FXML private ProgressIndicator loadingIndicator;
     @FXML private Text welcomeText;
     @FXML private Text togglePromptText;
     @FXML private VBox confirmPasswordBox;
+    @FXML private VBox usernameBox;
     @FXML private HBox forgotPasswordBox;
+    
+    // ===== Password Visibility State =====
+    private boolean isPasswordVisible = false;
+    private boolean isConfirmPasswordVisible = false;
 
     // ===== State =====
     private boolean isLoginMode = true;
@@ -48,15 +59,110 @@ public class LoginScene {
     @FXML
     public void initialize() {
         setupEnterKeyHandlers();
+        setupPasswordVisibilitySync();
         hideError();
     }
-
+    
     /**
      * Setup Enter key to submit form
      */
     private void setupEnterKeyHandlers() {
         passwordField.setOnAction(e -> handleAction());
+        if (passwordTextField != null) {
+            passwordTextField.setOnAction(e -> handleAction());
+        }
         confirmPasswordField.setOnAction(e -> handleAction());
+        if (confirmPasswordTextField != null) {
+            confirmPasswordTextField.setOnAction(e -> handleAction());
+        }
+        if (usernameField != null) {
+            usernameField.setOnAction(e -> handleAction());
+        }
+    }
+    
+    /**
+     * Sync password between PasswordField and TextField
+     */
+    private void setupPasswordVisibilitySync() {
+        if (passwordTextField != null && passwordField != null) {
+            passwordField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (!isPasswordVisible && passwordTextField != null) {
+                    passwordTextField.setText(newVal);
+                }
+            });
+            
+            passwordTextField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (isPasswordVisible && passwordField != null) {
+                    passwordField.setText(newVal);
+                }
+            });
+        }
+        
+        if (confirmPasswordTextField != null && confirmPasswordField != null) {
+            confirmPasswordField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (!isConfirmPasswordVisible && confirmPasswordTextField != null) {
+                    confirmPasswordTextField.setText(newVal);
+                }
+            });
+            
+            confirmPasswordTextField.textProperty().addListener((obs, oldVal, newVal) -> {
+                if (isConfirmPasswordVisible && confirmPasswordField != null) {
+                    confirmPasswordField.setText(newVal);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Toggle password visibility
+     */
+    @FXML
+    private void togglePasswordVisibility() {
+        if (passwordField == null || passwordTextField == null) return;
+        
+        isPasswordVisible = !isPasswordVisible;
+        
+        if (isPasswordVisible) {
+            passwordTextField.setText(passwordField.getText());
+            passwordField.setVisible(false);
+            passwordField.setManaged(false);
+            passwordTextField.setVisible(true);
+            passwordTextField.setManaged(true);
+            passwordToggleButton.setText("🙈");
+        } else {
+            passwordField.setText(passwordTextField.getText());
+            passwordTextField.setVisible(false);
+            passwordTextField.setManaged(false);
+            passwordField.setVisible(true);
+            passwordField.setManaged(true);
+            passwordToggleButton.setText("👁");
+        }
+    }
+    
+    /**
+     * Toggle confirm password visibility
+     */
+    @FXML
+    private void toggleConfirmPasswordVisibility() {
+        if (confirmPasswordField == null || confirmPasswordTextField == null) return;
+        
+        isConfirmPasswordVisible = !isConfirmPasswordVisible;
+        
+        if (isConfirmPasswordVisible) {
+            confirmPasswordTextField.setText(confirmPasswordField.getText());
+            confirmPasswordField.setVisible(false);
+            confirmPasswordField.setManaged(false);
+            confirmPasswordTextField.setVisible(true);
+            confirmPasswordTextField.setManaged(true);
+            confirmPasswordToggleButton.setText("🙈");
+        } else {
+            confirmPasswordField.setText(confirmPasswordTextField.getText());
+            confirmPasswordTextField.setVisible(false);
+            confirmPasswordTextField.setManaged(false);
+            confirmPasswordField.setVisible(true);
+            confirmPasswordField.setManaged(true);
+            confirmPasswordToggleButton.setText("👁");
+        }
     }
 
     // ===== Action Handlers =====
@@ -67,10 +173,13 @@ public class LoginScene {
     @FXML
     private void handleAction() {
         String email = emailField.getText().trim();
-        String password = passwordField.getText();
+        String username = usernameField != null ? usernameField.getText().trim() : "";
+        String password = isPasswordVisible && passwordTextField != null 
+            ? passwordTextField.getText() 
+            : passwordField.getText();
 
         // Validation
-        if (!validateInput(email, password)) {
+        if (!validateInput(email, username, password)) {
             return;
         }
 
@@ -84,7 +193,7 @@ public class LoginScene {
                 if (isLoginMode) {
                     performLogin(email, password);
                 } else {
-                    performRegister(email, password);
+                    performRegister(email, username, password);
                 }
             } catch (Exception e) {
                 handleAuthError(e);
@@ -118,14 +227,37 @@ public class LoginScene {
     /**
      * Validate user input
      */
-    private boolean validateInput(String email, String password) {
-        if (email.isEmpty() || password.isEmpty()) {
-            showError("Please fill in all fields");
-            return false;
-        }
-
-        if (!isLoginMode) {
-            String confirmPass = confirmPasswordField.getText();
+    private boolean validateInput(String email, String username, String password) {
+        if (isLoginMode) {
+            // Login mode: email/username and password required
+            if (email.isEmpty() || password.isEmpty()) {
+                showError("Please fill in all fields");
+                return false;
+            }
+        } else {
+            // Register mode: email, username, password, and confirm password required
+            if (email.isEmpty() || username.isEmpty() || password.isEmpty()) {
+                showError("Please fill in all fields");
+                return false;
+            }
+            
+            // Email validation
+            if (!email.contains("@") || !email.contains(".")) {
+                showError("Please enter a valid email address");
+                return false;
+            }
+            
+            // Username validation
+            if (username.length() < 3) {
+                showError("Username must be at least 3 characters");
+                return false;
+            }
+            
+            // Password validation
+            String confirmPass = isConfirmPasswordVisible && confirmPasswordTextField != null
+                ? confirmPasswordTextField.getText()
+                : confirmPasswordField.getText();
+            
             if (!password.equals(confirmPass)) {
                 showError("Passwords do not match");
                 return false;
@@ -186,7 +318,7 @@ public class LoginScene {
      * Perform user registration
      * TODO: Replace mock with actual BackendApi call
      */
-    private void performRegister(String email, String password) {
+    private void performRegister(String email, String username, String password) {
         simulateNetworkDelay(1500);
 
         boolean success = true; // Mock success
@@ -197,14 +329,14 @@ public class LoginScene {
                 showSuccess("Account created successfully! Please log in.");
                 switchToLoginMode();
             } else {
-                showError("Registration failed. Email may already exist.");
+                showError("Registration failed. Email or username may already exist.");
             }
         });
 
         // TODO: Actual implementation
         /*
         try {
-            AuthResponse response = backendApi.register(email, password);
+            AuthResponse response = backendApi.register(email, username, password);
             Platform.runLater(() -> {
                 setLoading(false);
                 if (response.isSuccess()) {
@@ -285,7 +417,12 @@ public class LoginScene {
         actionButton.setText("Log In");
         togglePromptText.setText("Need an account?");
         toggleLink.setText("Register");
+        if (emailLabel != null) {
+            emailLabel.setText("EMAIL OR USERNAME");
+        }
 
+        usernameBox.setVisible(false);
+        usernameBox.setManaged(false);
         confirmPasswordBox.setVisible(false);
         confirmPasswordBox.setManaged(false);
         forgotPasswordBox.setVisible(true);
@@ -301,7 +438,12 @@ public class LoginScene {
         actionButton.setText("Register");
         togglePromptText.setText("Already have an account?");
         toggleLink.setText("Log In");
+        if (emailLabel != null) {
+            emailLabel.setText("EMAIL");
+        }
 
+        usernameBox.setVisible(true);
+        usernameBox.setManaged(true);
         confirmPasswordBox.setVisible(true);
         confirmPasswordBox.setManaged(true);
         forgotPasswordBox.setVisible(false);
@@ -316,8 +458,23 @@ public class LoginScene {
         loadingIndicator.setManaged(loading);
         actionButton.setDisable(loading);
         emailField.setDisable(loading);
+        if (usernameField != null) {
+            usernameField.setDisable(loading);
+        }
         passwordField.setDisable(loading);
+        if (passwordTextField != null) {
+            passwordTextField.setDisable(loading);
+        }
         confirmPasswordField.setDisable(loading);
+        if (confirmPasswordTextField != null) {
+            confirmPasswordTextField.setDisable(loading);
+        }
+        if (passwordToggleButton != null) {
+            passwordToggleButton.setDisable(loading);
+        }
+        if (confirmPasswordToggleButton != null) {
+            confirmPasswordToggleButton.setDisable(loading);
+        }
         toggleLink.setDisable(loading);
     }
 
@@ -326,8 +483,17 @@ public class LoginScene {
      */
     private void clearFields() {
         emailField.clear();
+        if (usernameField != null) {
+            usernameField.clear();
+        }
         passwordField.clear();
+        if (passwordTextField != null) {
+            passwordTextField.clear();
+        }
         confirmPasswordField.clear();
+        if (confirmPasswordTextField != null) {
+            confirmPasswordTextField.clear();
+        }
     }
 
     // ===== UI Feedback Methods =====

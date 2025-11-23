@@ -23,20 +23,45 @@
     <!-- Form Container -->
     <VBox spacing="20" styleClass="form-container">
 
-        <!-- Email Field -->
+        <!-- Email Field (Login: Email/Username, Register: Email only) -->
         <VBox spacing="8">
-            <Label text="EMAIL OR USERNAME" styleClass="form-label"/>
+            <Label fx:id="emailLabel" text="EMAIL OR USERNAME" styleClass="form-label"/>
             <TextField fx:id="emailField"
                        promptText="Enter your email or username"
                        styleClass="form-input"/>
         </VBox>
 
-        <!-- Password Field -->
+        <!-- Username Field (Only for Register) -->
+        <VBox fx:id="usernameBox" spacing="8" managed="false" visible="false">
+            <Label text="USERNAME" styleClass="form-label"/>
+            <TextField fx:id="usernameField"
+                       promptText="Enter your username"
+                       styleClass="form-input"/>
+        </VBox>
+
+        <!-- Password Field with Visibility Toggle -->
         <VBox spacing="8">
             <Label text="PASSWORD" styleClass="form-label"/>
-            <PasswordField fx:id="passwordField"
-                           promptText="Enter your password"
-                           styleClass="form-input"/>
+            <HBox spacing="0" alignment="CENTER_LEFT">
+                <StackPane HBox.hgrow="ALWAYS">
+                    <PasswordField fx:id="passwordField"
+                                   promptText="Enter your password"
+                                   styleClass="form-input"/>
+                    <TextField fx:id="passwordTextField"
+                               promptText="Enter your password"
+                               styleClass="form-input"
+                               managed="false"
+                               visible="false"/>
+                </StackPane>
+                <Button fx:id="passwordToggleButton"
+                        text="👁"
+                        styleClass="password-toggle-button"
+                        onAction="#togglePasswordVisibility"
+                        minWidth="40"
+                        minHeight="40"
+                        maxWidth="40"
+                        maxHeight="40"/>
+            </HBox>
         </VBox>
 
         <!-- Forgot Password (Only for Login) -->
@@ -47,12 +72,29 @@
                        onAction="#handleForgotPassword"/>
         </HBox>
 
-        <!-- Confirm Password (Only for Register) -->
+        <!-- Confirm Password (Only for Register) with Visibility Toggle -->
         <VBox fx:id="confirmPasswordBox" spacing="8" managed="false" visible="false">
             <Label text="CONFIRM PASSWORD" styleClass="form-label"/>
-            <PasswordField fx:id="confirmPasswordField"
-                           promptText="Confirm your password"
-                           styleClass="form-input"/>
+            <HBox spacing="0" alignment="CENTER_LEFT">
+                <StackPane HBox.hgrow="ALWAYS">
+                    <PasswordField fx:id="confirmPasswordField"
+                                   promptText="Confirm your password"
+                                   styleClass="form-input"/>
+                    <TextField fx:id="confirmPasswordTextField"
+                               promptText="Confirm your password"
+                               styleClass="form-input"
+                               managed="false"
+                               visible="false"/>
+                </StackPane>
+                <Button fx:id="confirmPasswordToggleButton"
+                        text="👁"
+                        styleClass="password-toggle-button"
+                        onAction="#toggleConfirmPasswordVisibility"
+                        minWidth="40"
+                        minHeight="40"
+                        maxWidth="40"
+                        maxHeight="40"/>
+            </HBox>
         </VBox>
 
         <!-- Error Message -->
