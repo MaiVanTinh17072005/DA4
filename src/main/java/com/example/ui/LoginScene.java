@@ -238,7 +238,8 @@ public class LoginScene {
                 return false;
             }
             
-            ValidationResult passwordResult = ValidationUtil.validatePasswordForLogin(password);
+            // Validate password using validatePassword method
+            ValidationResult passwordResult = ValidationUtil.validatePassword(password);
             if (!passwordResult.isValid()) {
                 showError(passwordResult.getErrorMessage());
                 return false;
