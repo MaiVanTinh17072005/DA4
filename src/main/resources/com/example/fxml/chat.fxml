@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.ui.ChatScene"
+            prefWidth="1200"
+            prefHeight="720"
+            stylesheets="@../css/chat.css">
+
+    <!-- Top Toolbar with Tab Bar -->
+    <top>
+        <VBox spacing="6">
+            <HBox spacing="12" alignment="CENTER_LEFT" styleClass="notification-bar">
+                <Label text="Discord Mini • Messenger Mode" styleClass="section-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <TabPane>
+                    <Tab text="Friends"/>
+                    <Tab text="Groups"/>
+                    <Tab text="Calls"/>
+                    <Tab text="Livestream"/>
+                    <Tab text="AI"/>
+                </TabPane>
+            </HBox>
+            <Label fx:id="toolbarHintLabel"
+                   text="Hybrid P2P: server hỗ trợ đăng nhập, sau đó chat trực tiếp. Khi mất mạng sẽ tự chuyển LAN mode."
+                   styleClass="muted-text">
+                <padding><Insets top="0" right="20" bottom="8" left="20"/></padding>
+            </Label>
+        </VBox>
+    </top>
+
+    <center>
+        <HBox spacing="0">
+            <!-- Left Profile Sidebar -->
+            <VBox spacing="18" styleClass="sidebar" prefWidth="260">
+                <VBox spacing="10" styleClass="profile-card">
+                    <Circle radius="28" styleClass="avatar-circle"/>
+                    <Label fx:id="currentUserNameLabel" text="Minh Anh" styleClass="profile-name"/>
+                    <Label fx:id="currentUserStatusLabel" text="Online • Hybrid P2P" styleClass="profile-status"/>
+                </VBox>
+                <VBox spacing="10" styleClass="stats-section">
+                    <Label text="Online Friends" styleClass="section-title"/>
+                    <ListView fx:id="onlineListView" prefHeight="160"/>
+                </VBox>
+                <VBox spacing="10" styleClass="stats-section">
+                    <Label text="Your Groups" styleClass="section-title"/>
+                    <ListView fx:id="groupOverviewListView" prefHeight="140"/>
+                </VBox>
+                <VBox spacing="12" styleClass="nav-section">
+                    <Label text="Navigation" styleClass="section-title"/>
+                    <ToggleButton fx:id="filterDMButton" text="Direct Messages" selected="true" onAction="#handleFilterDM"/>
+                    <ToggleButton fx:id="filterGroupButton" text="Group Chats" onAction="#handleFilterGroup"/>
+                    <ToggleButton fx:id="filterFavoriteButton" text="Favorites" onAction="#handleFilterFavorite"/>
+                </VBox>
+            </VBox>
+
+            <!-- Center conversation list -->
+            <VBox spacing="12" styleClass="conversation-panel" prefWidth="320">
+                <TextField fx:id="searchField"
+                           promptText="Search friends or groups..."
+                           styleClass="search-field"/>
+                <ListView fx:id="conversationListView" VBox.vgrow="ALWAYS"/>
+            </VBox>
+
+            <!-- Right chat area -->
+            <VBox spacing="12" styleClass="chat-panel" VBox.vgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="chat-header">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label fx:id="activeConversationLabel" text="Select a conversation" styleClass="chat-title"/>
+                        <Label fx:id="activeStatusLabel" text="Status info" styleClass="muted-text"/>
+                    </VBox>
+                </HBox>
+
+                <ListView fx:id="messageListView" VBox.vgrow="ALWAYS"/>
+
+                <VBox spacing="8" styleClass="composer">
+                    <HBox spacing="8">
+                        <Button text="😀" onAction="#handleInsertEmoji" styleClass="icon-button"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="typingStatusLabel" text="Ready to chat." styleClass="muted-text"/>
+                    </HBox>
+                    <HBox spacing="10">
+                        <TextArea fx:id="messageInput"
+                                  promptText="Write a message…"
+                                  wrapText="true"
+                                  prefRowCount="3"/>
+                        <Button text="Send"
+                                onAction="#handleSendMessage"
+                                styleClass="primary-gradient-button"
+                                prefWidth="90"
+                                prefHeight="56"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+        </HBox>
+    </center>
+
+    <!-- Bottom Status Bar -->
+    <bottom>
+        <HBox spacing="20" alignment="CENTER_LEFT" styleClass="status-bar">
+            <Label fx:id="connectionStatusLabel" text="Connected to Central Server"/>
+            <Label text="•"/>
+            <Label fx:id="encryptionStatusLabel" text="E2EE Active (RSA + AES)"/>
+            <Label text="•"/>
+            <Label fx:id="lanModeLabel" text="Hybrid P2P Mode"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

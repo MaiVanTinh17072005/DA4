@@ -238,8 +238,7 @@ public class LoginScene {
                 return false;
             }
             
-            // Validate password using validatePassword method
-            ValidationResult passwordResult = ValidationUtil.validatePassword(password);
+            ValidationResult passwordResult = ValidationUtil.validatePasswordForLogin(password);
             if (!passwordResult.isValid()) {
                 showError(passwordResult.getErrorMessage());
                 return false;
@@ -295,6 +294,8 @@ public class LoginScene {
 
         Platform.runLater(() -> {
             setLoading(false);
+            //test chức năng login vào trang chủ
+            navigateToMainScene();
             if (success) {
                 navigateToMainScene();
             } else {
@@ -384,7 +385,7 @@ public class LoginScene {
     private void navigateToMainScene() {
         try {
             // Load ChatScene (main view)
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/chat.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/fxml/chat.fxml"));
             Parent root = loader.load();
 
             // Get current stage
@@ -392,7 +393,7 @@ public class LoginScene {
 
             // Create new scene (full screen)
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/css/chat.css").toExternalForm());
+            scene.getStylesheets().add(getClass().getResource("/com/example/css/chat.css").toExternalForm());
 
             // Set scene and show (full screen)
             stage.setScene(scene);
