@@ -22,42 +22,37 @@
               AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" 
               AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
             
-            <!-- ========== LEFT SIDEBAR: Servers/Channels ========== -->
+            <!-- ========== LEFT SIDEBAR: Main Features ========== -->
             <VBox styleClass="server-sidebar" prefWidth="72">
                 <!-- Home Button -->
                 <VBox alignment="CENTER" styleClass="server-icon-container">
                     <Button styleClass="server-icon, home-icon" text="🏠" onAction="#handleHomeClick">
-                        <tooltip><Tooltip text="Home"/></tooltip>
+                        <tooltip><Tooltip text="Trang chủ"/></tooltip>
                     </Button>
                 </VBox>
                 
                 <Separator styleClass="server-separator"/>
                 
-                <!-- Server Icons -->
+                <!-- Friends Button -->
                 <VBox alignment="CENTER" styleClass="server-icon-container">
-                    <Button styleClass="server-icon" text="D" onAction="#handleServerClick">
-                        <tooltip><Tooltip text="Discord Mini"/></tooltip>
+                    <Button styleClass="server-icon" text="👥" onAction="#handleFriendsClick">
+                        <tooltip><Tooltip text="Bạn bè"/></tooltip>
                     </Button>
                 </VBox>
                 
+                <!-- Livestream Button -->
                 <VBox alignment="CENTER" styleClass="server-icon-container">
-                    <Button styleClass="server-icon" text="F" onAction="#handleServerClick">
-                        <tooltip><Tooltip text="Friends"/></tooltip>
-                    </Button>
-                </VBox>
-                
-                <VBox alignment="CENTER" styleClass="server-icon-container">
-                    <Button styleClass="server-icon" text="G" onAction="#handleServerClick">
-                        <tooltip><Tooltip text="Groups"/></tooltip>
+                    <Button styleClass="server-icon" text="📡" onAction="#handleLivestreamClick">
+                        <tooltip><Tooltip text="Livestream"/></tooltip>
                     </Button>
                 </VBox>
                 
                 <Region VBox.vgrow="ALWAYS"/>
                 
-                <!-- Add Server Button -->
+                <!-- Logout Button at Bottom -->
                 <VBox alignment="CENTER" styleClass="server-icon-container">
-                    <Button styleClass="server-icon, add-server-icon" text="+" onAction="#handleAddServer">
-                        <tooltip><Tooltip text="Add a Server"/></tooltip>
+                    <Button styleClass="server-icon, add-server-icon" text="🚪" onAction="#handleLogout">
+                        <tooltip><Tooltip text="Đăng xuất"/></tooltip>
                     </Button>
                 </VBox>
             </VBox>
@@ -101,9 +96,6 @@
                         <Label fx:id="currentUserNameLabel" text="Minh Anh" styleClass="user-name"/>
                         <Label fx:id="currentUserStatusLabel" text="🟢 Online" styleClass="user-status"/>
                     </VBox>
-                    <Button styleClass="icon-btn" text="⚙️" onAction="#handleSettings">
-                        <tooltip><Tooltip text="Cài đặt"/></tooltip>
-                    </Button>
                 </HBox>
             </VBox>
 
@@ -123,20 +115,11 @@
                     
                     <!-- Action Buttons -->
                     <HBox spacing="8" alignment="CENTER_RIGHT">
-                        <Button styleClass="header-icon-btn" text="📞" onAction="#handleStartVoiceCall">
-                            <tooltip><Tooltip text="Gọi thoại"/></tooltip>
+                        <Button styleClass="header-icon-btn" text="📞" onAction="#handleStartCall">
+                            <tooltip><Tooltip text="Gọi điện"/></tooltip>
                         </Button>
-                        <Button styleClass="header-icon-btn" text="📹" onAction="#handleStartVideoCall">
-                            <tooltip><Tooltip text="Gọi video"/></tooltip>
-                        </Button>
-                        <Button styleClass="header-icon-btn" text="📌" onAction="#handlePinChat">
-                            <tooltip><Tooltip text="Ghim chat"/></tooltip>
-                        </Button>
-                        <Button styleClass="header-icon-btn" text="👥" onAction="#handleShowMembers">
-                            <tooltip><Tooltip text="Thành viên"/></tooltip>
-                        </Button>
-                        <Button styleClass="header-icon-btn" text="🔍" onAction="#handleSearchInChat">
-                            <tooltip><Tooltip text="Tìm kiếm"/></tooltip>
+                        <Button styleClass="header-icon-btn" text="⋮" onAction="#handleShowInfo">
+                            <tooltip><Tooltip text="Xem thông tin"/></tooltip>
                         </Button>
                     </HBox>
                 </HBox>

@@ -1,5 +1,6 @@
 package com.example.ui;
 
+import com.example.util.SceneManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -170,34 +171,41 @@ public class ChatScene {
     }
 
     @FXML
-    private void handleServerClick() {
-        typingStatusLabel.setText("Đã chọn server.");
+    private void handleFriendsClick() {
+        typingStatusLabel.setText("Bạn bè - Kết bạn, tìm bạn - tính năng đang phát triển.");
     }
 
     @FXML
-    private void handleAddServer() {
-        typingStatusLabel.setText("Thêm server mới - tính năng đang phát triển.");
+    private void handleLivestreamClick() {
+        typingStatusLabel.setText("Livestream - tính năng đang phát triển.");
     }
 
     @FXML
-    private void handleSettings() {
-        typingStatusLabel.setText("Cài đặt - tính năng đang phát triển.");
+    private void handleLogout() {
+        // Navigate back to login
+        SceneManager.setTitle("Discord Mini - Đăng nhập");
+        SceneManager.loadContent("content/login-content.fxml");
     }
 
     // ===== Chat Header Actions =====
     @FXML
-    private void handlePinChat() {
-        typingStatusLabel.setText("Đã ghim cuộc trò chuyện.");
+    private void handleStartCall() {
+        if (activeConversation == null) {
+            typingStatusLabel.setText("Vui lòng chọn cuộc trò chuyện trước.");
+            return;
+        }
+        String callType = "Direct".equals(activeConversation.getType()) ? "1-1" : "nhóm";
+        typingStatusLabel.setText("Gọi điện " + callType + " - tính năng đang phát triển.");
     }
 
     @FXML
-    private void handleShowMembers() {
-        typingStatusLabel.setText("Hiển thị danh sách thành viên.");
-    }
-
-    @FXML
-    private void handleSearchInChat() {
-        typingStatusLabel.setText("Tìm kiếm trong cuộc trò chuyện.");
+    private void handleShowInfo() {
+        if (activeConversation == null) {
+            typingStatusLabel.setText("Vui lòng chọn cuộc trò chuyện trước.");
+            return;
+        }
+        String infoType = "Direct".equals(activeConversation.getType()) ? "người dùng" : "nhóm";
+        typingStatusLabel.setText("Xem thông tin " + infoType + " - tính năng đang phát triển.");
     }
 
     @FXML
@@ -228,16 +236,6 @@ public class ChatScene {
     private void handleInsertEmoji() {
         messageInput.appendText(" 😀 ");
         typingStatusLabel.setText("Đã thêm emoji.");
-    }
-
-    @FXML
-    private void handleStartVoiceCall() {
-        typingStatusLabel.setText("Gọi thoại - tính năng đang phát triển.");
-    }
-
-    @FXML
-    private void handleStartVideoCall() {
-        typingStatusLabel.setText("Gọi video - tính năng đang phát triển.");
     }
 
     // ===== Filter Buttons =====
