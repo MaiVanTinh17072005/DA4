@@ -12,9 +12,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Messenger-like dashboard focusing on chat, group chat and online presence.
- * Advanced modules (calls, livestream, AI) are exposed through toolbar buttons
- * but mocked until backend layers (sockets, ORM, Redis) are wired in.
+ * Modern Discord-inspired chat interface controller
+ * Handles conversation list, messaging, and user interactions
  */
 public class ChatScene {
 
@@ -31,7 +30,6 @@ public class ChatScene {
     @FXML private Label connectionStatusLabel;
     @FXML private Label encryptionStatusLabel;
     @FXML private Label lanModeLabel;
-    @FXML private Label toolbarHintLabel;
     @FXML private Label currentUserNameLabel;
     @FXML private Label currentUserStatusLabel;
     @FXML private ToggleButton filterDMButton;
@@ -54,16 +52,15 @@ public class ChatScene {
         initGroupOverview();
         initFilters();
         selectDefaultConversation();
-        typingStatusLabel.setText("Ready. Tin nhắn sẽ tự retry nếu chuyển sang LAN mode.");
+        typingStatusLabel.setText("Sẵn sàng chat. Tin nhắn sẽ tự động gửi lại nếu chuyển sang LAN mode.");
     }
 
     private void initProfile() {
         currentUserNameLabel.setText("Minh Anh");
-        currentUserStatusLabel.setText("Online • Hybrid P2P");
-        connectionStatusLabel.setText("Connected to Central Server");
-        encryptionStatusLabel.setText("E2EE Active (RSA + AES)");
-        lanModeLabel.setText("Hybrid P2P Mode");
-        toolbarHintLabel.setText("Toolbar chứa Friends / Groups / Calls / Livestream / AI.");
+        currentUserStatusLabel.setText("🟢 Online");
+        connectionStatusLabel.setText("🟢 Đã kết nối với máy chủ");
+        encryptionStatusLabel.setText("🔒 E2EE đang hoạt động");
+        lanModeLabel.setText("🌐 Hybrid P2P Mode");
     }
 
     private void initConversations() {
@@ -88,8 +85,7 @@ public class ChatScene {
                 }
             });
         searchField.textProperty().addListener((obs, old, text) -> applyFilters());
-        // Add a tooltip to the search field
-        searchField.setTooltip(new Tooltip("Search for friends or groups"));
+        searchField.setTooltip(new Tooltip("Tìm kiếm bạn bè hoặc nhóm"));
     }
 
     private void initMessageView() {
@@ -103,17 +99,6 @@ public class ChatScene {
             "Livestream Crew • 3 online",
             "UI Design Squad • 2 online"
         ));
-        // Add context menu to online list
-        onlineListView.setCellFactory(lv -> {
-            ListCell<String> cell = new ListCell<>();
-            ContextMenu contextMenu = new ContextMenu();
-            MenuItem viewProfile = new MenuItem("View Profile");
-            MenuItem sendMessage = new MenuItem("Send Message");
-            contextMenu.getItems().addAll(viewProfile, sendMessage);
-            cell.textProperty().bind(cell.itemProperty());
-            cell.setContextMenu(contextMenu);
-            return cell;
-        });
     }
 
     private void initGroupOverview() {
@@ -135,20 +120,20 @@ public class ChatScene {
         if (!conversationListView.getItems().isEmpty()) {
             conversationListView.getSelectionModel().select(0);
         } else {
-            activeConversationLabel.setText("No conversations");
-            activeStatusLabel.setText("Start a new chat to get going.");
+            activeConversationLabel.setText("# Chưa có cuộc trò chuyện");
+            activeStatusLabel.setText("Chọn bạn bè hoặc nhóm để bắt đầu chat");
         }
     }
 
     private void loadMessagesFor(ConversationItem conversation) {
-        activeConversationLabel.setText(conversation.getName());
+        activeConversationLabel.setText("# " + conversation.getName());
         activeStatusLabel.setText(conversation.isOnline()
-            ? "Online • P2P ready"
-            : "Offline • Tin nhắn sẽ queue chờ LAN");
+            ? "🟢 Đang hoạt động • P2P sẵn sàng"
+            : "⚫ Ngoại tuyến • Tin nhắn sẽ được lưu hàng đợi");
 
         ObservableList<MessageItem> messages = FXCollections.observableArrayList(
             new MessageItem(conversation.getName(), "Chào bạn! Dự án hôm nay thế nào?", LocalDateTime.now().minusMinutes(12), false),
-            new MessageItem("You", "Đang hoàn thiện UI chat mới giống Messenger.", LocalDateTime.now().minusMinutes(8), true),
+            new MessageItem("You", "Đang hoàn thiện UI chat mới giống Discord.", LocalDateTime.now().minusMinutes(8), true),
             new MessageItem(conversation.getName(), "Nice! Nhớ test fallback LAN nhé.", LocalDateTime.now().minusMinutes(4), false)
         );
         messageListView.setItems(messages);
@@ -178,64 +163,81 @@ public class ChatScene {
         }
     }
 
-    // ===== Toolbar Actions =====
-    @FXML private void handleToolbarChats() { toolbarHintLabel.setText("Chat mode đang mở."); }
-    @FXML private void handleToolbarFriends() { toolbarHintLabel.setText("Friends: quản lý lời mời & danh sách. (Mock)"); }
-    @FXML private void handleToolbarGroups() { toolbarHintLabel.setText("Groups: tạo/ quản lý nhóm. (Mock)"); }
-    @FXML private void handleToolbarCalls() { toolbarHintLabel.setText("Calls: Voice/Video bằng TCP/UDP thuần. (Mock)"); }
-    @FXML private void handleToolbarLivestream() { toolbarHintLabel.setText("Livestream: P2P + adaptive bitrate. (Mock)"); }
-    @FXML private void handleToolbarAI() { toolbarHintLabel.setText("AI Assistant: gợi ý bitrate/auto reply. (Mock)"); }
-    @FXML private void handleToolbarSettings() { toolbarHintLabel.setText("Settings sẽ bật popup cấu hình hybrid mode. (Mock)"); }
+    // ===== Server Sidebar Actions =====
+    @FXML
+    private void handleHomeClick() {
+        typingStatusLabel.setText("Đã chuyển về trang chủ.");
+    }
+
+    @FXML
+    private void handleServerClick() {
+        typingStatusLabel.setText("Đã chọn server.");
+    }
+
+    @FXML
+    private void handleAddServer() {
+        typingStatusLabel.setText("Thêm server mới - tính năng đang phát triển.");
+    }
+
+    @FXML
+    private void handleSettings() {
+        typingStatusLabel.setText("Cài đặt - tính năng đang phát triển.");
+    }
+
+    // ===== Chat Header Actions =====
+    @FXML
+    private void handlePinChat() {
+        typingStatusLabel.setText("Đã ghim cuộc trò chuyện.");
+    }
+
+    @FXML
+    private void handleShowMembers() {
+        typingStatusLabel.setText("Hiển thị danh sách thành viên.");
+    }
+
+    @FXML
+    private void handleSearchInChat() {
+        typingStatusLabel.setText("Tìm kiếm trong cuộc trò chuyện.");
+    }
+
+    @FXML
+    private void handleAttachment() {
+        typingStatusLabel.setText("Đính kèm file - tính năng đang phát triển.");
+    }
 
     // ===== Chat Actions =====
     @FXML
     private void handleSendMessage() {
         String text = messageInput.getText();
         if (text == null || text.trim().isEmpty()) {
-            typingStatusLabel.setText("Message can't be empty.");
+            typingStatusLabel.setText("Tin nhắn không được để trống.");
             return;
         }
         if (activeConversation == null) {
-            typingStatusLabel.setText("Select a conversation first.");
+            typingStatusLabel.setText("Vui lòng chọn cuộc trò chuyện trước.");
             return;
         }
         MessageItem newMessage = new MessageItem("You", text.trim(), LocalDateTime.now(), true);
         messageListView.getItems().add(newMessage);
         messageInput.clear();
-        typingStatusLabel.setText("Sent at " + timeFormatter.format(newMessage.timestamp()) + ". Nếu server tắt sẽ auto retry.");
+        typingStatusLabel.setText("Đã gửi lúc " + timeFormatter.format(newMessage.timestamp()) + ". Nếu server tắt sẽ tự động gửi lại.");
         messageListView.scrollTo(messageListView.getItems().size() - 1);
     }
 
     @FXML
     private void handleInsertEmoji() {
         messageInput.appendText(" 😀 ");
-        typingStatusLabel.setText("Emoji inserted.");
-    }
-
-    @FXML
-    private void handleShareFile() {
-        typingStatusLabel.setText("File picker sẽ mở khi backend kết nối. File gửi qua TCP + AES.");
+        typingStatusLabel.setText("Đã thêm emoji.");
     }
 
     @FXML
     private void handleStartVoiceCall() {
-        typingStatusLabel.setText("Voice call mock — UDP + Virtual Thread sẽ tích hợp sau.");
+        typingStatusLabel.setText("Gọi thoại - tính năng đang phát triển.");
     }
 
     @FXML
     private void handleStartVideoCall() {
-        typingStatusLabel.setText("Video call mock — WebRTC/ICE4J sẽ gắn sau.");
-    }
-
-    @FXML
-    private void handleNewChat() {
-        typingStatusLabel.setText("New chat dialog coming soon.");
-    }
-
-    @FXML
-    private void handleChangeStatus() {
-        currentUserStatusLabel.setText("Focus • Building socket layer");
-        typingStatusLabel.setText("Status updated to Focus.");
+        typingStatusLabel.setText("Gọi video - tính năng đang phát triển.");
     }
 
     // ===== Filter Buttons =====

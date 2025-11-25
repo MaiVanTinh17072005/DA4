@@ -296,11 +296,11 @@ public class LoginScene {
             setLoading(false);
             //test chức năng login vào trang chủ
             navigateToMainScene();
-            if (success) {
-                navigateToMainScene();
-            } else {
-                showError("Invalid credentials. Please try again.");
-            }
+//            if (success) {
+//                navigateToMainScene();
+//            } else {
+//                showError("Invalid credentials. Please try again.");
+//            }
         });
 
         // TODO: Actual implementation
@@ -377,31 +377,17 @@ public class LoginScene {
         });
     }
 
-    // ===== Navigation =====
-
     /**
      * Navigate to main application scene after successful login
      */
     private void navigateToMainScene() {
         try {
-            // Load ChatScene (main view)
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/fxml/chat.fxml"));
-            Parent root = loader.load();
-
-            // Get current stage
-            Stage stage = (Stage) emailField.getScene().getWindow();
-
-            // Create new scene (full screen)
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/com/example/css/chat.css").toExternalForm());
-
-            // Set scene and show (full screen)
-            stage.setScene(scene);
-            stage.setTitle("Discord Mini - Chat");
-            stage.setMaximized(true);
-            stage.setResizable(true);
-
-        } catch (IOException e) {
+            // Use SceneManager to load chat content
+            // This ensures proper alignment and layout handling
+            SceneManager.setTitle("Discord Mini - Chat");
+            SceneManager.loadContent("chat.fxml");
+            
+        } catch (Exception e) {
             e.printStackTrace();
             showError("Failed to load main scene: " + e.getMessage());
         }

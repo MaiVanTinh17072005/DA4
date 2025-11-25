@@ -30,6 +30,14 @@ public class MainLayoutController {
             // Clear previous content
             contentContainer.getChildren().clear();
             
+            // Adjust alignment based on content type
+            // Chat interface needs full screen (TOP_LEFT), login forms need centering
+            if (contentPath.contains("chat.fxml")) {
+                contentContainer.setAlignment(javafx.geometry.Pos.TOP_LEFT);
+            } else {
+                contentContainer.setAlignment(javafx.geometry.Pos.CENTER);
+            }
+            
             // Add new content
             contentContainer.getChildren().add(content);
             

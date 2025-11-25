@@ -2,7 +2,6 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Text?>
@@ -10,107 +9,221 @@
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="com.example.ui.ChatScene"
-            prefWidth="1200"
-            prefHeight="720"
-            stylesheets="@../css/chat.css">
+            minWidth="1200"
+            minHeight="700"
+            maxWidth="Infinity"
+            maxHeight="Infinity"
+            stylesheets="@../css/chat.css"
+            styleClass="root">
 
-    <!-- Top Toolbar with Tab Bar -->
-    <top>
-        <VBox spacing="6">
-            <HBox spacing="12" alignment="CENTER_LEFT" styleClass="notification-bar">
-                <Label text="Discord Mini • Messenger Mode" styleClass="section-title"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <TabPane>
-                    <Tab text="Friends"/>
-                    <Tab text="Groups"/>
-                    <Tab text="Calls"/>
-                    <Tab text="Livestream"/>
-                    <Tab text="AI"/>
-                </TabPane>
-            </HBox>
-            <Label fx:id="toolbarHintLabel"
-                   text="Hybrid P2P: server hỗ trợ đăng nhập, sau đó chat trực tiếp. Khi mất mạng sẽ tự chuyển LAN mode."
-                   styleClass="muted-text">
-                <padding><Insets top="0" right="20" bottom="8" left="20"/></padding>
-            </Label>
-        </VBox>
-    </top>
-
+    <!-- Main Content -->
     <center>
-        <HBox spacing="0">
-            <!-- Left Profile Sidebar -->
-            <VBox spacing="18" styleClass="sidebar" prefWidth="260">
-                <VBox spacing="10" styleClass="profile-card">
-                    <Circle radius="28" styleClass="avatar-circle"/>
-                    <Label fx:id="currentUserNameLabel" text="Minh Anh" styleClass="profile-name"/>
-                    <Label fx:id="currentUserStatusLabel" text="Online • Hybrid P2P" styleClass="profile-status"/>
+        <HBox spacing="0" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS"
+              AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0" 
+              AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0">
+            
+            <!-- ========== LEFT SIDEBAR: Servers/Channels ========== -->
+            <VBox styleClass="server-sidebar" prefWidth="72">
+                <!-- Home Button -->
+                <VBox alignment="CENTER" styleClass="server-icon-container">
+                    <Button styleClass="server-icon, home-icon" text="🏠" onAction="#handleHomeClick">
+                        <tooltip><Tooltip text="Home"/></tooltip>
+                    </Button>
                 </VBox>
-                <VBox spacing="10" styleClass="stats-section">
-                    <Label text="Online Friends" styleClass="section-title"/>
-                    <ListView fx:id="onlineListView" prefHeight="160"/>
+                
+                <Separator styleClass="server-separator"/>
+                
+                <!-- Server Icons -->
+                <VBox alignment="CENTER" styleClass="server-icon-container">
+                    <Button styleClass="server-icon" text="D" onAction="#handleServerClick">
+                        <tooltip><Tooltip text="Discord Mini"/></tooltip>
+                    </Button>
                 </VBox>
-                <VBox spacing="10" styleClass="stats-section">
-                    <Label text="Your Groups" styleClass="section-title"/>
-                    <ListView fx:id="groupOverviewListView" prefHeight="140"/>
+                
+                <VBox alignment="CENTER" styleClass="server-icon-container">
+                    <Button styleClass="server-icon" text="F" onAction="#handleServerClick">
+                        <tooltip><Tooltip text="Friends"/></tooltip>
+                    </Button>
                 </VBox>
-                <VBox spacing="12" styleClass="nav-section">
-                    <Label text="Navigation" styleClass="section-title"/>
-                    <ToggleButton fx:id="filterDMButton" text="Direct Messages" selected="true" onAction="#handleFilterDM"/>
-                    <ToggleButton fx:id="filterGroupButton" text="Group Chats" onAction="#handleFilterGroup"/>
-                    <ToggleButton fx:id="filterFavoriteButton" text="Favorites" onAction="#handleFilterFavorite"/>
+                
+                <VBox alignment="CENTER" styleClass="server-icon-container">
+                    <Button styleClass="server-icon" text="G" onAction="#handleServerClick">
+                        <tooltip><Tooltip text="Groups"/></tooltip>
+                    </Button>
+                </VBox>
+                
+                <Region VBox.vgrow="ALWAYS"/>
+                
+                <!-- Add Server Button -->
+                <VBox alignment="CENTER" styleClass="server-icon-container">
+                    <Button styleClass="server-icon, add-server-icon" text="+" onAction="#handleAddServer">
+                        <tooltip><Tooltip text="Add a Server"/></tooltip>
+                    </Button>
                 </VBox>
             </VBox>
 
-            <!-- Center conversation list -->
-            <VBox spacing="12" styleClass="conversation-panel" prefWidth="320">
-                <TextField fx:id="searchField"
-                           promptText="Search friends or groups..."
-                           styleClass="search-field"/>
-                <ListView fx:id="conversationListView" VBox.vgrow="ALWAYS"/>
-            </VBox>
-
-            <!-- Right chat area -->
-            <VBox spacing="12" styleClass="chat-panel" VBox.vgrow="ALWAYS">
-                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="chat-header">
-                    <VBox spacing="4" HBox.hgrow="ALWAYS">
-                        <Label fx:id="activeConversationLabel" text="Select a conversation" styleClass="chat-title"/>
-                        <Label fx:id="activeStatusLabel" text="Status info" styleClass="muted-text"/>
-                    </VBox>
+            <!-- ========== MIDDLE PANEL: Conversations List ========== -->
+            <VBox styleClass="conversation-sidebar" prefWidth="320">
+                <!-- Search Bar -->
+                <HBox styleClass="search-container" alignment="CENTER_LEFT">
+                    <TextField fx:id="searchField"
+                               promptText="🔍 Tìm kiếm hoặc bắt đầu cuộc trò chuyện..."
+                               styleClass="search-field"
+                               HBox.hgrow="ALWAYS"/>
                 </HBox>
 
-                <ListView fx:id="messageListView" VBox.vgrow="ALWAYS"/>
+                <!-- Filter Tabs -->
+                <HBox styleClass="filter-tabs" spacing="8">
+                    <ToggleButton fx:id="filterDMButton" 
+                                  text="Bạn bè" 
+                                  selected="true" 
+                                  onAction="#handleFilterDM"
+                                  styleClass="filter-tab"/>
+                    <ToggleButton fx:id="filterGroupButton" 
+                                  text="Nhóm" 
+                                  onAction="#handleFilterGroup"
+                                  styleClass="filter-tab"/>
+                    <ToggleButton fx:id="filterFavoriteButton" 
+                                  text="⭐ Yêu thích" 
+                                  onAction="#handleFilterFavorite"
+                                  styleClass="filter-tab"/>
+                </HBox>
 
-                <VBox spacing="8" styleClass="composer">
-                    <HBox spacing="8">
-                        <Button text="😀" onAction="#handleInsertEmoji" styleClass="icon-button"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="typingStatusLabel" text="Ready to chat." styleClass="muted-text"/>
+                <!-- Conversations List -->
+                <ScrollPane styleClass="conversation-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
+                    <ListView fx:id="conversationListView" styleClass="conversation-list"/>
+                </ScrollPane>
+
+                <!-- User Profile at Bottom -->
+                <HBox styleClass="user-profile-bar" alignment="CENTER_LEFT" spacing="10">
+                    <Circle radius="20" styleClass="user-avatar"/>
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label fx:id="currentUserNameLabel" text="Minh Anh" styleClass="user-name"/>
+                        <Label fx:id="currentUserStatusLabel" text="🟢 Online" styleClass="user-status"/>
+                    </VBox>
+                    <Button styleClass="icon-btn" text="⚙️" onAction="#handleSettings">
+                        <tooltip><Tooltip text="Cài đặt"/></tooltip>
+                    </Button>
+                </HBox>
+            </VBox>
+
+            <!-- ========== RIGHT PANEL: Chat Area ========== -->
+            <VBox styleClass="chat-area" HBox.hgrow="ALWAYS">
+                
+                <!-- Chat Header -->
+                <HBox styleClass="chat-header" alignment="CENTER_LEFT" spacing="12">
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label fx:id="activeConversationLabel" 
+                               text="# Chọn một cuộc trò chuyện" 
+                               styleClass="chat-header-title"/>
+                        <Label fx:id="activeStatusLabel" 
+                               text="Chọn bạn bè hoặc nhóm để bắt đầu chat" 
+                               styleClass="chat-header-subtitle"/>
+                    </VBox>
+                    
+                    <!-- Action Buttons -->
+                    <HBox spacing="8" alignment="CENTER_RIGHT">
+                        <Button styleClass="header-icon-btn" text="📞" onAction="#handleStartVoiceCall">
+                            <tooltip><Tooltip text="Gọi thoại"/></tooltip>
+                        </Button>
+                        <Button styleClass="header-icon-btn" text="📹" onAction="#handleStartVideoCall">
+                            <tooltip><Tooltip text="Gọi video"/></tooltip>
+                        </Button>
+                        <Button styleClass="header-icon-btn" text="📌" onAction="#handlePinChat">
+                            <tooltip><Tooltip text="Ghim chat"/></tooltip>
+                        </Button>
+                        <Button styleClass="header-icon-btn" text="👥" onAction="#handleShowMembers">
+                            <tooltip><Tooltip text="Thành viên"/></tooltip>
+                        </Button>
+                        <Button styleClass="header-icon-btn" text="🔍" onAction="#handleSearchInChat">
+                            <tooltip><Tooltip text="Tìm kiếm"/></tooltip>
+                        </Button>
                     </HBox>
-                    <HBox spacing="10">
+                </HBox>
+
+                <!-- Messages Area -->
+                <ScrollPane styleClass="messages-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
+                    <VBox styleClass="messages-container">
+                        <ListView fx:id="messageListView" styleClass="message-list"/>
+                    </VBox>
+                </ScrollPane>
+
+                <!-- Message Input Area -->
+                <VBox styleClass="message-input-container">
+                    <!-- Typing Indicator -->
+                    <Label fx:id="typingStatusLabel" 
+                           text="" 
+                           styleClass="typing-indicator"
+                           managed="false"
+                           visible="false"/>
+                    
+                    <!-- Input Box -->
+                    <HBox styleClass="message-input-box" alignment="CENTER" spacing="8">
+                        <!-- Attachment Button -->
+                        <Button styleClass="input-icon-btn" text="➕" onAction="#handleAttachment">
+                            <tooltip><Tooltip text="Đính kèm file"/></tooltip>
+                        </Button>
+                        
+                        <!-- Text Input -->
                         <TextArea fx:id="messageInput"
-                                  promptText="Write a message…"
+                                  promptText="Nhắn tin tới..."
                                   wrapText="true"
-                                  prefRowCount="3"/>
-                        <Button text="Send"
-                                onAction="#handleSendMessage"
-                                styleClass="primary-gradient-button"
-                                prefWidth="90"
-                                prefHeight="56"/>
+                                  prefRowCount="1"
+                                  styleClass="message-textarea"
+                                  HBox.hgrow="ALWAYS"/>
+                        
+                        <!-- Emoji Button -->
+                        <Button styleClass="input-icon-btn" text="😀" onAction="#handleInsertEmoji">
+                            <tooltip><Tooltip text="Emoji"/></tooltip>
+                        </Button>
+                        
+                        <!-- Send Button -->
+                        <Button fx:id="sendButton" 
+                                styleClass="send-button" 
+                                text="Gửi" 
+                                onAction="#handleSendMessage">
+                            <tooltip><Tooltip text="Gửi tin nhắn (Enter)"/></tooltip>
+                        </Button>
+                    </HBox>
+                    
+                    <!-- Connection Status -->
+                    <HBox styleClass="connection-status-bar" alignment="CENTER_LEFT" spacing="8">
+                        <Label fx:id="connectionStatusLabel" 
+                               text="🟢 Đã kết nối với máy chủ" 
+                               styleClass="status-text"/>
+                        <Label text="•" styleClass="status-separator"/>
+                        <Label fx:id="encryptionStatusLabel" 
+                               text="🔒 E2EE đang hoạt động" 
+                               styleClass="status-text"/>
+                        <Label text="•" styleClass="status-separator"/>
+                        <Label fx:id="lanModeLabel" 
+                               text="🌐 Hybrid P2P Mode" 
+                               styleClass="status-text"/>
                     </HBox>
                 </VBox>
             </VBox>
+
+            <!-- ========== FAR RIGHT PANEL: Member List / Info (Optional) ========== -->
+            <VBox styleClass="info-sidebar" prefWidth="240" managed="false" visible="false">
+                <Label text="Thành viên" styleClass="info-sidebar-title"/>
+                
+                <VBox spacing="12" styleClass="members-section">
+                    <Label text="ONLINE — 3" styleClass="member-category"/>
+                    <ListView fx:id="onlineListView" styleClass="member-list" prefHeight="200"/>
+                    
+                    <Label text="OFFLINE — 2" styleClass="member-category"/>
+                    <ListView fx:id="offlineListView" styleClass="member-list" prefHeight="150"/>
+                </VBox>
+                
+                <Separator styleClass="info-separator"/>
+                
+                <VBox spacing="12" styleClass="groups-section">
+                    <Label text="NHÓM CỦA BẠN" styleClass="member-category"/>
+                    <ListView fx:id="groupOverviewListView" styleClass="member-list"/>
+                </VBox>
+            </VBox>
+            
         </HBox>
     </center>
-
-    <!-- Bottom Status Bar -->
-    <bottom>
-        <HBox spacing="20" alignment="CENTER_LEFT" styleClass="status-bar">
-            <Label fx:id="connectionStatusLabel" text="Connected to Central Server"/>
-            <Label text="•"/>
-            <Label fx:id="encryptionStatusLabel" text="E2EE Active (RSA + AES)"/>
-            <Label text="•"/>
-            <Label fx:id="lanModeLabel" text="Hybrid P2P Mode"/>
-        </HBox>
-    </bottom>
 
 </BorderPane>
