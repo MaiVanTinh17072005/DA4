@@ -220,16 +220,13 @@ public class ValidationUtil {
     }
 
     /**
-     * Validate password for login (less strict - just check not empty)
+     * Validate password for login (same as register - full validation)
      * @param password Password to validate
      * @return ValidationResult with isValid and error message
      */
     public static ValidationResult validatePasswordForLogin(String password) {
-        if (password == null || password.isEmpty()) {
-            return new ValidationResult(false, "Mật khẩu không được để trống");
-        }
-        
-        return new ValidationResult(true, null);
+        // Use the same validation as register
+        return validatePassword(password);
     }
 
     /**
