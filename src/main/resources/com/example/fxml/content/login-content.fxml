@@ -17,7 +17,7 @@
     <!-- Logo & Title -->
     <VBox alignment="CENTER" spacing="10">
         <Text text="Discord Mini" styleClass="app-title"/>
-        <Text fx:id="welcomeText" text="Welcome back!" styleClass="welcome-text"/>
+        <Text fx:id="welcomeText" text="Chào mừng trở lại!" styleClass="welcome-text"/>
     </VBox>
 
     <!-- Form Container -->
@@ -27,28 +27,28 @@
         <VBox spacing="8">
             <Label fx:id="emailLabel" text="EMAIL" styleClass="form-label"/>
             <TextField fx:id="emailField"
-                       promptText="Enter your email address"
+                       promptText="Nhập địa chỉ email của bạn"
                        styleClass="form-input"/>
         </VBox>
 
         <!-- Username Field (Only for Register) -->
         <VBox fx:id="usernameBox" spacing="8" managed="false" visible="false">
-            <Label text="USERNAME" styleClass="form-label"/>
+            <Label text="TÊN NGƯỜI DÙNG" styleClass="form-label"/>
             <TextField fx:id="usernameField"
-                       promptText="Enter your username"
+                       promptText="Nhập tên người dùng"
                        styleClass="form-input"/>
         </VBox>
 
         <!-- Password Field with Visibility Toggle -->
         <VBox spacing="8">
-            <Label text="PASSWORD" styleClass="form-label"/>
+            <Label text="MẬT KHẨU" styleClass="form-label"/>
             <HBox spacing="0" alignment="CENTER_LEFT">
                 <StackPane HBox.hgrow="ALWAYS">
                     <PasswordField fx:id="passwordField"
-                                   promptText="Enter your password"
+                                   promptText="Nhập mật khẩu"
                                    styleClass="form-input"/>
                     <TextField fx:id="passwordTextField"
-                               promptText="Enter your password"
+                               promptText="Nhập mật khẩu"
                                styleClass="form-input"
                                managed="false"
                                visible="false"/>
@@ -67,21 +67,21 @@
         <!-- Forgot Password (Only for Login) -->
         <HBox fx:id="forgotPasswordBox">
             <Hyperlink fx:id="forgotPasswordLink"
-                       text="Forgot your password?"
+                       text="Quên mật khẩu?"
                        styleClass="link-text"
                        onAction="#handleForgotPassword"/>
         </HBox>
 
         <!-- Confirm Password (Only for Register) with Visibility Toggle -->
         <VBox fx:id="confirmPasswordBox" spacing="8" managed="false" visible="false">
-            <Label text="CONFIRM PASSWORD" styleClass="form-label"/>
+            <Label text="XÁC NHẬN MẬT KHẨU" styleClass="form-label"/>
             <HBox spacing="0" alignment="CENTER_LEFT">
                 <StackPane HBox.hgrow="ALWAYS">
                     <PasswordField fx:id="confirmPasswordField"
-                                   promptText="Confirm your password"
+                                   promptText="Xác nhận mật khẩu"
                                    styleClass="form-input"/>
                     <TextField fx:id="confirmPasswordTextField"
-                               promptText="Confirm your password"
+                               promptText="Xác nhận mật khẩu"
                                styleClass="form-input"
                                managed="false"
                                visible="false"/>
@@ -106,7 +106,7 @@
 
         <!-- Login/Register Button -->
         <Button fx:id="actionButton"
-                text="Log In"
+                text="Đăng nhập"
                 styleClass="primary-button"
                 onAction="#handleAction"
                 defaultButton="true"
@@ -115,10 +115,10 @@
         <!-- Toggle Login/Register -->
         <HBox alignment="CENTER" spacing="5">
             <Text fx:id="togglePromptText"
-                  text="Need an account?"
+                  text="Chưa có tài khoản?"
                   styleClass="secondary-text"/>
             <Hyperlink fx:id="toggleLink"
-                       text="Register"
+                       text="Đăng ký"
                        styleClass="link-text-bold"
                        onAction="#handleToggleMode"/>
         </HBox>

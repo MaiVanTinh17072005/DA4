@@ -76,7 +76,7 @@ public class ForgotPasswordScene {
     @FXML
     private void handleBackToLogin() {
         // Swap content using SceneManager
-        SceneManager.setTitle("Discord Mini - Login");
+        SceneManager.setTitle("Discord Mini - Đăng nhập");
         SceneManager.loadContent("content/login-content.fxml");
     }
 
@@ -111,7 +111,7 @@ public class ForgotPasswordScene {
             if (success) {
                 navigateToOTPVerification(email);
             } else {
-                showError("Email not found. Please check and try again.");
+                showError("Không tìm thấy email. Vui lòng kiểm tra và thử lại.");
             }
         });
 
@@ -141,7 +141,7 @@ public class ForgotPasswordScene {
      */
     private void navigateToOTPVerification(String email) {
         // Swap content using SceneManager
-        SceneManager.setTitle("Discord Mini - Verify OTP");
+        SceneManager.setTitle("Discord Mini - Xác minh OTP");
         OTPVerificationScene controller = (OTPVerificationScene) SceneManager.loadContent("content/otp-verification-content.fxml");
         if (controller != null) {
             controller.setEmail(email);
@@ -154,7 +154,7 @@ public class ForgotPasswordScene {
     private void handleError(Exception e) {
         Platform.runLater(() -> {
             setLoading(false);
-            showError("Connection error: " + e.getMessage());
+            showError("Lỗi kết nối: " + e.getMessage());
         });
     }
 

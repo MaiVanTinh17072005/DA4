@@ -220,7 +220,7 @@ public class LoginScene {
     @FXML
     private void handleForgotPassword() {
         // Swap content using SceneManager (no scene reload needed)
-        SceneManager.setTitle("Discord Mini - Forgot Password");
+        SceneManager.setTitle("Discord Mini - Quên Mật Khẩu");
         SceneManager.loadContent("content/forgot-password-content.fxml");
     }
 
@@ -338,10 +338,10 @@ public class LoginScene {
         Platform.runLater(() -> {
             setLoading(false);
             if (success) {
-                showSuccess("Account created successfully! Please log in.");
+                showSuccess("Tài khoản đã được tạo thành công! Vui lòng đăng nhập.");
                 switchToLoginMode();
             } else {
-                showError("Registration failed. Email or username may already exist.");
+                showError("Đăng ký thất bại. Email hoặc tên người dùng có thể đã tồn tại.");
             }
         });
 
@@ -373,7 +373,7 @@ public class LoginScene {
     private void handleAuthError(Exception e) {
         Platform.runLater(() -> {
             setLoading(false);
-            showError("Connection error: " + e.getMessage());
+            showError("Lỗi kết nối: " + e.getMessage());
         });
     }
 
@@ -389,7 +389,7 @@ public class LoginScene {
             
         } catch (Exception e) {
             e.printStackTrace();
-            showError("Failed to load main scene: " + e.getMessage());
+            showError("Không thể tải giao diện chính: " + e.getMessage());
         }
     }
 
@@ -411,15 +411,15 @@ public class LoginScene {
      */
     private void switchToLoginMode() {
         isLoginMode = true;
-        welcomeText.setText("Welcome back!");
-        actionButton.setText("Log In");
-        togglePromptText.setText("Need an account?");
-        toggleLink.setText("Register");
+        welcomeText.setText("Chào mừng trở lại!");
+        actionButton.setText("Đăng nhập");
+        togglePromptText.setText("Chưa có tài khoản?");
+        toggleLink.setText("Đăng ký");
         if (emailLabel != null) {
             emailLabel.setText("EMAIL");
         }
         if (emailField != null) {
-            emailField.setPromptText("Enter your email address");
+            emailField.setPromptText("Nhập địa chỉ email của bạn");
         }
 
         usernameBox.setVisible(false);
@@ -435,10 +435,10 @@ public class LoginScene {
      */
     private void switchToRegisterMode() {
         isLoginMode = false;
-        welcomeText.setText("Create an account");
-        actionButton.setText("Register");
-        togglePromptText.setText("Already have an account?");
-        toggleLink.setText("Log In");
+        welcomeText.setText("Tạo tài khoản mới");
+        actionButton.setText("Đăng ký");
+        togglePromptText.setText("Đã có tài khoản?");
+        toggleLink.setText("Đăng nhập");
         if (emailLabel != null) {
             emailLabel.setText("EMAIL");
         }

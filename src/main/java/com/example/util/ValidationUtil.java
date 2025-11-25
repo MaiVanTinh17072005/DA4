@@ -14,8 +14,8 @@ public class ValidationUtil {
     
     private static final Pattern emailPattern = Pattern.compile(EMAIL_PATTERN);
     
-    // Username pattern: 3-20 characters, alphanumeric and underscore only
-    private static final String USERNAME_PATTERN = "^[a-zA-Z0-9_]{3,20}$";
+    // Username pattern: 3-20 characters, alphanumeric, underscore, and spaces allowed
+    private static final String USERNAME_PATTERN = "^[a-zA-Z0-9_ ]{3,20}$";
     
     private static final Pattern usernamePattern = Pattern.compile(USERNAME_PATTERN);
     
@@ -117,38 +117,47 @@ public class ValidationUtil {
             return new ValidationResult(false, "Tên người dùng không được để trống");
         }
         
-        username = username.trim();
+        // Don't trim - allow spaces in username
+        String originalUsername = username;
         
         // Check length - too short
-        if (username.length() < 3) {
+        if (originalUsername.length() < 3) {
             return new ValidationResult(false, 
-                String.format("Tên người dùng phải có ít nhất %d ký tự (hiện tại: %d ký tự)", 3, username.length()));
+                String.format("Tên người dùng phải có ít nhất %d ký tự (hiện tại: %d ký tự)", 3, originalUsername.length()));
         }
         
         // Check length - too long
-        if (username.length() > 20) {
+        if (originalUsername.length() > 20) {
             return new ValidationResult(false, 
-                String.format("Tên người dùng không được vượt quá %d ký tự (hiện tại: %d ký tự)", 20, username.length()));
+                String.format("Tên người dùng không được vượt quá %d ký tự (hiện tại: %d ký tự)", 20, originalUsername.length()));
         }
         
-        // Check for invalid characters
-        if (!username.matches("^[a-zA-Z0-9_]+$")) {
+        // Check for invalid characters (allow spaces now)
+        if (!originalUsername.matches("^[a-zA-Z0-9_ ]+$")) {
             // Find first invalid character
-            for (char c : username.toCharArray()) {
-                if (!Character.isLetterOrDigit(c) && c != '_') {
+            for (char c : originalUsername.toCharArray()) {
+                if (!Character.isLetterOrDigit(c) && c != '_' && c != ' ') {
                     return new ValidationResult(false, 
-                        String.format("Tên người dùng không được chứa ký tự '%c'. Chỉ cho phép chữ cái, số và dấu gạch dưới (_)", c));
+                        String.format("Tên người dùng không được chứa ký tự '%c'. Chỉ cho phép chữ cái, số, khoảng trắng và dấu gạch dưới (_)", c));
                 }
             }
         }
         
-        // Check if starts with number or underscore
-        if (Character.isDigit(username.charAt(0))) {
+        // Check if starts with number, underscore, or space
+        if (Character.isDigit(originalUsername.charAt(0))) {
             return new ValidationResult(false, "Tên người dùng không được bắt đầu bằng số");
         }
         
-        if (username.startsWith("_")) {
+        if (originalUsername.startsWith("_")) {
             return new ValidationResult(false, "Tên người dùng không được bắt đầu bằng dấu gạch dưới (_)");
+        }
+        
+        if (originalUsername.startsWith(" ")) {
+            return new ValidationResult(false, "Tên người dùng không được bắt đầu bằng khoảng trắng");
+        }
+        
+        if (originalUsername.endsWith(" ")) {
+            return new ValidationResult(false, "Tên người dùng không được kết thúc bằng khoảng trắng");
         }
         
         return new ValidationResult(true, null);
