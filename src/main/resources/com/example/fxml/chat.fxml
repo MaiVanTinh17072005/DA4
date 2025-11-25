@@ -90,7 +90,9 @@
                 </ScrollPane>
 
                 <!-- User Profile at Bottom -->
-                <HBox styleClass="user-profile-bar" alignment="CENTER_LEFT" spacing="10">
+                <HBox styleClass="user-profile-bar" alignment="CENTER_LEFT" spacing="10"
+                      onMouseClicked="#handleOpenProfile"
+                      style="-fx-cursor: hand;">
                     <Circle radius="20" styleClass="user-avatar"/>
                     <VBox spacing="2" HBox.hgrow="ALWAYS">
                         <Label fx:id="currentUserNameLabel" text="Minh Anh" styleClass="user-name"/>

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.ui.ProfileScene"
+            fitToWidth="true"
+            styleClass="profile-scroll"
+            stylesheets="@../../css/profile.css">
+
+    <VBox alignment="TOP_CENTER" spacing="0" styleClass="profile-container">
+
+        <!-- Banner -->
+        <VBox styleClass="profile-banner">
+            <padding><Insets top="20" right="30" bottom="80" left="30"/></padding>
+            <Button text="← Back to Chat"
+                    styleClass="back-btn"
+                    onAction="#handleBackToChat"/>
+        </VBox>
+
+        <!-- Main Content -->
+        <VBox alignment="TOP_CENTER" spacing="30" styleClass="profile-content">
+            <padding><Insets top="0" right="40" bottom="50" left="40"/></padding>
+
+            <!-- Avatar Card -->
+            <VBox alignment="CENTER" spacing="15" styleClass="avatar-section">
+                <StackPane>
+                    <Circle fx:id="avatarCircle" radius="65" styleClass="avatar"/>
+                    <Button text="📷"
+                            styleClass="avatar-btn"
+                            onAction="#handleChangeAvatar"
+                            StackPane.alignment="BOTTOM_RIGHT"
+                            translateX="-5"
+                            translateY="-5"/>
+                </StackPane>
+                <Label fx:id="usernameLabel" text="Minh Anh" styleClass="username"/>
+                <Label fx:id="statusLabel" text="● Online" styleClass="status"/>
+            </VBox>
+
+            <!-- Info Form -->
+            <VBox spacing="20" styleClass="info-form" maxWidth="500">
+
+                <!-- Email -->
+                <VBox spacing="8">
+                    <Label text="EMAIL" styleClass="field-label"/>
+                    <HBox spacing="10" styleClass="field-row">
+                        <TextField fx:id="emailField"
+                                   text="minhanh@gmail.com"
+                                   editable="false"
+                                   styleClass="field-input"
+                                   HBox.hgrow="ALWAYS"/>
+                        <Button text="✏️"
+                                styleClass="edit-btn"
+                                onAction="#handleEditEmail"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Username -->
+                <VBox spacing="8">
+                    <Label text="USERNAME" styleClass="field-label"/>
+                    <HBox spacing="10" styleClass="field-row">
+                        <TextField fx:id="usernameField"
+                                   text="Minh Anh"
+                                   editable="false"
+                                   styleClass="field-input"
+                                   HBox.hgrow="ALWAYS"/>
+                        <Button text="✏️"
+                                styleClass="edit-btn"
+                                onAction="#handleEditUsername"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Change Password -->
+                <VBox spacing="8">
+                    <Label text="PASSWORD" styleClass="field-label"/>
+                    <Button text="Change Password"
+                            styleClass="action-btn"
+                            onAction="#handleChangePassword"
+                            maxWidth="Infinity"/>
+                </VBox>
+
+                <!-- Logout -->
+                <Button text="Logout"
+                        styleClass="logout-btn"
+                        onAction="#handleLogout"
+                        maxWidth="Infinity"/>
+            </VBox>
+        </VBox>
+    </VBox>
+</ScrollPane>

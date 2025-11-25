@@ -187,6 +187,13 @@ public class ChatScene {
         SceneManager.loadContent("content/login-content.fxml");
     }
 
+    @FXML
+    private void handleOpenProfile() {
+        // Navigate to user profile page
+        SceneManager.setTitle("Discord Mini - Trang Cá Nhân");
+        SceneManager.loadContent("content/profile-content.fxml");
+    }
+
     // ===== Chat Header Actions =====
     @FXML
     private void handleStartCall() {
