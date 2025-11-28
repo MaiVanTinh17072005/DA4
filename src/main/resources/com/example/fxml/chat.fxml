@@ -78,10 +78,6 @@
                                   text="Nhóm" 
                                   onAction="#handleFilterGroup"
                                   styleClass="filter-tab"/>
-                    <ToggleButton fx:id="filterFavoriteButton" 
-                                  text="⭐ Yêu thích" 
-                                  onAction="#handleFilterFavorite"
-                                  styleClass="filter-tab"/>
                 </HBox>
 
                 <!-- Conversations List -->

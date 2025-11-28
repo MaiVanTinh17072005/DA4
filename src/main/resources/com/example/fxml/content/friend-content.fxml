@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.ui.FriendScene"
+      styleClass="friend-main-area" 
+      HBox.hgrow="ALWAYS"
+      stylesheets="@../../css/friend.css">
+    
+    <!-- Header -->
+    <HBox styleClass="friend-header" alignment="CENTER_LEFT" spacing="20">
+        <Label text="👥" styleClass="header-icon"/>
+        <Label text="Bạn bè" styleClass="header-title"/>
+        
+        <Separator orientation="VERTICAL" prefHeight="24" styleClass="header-separator"/>
+        
+        <!-- Navigation Tabs -->
+        <HBox spacing="12" HBox.hgrow="ALWAYS">
+            <Button fx:id="allFriendsTab" 
+                   text="Tất cả" 
+                   styleClass="nav-tab, active-tab"
+                   onAction="#handleShowAllFriends"/>
+            <Button fx:id="onlineTab" 
+                   text="Online" 
+                   styleClass="nav-tab"
+                   onAction="#handleShowOnline"/>
+            <Button fx:id="pendingTab" 
+                   text="Đang chờ" 
+                   styleClass="nav-tab"
+                   onAction="#handleShowPending"/>
+            <Button fx:id="blockedTab" 
+                   text="Đã chặn" 
+                   styleClass="nav-tab"
+                   onAction="#handleShowBlocked"/>
+        </HBox>
+        
+        <!-- Add Friend Button -->
+        <Button text="Thêm bạn" 
+               styleClass="add-friend-btn"
+               onAction="#handleAddFriend"/>
+    </HBox>
+
+    <!-- Search Bar -->
+    <HBox styleClass="search-bar" alignment="CENTER_LEFT" spacing="12">
+        <TextField fx:id="searchField" 
+                  promptText="🔍 Tìm kiếm bạn bè..." 
+                  styleClass="search-input"
+                  HBox.hgrow="ALWAYS"/>
+    </HBox>
+
+    <!-- Content Area (Stacked Views) -->
+    <StackPane VBox.vgrow="ALWAYS">
+        
+        <!-- All Friends View -->
+        <ScrollPane fx:id="allFriendsView" 
+                   styleClass="content-scroll" 
+                   fitToWidth="true">
+            <VBox spacing="0" styleClass="friend-list-container">
+                <Label fx:id="allFriendsCountLabel" text="TẤT CẢ BẠN BÈ — 0" styleClass="section-header"/>
+                <ListView fx:id="allFriendsListView" styleClass="friend-list"/>
+            </VBox>
+        </ScrollPane>
+
+        <!-- Online Friends View -->
+        <ScrollPane fx:id="onlineView" 
+                   styleClass="content-scroll" 
+                   fitToWidth="true"
+                   visible="false"
+                   managed="false">
+            <VBox spacing="0" styleClass="friend-list-container">
+                <Label fx:id="onlineFriendsCountLabel" text="ĐANG ONLINE — 0" styleClass="section-header"/>
+                <ListView fx:id="onlineFriendsListView" styleClass="friend-list"/>
+            </VBox>
+        </ScrollPane>
+
+        <!-- Pending Requests View -->
+        <ScrollPane fx:id="pendingView" 
+                   styleClass="content-scroll" 
+                   fitToWidth="true"
+                   visible="false"
+                   managed="false">
+            <VBox spacing="16" styleClass="friend-list-container">
+                <!-- Incoming Requests -->
+                <VBox spacing="8">
+                    <Label fx:id="incomingCountLabel" text="LỜI MỜI KẾT BẠN — 0" styleClass="section-header"/>
+                    <ListView fx:id="incomingRequestsListView" styleClass="request-list"/>
+                </VBox>
+                
+                <!-- Outgoing Requests -->
+                <VBox spacing="8">
+                    <Label fx:id="outgoingCountLabel" text="ĐÃ GỬI LỜI MỜI — 0" styleClass="section-header"/>
+                    <ListView fx:id="outgoingRequestsListView" styleClass="request-list"/>
+                </VBox>
+            </VBox>
+        </ScrollPane>
+
+        <!-- Blocked Users View -->
+        <ScrollPane fx:id="blockedView" 
+                   styleClass="content-scroll" 
+                   fitToWidth="true"
+                   visible="false"
+                   managed="false">
+            <VBox spacing="0" styleClass="friend-list-container">
+                <Label fx:id="blockedCountLabel" text="ĐÃ CHẶN — 0" styleClass="section-header"/>
+                <ListView fx:id="blockedUsersListView" styleClass="friend-list"/>
+            </VBox>
+        </ScrollPane>
+
+        <!-- Add Friend View -->
+        <VBox fx:id="addFriendView" 
+             styleClass="add-friend-container" 
+             spacing="20" 
+             alignment="TOP_CENTER"
+             visible="false"
+             managed="false">
+            <padding><Insets top="60" right="40" bottom="40" left="40"/></padding>
+            
+            <Label text="THÊM BẠN BÈ" styleClass="add-friend-title"/>
+            
+            <VBox spacing="12" styleClass="add-friend-form" maxWidth="600">
+                <Label text="Bạn có thể thêm bạn bằng Username hoặc Email" 
+                       styleClass="form-description"/>
+                
+                <HBox spacing="12" alignment="CENTER">
+                    <TextField fx:id="addFriendInput" 
+                              promptText="Nhập Username hoặc Email..."
+                              styleClass="add-friend-input"
+                              HBox.hgrow="ALWAYS"/>
+                    <Button text="Gửi lời mời" 
+                           styleClass="send-request-btn"
+                           onAction="#handleSendRequest"/>
+                </HBox>
+                
+                <Label fx:id="addFriendStatusLabel" 
+                       text="" 
+                       styleClass="status-message"
+                       wrapText="true"/>
+            </VBox>
+            
+            <!-- Tips -->
+            <VBox spacing="16" styleClass="message-area">
+                <Label text="💡 Mẹo:" styleClass="tip-title"/>
+                <Label text="• Tên người dùng phân biệt chữ hoa chữ thường"
+                       styleClass="tip-text"/>
+                <Label text="• Bạn bè phải chấp nhận lời mời trước khi có thể chat"
+                       styleClass="tip-text"/>
+            </VBox>
+        </VBox>
+    </StackPane>
+</VBox>

@@ -35,7 +35,6 @@ public class ChatScene {
     @FXML private Label currentUserStatusLabel;
     @FXML private ToggleButton filterDMButton;
     @FXML private ToggleButton filterGroupButton;
-    @FXML private ToggleButton filterFavoriteButton;
 
     private final ObservableList<ConversationItem> allConversations = FXCollections.observableArrayList();
     private final ObservableList<ConversationItem> filteredConversations = FXCollections.observableArrayList();
@@ -66,11 +65,11 @@ public class ChatScene {
 
     private void initConversations() {
         allConversations.addAll(
-            new ConversationItem("Huy Pham", "Direct", true, "Có tối đi call không bro?", true),
-            new ConversationItem("UI Design Squad", "Group", false, "Figma file update 1.2", true),
-            new ConversationItem("An Nguyen", "Direct", true, "Share giúp mình log socket nha!", false),
-            new ConversationItem("Livestream Crew", "Group", true, "Next stream cuối tuần nhé!", true),
-            new ConversationItem("AI Research", "Group", false, "Adaptive bitrate báo cáo mới", false)
+            new ConversationItem("Huy Pham", "Direct", true, "Có tối đi call không bro?"),
+            new ConversationItem("UI Design Squad", "Group", false, "Figma file update 1.2"),
+            new ConversationItem("An Nguyen", "Direct", true, "Share giúp mình log socket nha!"),
+            new ConversationItem("Livestream Crew", "Group", true, "Next stream cuối tuần nhé!"),
+            new ConversationItem("AI Research", "Group", false, "Adaptive bitrate báo cáo mới")
         );
         filteredConversations.setAll(allConversations);
     }
@@ -114,7 +113,6 @@ public class ChatScene {
         ToggleGroup filterGroup = new ToggleGroup();
         filterDMButton.setToggleGroup(filterGroup);
         filterGroupButton.setToggleGroup(filterGroup);
-        filterFavoriteButton.setToggleGroup(filterGroup);
     }
 
     private void selectDefaultConversation() {
@@ -151,8 +149,6 @@ public class ChatScene {
                         return "Direct".equals(conv.getType());
                     } else if (filterGroupButton.isSelected()) {
                         return "Group".equals(conv.getType());
-                    } else if (filterFavoriteButton.isSelected()) {
-                        return conv.isFavorite();
                     }
                     return true;
                 })
@@ -248,14 +244,12 @@ public class ChatScene {
     // ===== Filter Buttons =====
     @FXML private void handleFilterDM() { applyFilters(); }
     @FXML private void handleFilterGroup() { applyFilters(); }
-    @FXML private void handleFilterFavorite() { applyFilters(); }
 
     // ===== Helper Classes =====
-    private record ConversationItem(String name, String type, boolean online, String lastMessage, boolean favorite) {
+    private record ConversationItem(String name, String type, boolean online, String lastMessage) {
         String getName() { return name; }
         String getType() { return type; }
         boolean isOnline() { return online; }
-        boolean isFavorite() { return favorite; }
         String lastMessagePreview() { return lastMessage; }
     }
 
