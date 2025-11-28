@@ -19,7 +19,7 @@ public class Main extends Application {
             // Load login content
             SceneManager.setTitle("Discord Mini - Login");
 //            SceneManager.loadContent("content/login-content.fxml");
-            SceneManager.loadContent("chat.fxml");
+            SceneManager.loadContent("content/login-content.fxml");
             // Show stage
             primaryStage.show();
 

@@ -17,6 +17,9 @@ public class MainLayoutController {
     @FXML
     private StackPane contentContainer;
 
+    @FXML
+    private javafx.scene.layout.VBox sidebarContainer;
+
     /**
      * Load and display a content view
      * @param contentPath Path to the content FXML file
@@ -30,9 +33,20 @@ public class MainLayoutController {
             // Clear previous content
             contentContainer.getChildren().clear();
             
+            // Toggle sidebar visibility based on content
+            boolean isAuthScreen = contentPath.contains("login") || 
+                                 contentPath.contains("register") || 
+                                 contentPath.contains("forgot-password") ||
+                                 contentPath.contains("change-password") ||
+                                 contentPath.contains("otp");
+            
+            if (sidebarContainer != null) {
+                sidebarContainer.setVisible(!isAuthScreen);
+                sidebarContainer.setManaged(!isAuthScreen);
+            }
+
             // Adjust alignment based on content type
-            // Chat interface needs full screen (TOP_LEFT), login forms need centering
-            if (contentPath.contains("chat.fxml")) {
+            if (!isAuthScreen) {
                 contentContainer.setAlignment(javafx.geometry.Pos.TOP_LEFT);
             } else {
                 contentContainer.setAlignment(javafx.geometry.Pos.CENTER);

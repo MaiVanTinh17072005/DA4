@@ -349,6 +349,12 @@ public class FriendScene {
         showPendingRequests();
     }
 
+    @FXML
+    private void handleOpenProfile() {
+        SceneManager.setTitle("Discord Mini - Trang Cá Nhân");
+        SceneManager.loadContent("content/profile-content.fxml");
+    }
+
     // ===== Helper Classes =====
     private record FriendItem(
         String name, 

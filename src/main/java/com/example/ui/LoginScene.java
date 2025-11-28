@@ -385,7 +385,7 @@ public class LoginScene {
             // Use SceneManager to load chat content
             // This ensures proper alignment and layout handling
             SceneManager.setTitle("Discord Mini - Chat");
-            SceneManager.loadContent("chat.fxml");
+            SceneManager.loadContent("content/chat-content.fxml");
             
         } catch (Exception e) {
             e.printStackTrace();

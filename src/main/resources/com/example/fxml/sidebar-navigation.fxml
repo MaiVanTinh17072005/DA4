@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.ui.SidebarController"
+      styleClass="server-sidebar" 
+      prefWidth="72"
+      stylesheets="@../css/chat.css">
+
+    <!-- Home Button -->
+    <VBox alignment="CENTER" styleClass="server-icon-container">
+        <Button styleClass="server-icon, home-icon" text="🏠" onAction="#handleHomeClick">
+            <tooltip><Tooltip text="Trang chủ"/></tooltip>
+        </Button>
+    </VBox>
+    
+    <Separator styleClass="server-separator"/>
+    
+    <!-- Friends Button -->
+    <VBox alignment="CENTER" styleClass="server-icon-container">
+        <Button styleClass="server-icon" text="👥" onAction="#handleFriendsClick">
+            <tooltip><Tooltip text="Bạn bè"/></tooltip>
+        </Button>
+    </VBox>
+    
+    <!-- Livestream Button -->
+    <VBox alignment="CENTER" styleClass="server-icon-container">
+        <Button styleClass="server-icon" text="📡" onAction="#handleLivestreamClick">
+            <tooltip><Tooltip text="Livestream"/></tooltip>
+        </Button>
+    </VBox>
+    
+    <Region VBox.vgrow="ALWAYS"/>
+    
+    <!-- Logout Button at Bottom -->
+    <VBox alignment="CENTER" styleClass="server-icon-container">
+        <Button styleClass="server-icon, add-server-icon" text="🚪" onAction="#handleLogout">
+            <tooltip><Tooltip text="Đăng xuất"/></tooltip>
+        </Button>
+    </VBox>
+</VBox>

@@ -160,29 +160,9 @@ public class ChatScene {
         }
     }
 
-    // ===== Server Sidebar Actions =====
-    @FXML
-    private void handleHomeClick() {
-        typingStatusLabel.setText("Đã chuyển về trang chủ.");
-    }
 
-    @FXML
-    private void handleFriendsClick() {
-        SceneManager.setTitle("Discord Mini - Bạn bè");
-        SceneManager.loadContent("content/friends-content.fxml");
-    }
 
-    @FXML
-    private void handleLivestreamClick() {
-        typingStatusLabel.setText("Livestream - tính năng đang phát triển.");
-    }
 
-    @FXML
-    private void handleLogout() {
-        // Navigate back to login
-        SceneManager.setTitle("Discord Mini - Đăng nhập");
-        SceneManager.loadContent("content/login-content.fxml");
-    }
 
     @FXML
     private void handleOpenProfile() {

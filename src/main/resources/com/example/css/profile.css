@@ -18,8 +18,6 @@
 }
 
 /* Banner */
-
-
 .back-btn {
     -fx-background-color: #ffffff33;
     -fx-text-fill: white;
@@ -33,13 +31,9 @@
     -fx-cursor: hand;
 }
 
-.back-btn:hover {
-    -fx-background-color: #ffffff59;
-}
-
 /* Content */
 .profile-content {
-    -fx-translate-y: -60;
+    /* -fx-translate-y: -60; Removed */
 }
 
 /* Avatar Section */
@@ -165,6 +159,69 @@
 .logout-btn:hover {
     -fx-background-color: #f04747;
     -fx-text-fill: white;
+}
+
+/* Notification Bar */
+.notification-bar {
+    -fx-background-radius: 10px;
+    -fx-effect: dropshadow(gaussian, #00000066, 10, 0.3, 0, 3);
+    -fx-opacity: 0.95;
+}
+
+.notification-bar.success {
+    -fx-background-color: linear-gradient(to right, #43b581, #3ca374);
+    -fx-border-color: #43b581;
+    -fx-border-width: 1px;
+    -fx-border-radius: 10px;
+}
+
+.notification-bar.error {
+    -fx-background-color: linear-gradient(to right, #f04747, #d84040);
+    -fx-border-color: #f04747;
+    -fx-border-width: 1px;
+    -fx-border-radius: 10px;
+}
+
+.notification-icon {
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.notification-message {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
+}
+
+.notification-close {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 8px;
+    -fx-cursor: hand;
+    -fx-background-radius: 5px;
+}
+
+.notification-close:hover {
+    -fx-background-color: #ffffff33;
+}
+
+/* Save Button */
+.save-btn {
+    -fx-background-color: #43b581;
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-font-weight: 600;
+    -fx-padding: 14px 24px;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, #43b58166, 8, 0.3, 0, 2);
+}
+
+.save-btn:hover {
+    -fx-background-color: #3ca374;
 }
 
 /* Scrollbar */

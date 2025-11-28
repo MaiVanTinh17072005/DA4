@@ -14,17 +14,11 @@
 
     <VBox alignment="TOP_CENTER" spacing="0" styleClass="profile-container">
 
-        <!-- Banner -->
-        <VBox styleClass="profile-banner">
-            <padding><Insets top="20" right="30" bottom="80" left="30"/></padding>
-            <Button text="← Back to Chat"
-                    styleClass="back-btn"
-                    onAction="#handleBackToChat"/>
-        </VBox>
+
 
         <!-- Main Content -->
         <VBox alignment="TOP_CENTER" spacing="30" styleClass="profile-content">
-            <padding><Insets top="0" right="40" bottom="50" left="40"/></padding>
+            <padding><Insets top="60" right="40" bottom="0" left="40"/></padding>
 
             <!-- Avatar Card -->
             <VBox alignment="CENTER" spacing="15" styleClass="avatar-section">
@@ -40,6 +34,26 @@
                 <Label fx:id="usernameLabel" text="Minh Anh" styleClass="username"/>
                 <Label fx:id="statusLabel" text="● Online" styleClass="status"/>
             </VBox>
+
+            <!-- Notification Bar -->
+            <HBox fx:id="notificationBar" 
+                  styleClass="notification-bar" 
+                  alignment="CENTER_LEFT" 
+                  spacing="10"
+                  maxWidth="500"
+                  managed="false"
+                  visible="false">
+                <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+                <Label fx:id="notificationIcon" styleClass="notification-icon"/>
+                <Label fx:id="notificationMessage" 
+                       styleClass="notification-message" 
+                       wrapText="true"
+                       HBox.hgrow="ALWAYS"/>
+                <Button fx:id="notificationCloseBtn" 
+                        text="✕" 
+                        styleClass="notification-close"
+                        onAction="#handleCloseNotification"/>
+            </HBox>
 
             <!-- Info Form -->
             <VBox spacing="20" styleClass="info-form" maxWidth="500">
