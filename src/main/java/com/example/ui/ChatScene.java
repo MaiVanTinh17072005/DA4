@@ -168,7 +168,8 @@ public class ChatScene {
 
     @FXML
     private void handleFriendsClick() {
-        typingStatusLabel.setText("Bạn bè - Kết bạn, tìm bạn - tính năng đang phát triển.");
+        SceneManager.setTitle("Discord Mini - Bạn bè");
+        SceneManager.loadContent("content/friends-content.fxml");
     }
 
     @FXML

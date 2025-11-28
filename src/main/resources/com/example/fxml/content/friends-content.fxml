@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.ui.FriendScene"
+      spacing="0" 
+      HBox.hgrow="ALWAYS" 
+      VBox.vgrow="ALWAYS"
+      stylesheets="@../../css/friends.css"
+      styleClass="friends-root">
+    
+    <!-- ========== LEFT PANEL: Friends List ========== -->
+    <VBox styleClass="friends-sidebar" prefWidth="320">
+        <!-- Search Bar -->
+        <HBox styleClass="friends-search-container" alignment="CENTER_LEFT">
+            <TextField fx:id="searchField"
+                       promptText="🔍 Tìm kiếm bạn bè..."
+                       styleClass="friends-search-field"
+                       HBox.hgrow="ALWAYS"/>
+        </HBox>
+
+        <!-- Filter Tabs -->
+        <HBox styleClass="friends-filter-tabs" spacing="8">
+            <ToggleButton fx:id="filterAllButton" 
+                          text="Tất cả" 
+                          selected="true" 
+                          onAction="#handleFilterAll"
+                          styleClass="friends-filter-tab"/>
+            <ToggleButton fx:id="filterOnlineButton" 
+                          text="Online" 
+                          onAction="#handleFilterOnline"
+                          styleClass="friends-filter-tab"/>
+            <ToggleButton fx:id="filterPendingButton" 
+                          text="Đang chờ" 
+                          onAction="#handleFilterPending"
+                          styleClass="friends-filter-tab"/>
+        </HBox>
+
+        <!-- Friends List -->
+        <ScrollPane styleClass="friends-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
+            <ListView fx:id="friendsListView" styleClass="friends-list"/>
+        </ScrollPane>
+
+        <!-- User Profile at Bottom -->
+        <HBox styleClass="friends-user-profile-bar" alignment="CENTER_LEFT" spacing="10">
+            <Circle radius="20" styleClass="friend-avatar"/>
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label fx:id="currentUserNameLabel" text="Minh Anh" styleClass="user-name"/>
+                <Label fx:id="currentUserStatusLabel" text="🟢 Online" styleClass="user-status"/>
+            </VBox>
+        </HBox>
+    </VBox>
+
+    <!-- ========== RIGHT PANEL: Friend Details / Requests ========== -->
+    <VBox styleClass="friends-main-area" HBox.hgrow="ALWAYS">
+        
+        <!-- Header -->
+        <HBox styleClass="friends-header" alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label fx:id="headerTitleLabel" 
+                       text="Bạn bè" 
+                       styleClass="friends-header-title"/>
+                <Label fx:id="headerSubtitleLabel" 
+                       text="Quản lý danh sách bạn bè của bạn" 
+                       styleClass="friends-header-subtitle"/>
+            </VBox>
+            
+            <!-- Add Friend Button -->
+            <Button fx:id="addFriendButton" 
+                    styleClass="add-friend-btn" 
+                    text="➕ Thêm bạn" 
+                    onAction="#handleAddFriend">
+                <tooltip><Tooltip text="Gửi lời mời kết bạn"/></tooltip>
+            </Button>
+        </HBox>
+
+        <!-- Main Content Area -->
+        <ScrollPane styleClass="friends-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
+            <VBox fx:id="mainContentArea" styleClass="friend-details-container" spacing="16">
+                
+                <!-- Friend Requests Section -->
+                <VBox fx:id="friendRequestsSection" spacing="12" managed="false" visible="false">
+                    <Label text="YÊU CẦU KẾT BẠN" styleClass="section-header"/>
+                    <VBox fx:id="friendRequestsContainer" spacing="12"/>
+                </VBox>
+
+                <!-- Friend Details Section -->
+                <VBox fx:id="friendDetailsSection" spacing="16" managed="false" visible="false">
+                    <VBox styleClass="friend-detail-card" spacing="16" alignment="CENTER">
+                        <!-- Friend Avatar -->
+                        <Circle fx:id="detailAvatar" radius="60" styleClass="friend-detail-avatar"/>
+                        
+                        <!-- Friend Info -->
+                        <VBox spacing="4" alignment="CENTER">
+                            <Label fx:id="detailName" text="Tên bạn bè" styleClass="friend-detail-name"/>
+                            <Label fx:id="detailUsername" text="@username" styleClass="friend-detail-username"/>
+                            <Label fx:id="detailStatus" text="🟢 Online" styleClass="friend-detail-status"/>
+                        </VBox>
+
+                        <!-- Action Buttons -->
+                        <HBox spacing="12" alignment="CENTER">
+                            <Button text="💬 Nhắn tin" 
+                                    styleClass="friend-action-btn, message" 
+                                    onAction="#handleSendMessage">
+                                <tooltip><Tooltip text="Gửi tin nhắn"/></tooltip>
+                            </Button>
+                            <Button text="📞 Gọi điện" 
+                                    styleClass="friend-action-btn, call" 
+                                    onAction="#handleCall">
+                                <tooltip><Tooltip text="Gọi thoại"/></tooltip>
+                            </Button>
+                            <Button text="❌ Xóa bạn" 
+                                    styleClass="friend-action-btn, remove" 
+                                    onAction="#handleRemoveFriend">
+                                <tooltip><Tooltip text="Xóa khỏi danh sách bạn bè"/></tooltip>
+                            </Button>
+                        </HBox>
+
+                        <!-- Additional Info -->
+                        <VBox spacing="8" alignment="CENTER_LEFT" style="-fx-padding: 16px 0 0 0;">
+                            <HBox spacing="8">
+                                <Label text="Bạn bè từ:" styleClass="info-label"/>
+                                <Label fx:id="friendSinceLabel" text="01/01/2024" styleClass="info-value"/>
+                            </HBox>
+                            <HBox spacing="8">
+                                <Label text="Nhóm chung:" styleClass="info-label"/>
+                                <Label fx:id="mutualGroupsLabel" text="3 nhóm" styleClass="info-value"/>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+                </VBox>
+
+                <!-- Empty State -->
+                <VBox fx:id="emptyStateSection" styleClass="empty-state" spacing="16" alignment="CENTER">
+                    <Label text="👥" styleClass="empty-state-icon"/>
+                    <Label fx:id="emptyStateTitle" text="Chọn một bạn bè" styleClass="empty-state-title"/>
+                    <Label fx:id="emptyStateSubtitle" 
+                           text="Chọn một người bạn từ danh sách để xem thông tin chi tiết" 
+                           styleClass="empty-state-subtitle"
+                           maxWidth="300"
+                           wrapText="true"
+                           alignment="CENTER"/>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
+
+    </VBox>
+    
+</HBox>
