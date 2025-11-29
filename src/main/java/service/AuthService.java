@@ -1,6 +1,8 @@
 package service;
 
 import dto.AuthResponse;
+import dto.ForgotPasswordRequest;
+import dto.ForgotPasswordResponse;
 import dto.LoginRequest;
 import dto.RegisterRequest;
 import dto.UserDTO;
@@ -23,6 +25,12 @@ public class AuthService {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private EmailService emailService;
+    
+    @Autowired
+    private OtpService otpService;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
     
@@ -179,6 +187,133 @@ public class AuthService {
             e.printStackTrace();
             System.out.println("[AuthService] ===== LOGIN PROCESS END (FAILED) =====");
             return AuthResponse.error("Login failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Logout user
+     * Updates user status to offline
+     * 
+     * @param token JWT token from Authorization header
+     * @return AuthResponse with success status and message
+     */
+    public AuthResponse logout(String token) {
+        System.out.println("[AuthService] ===== LOGOUT PROCESS START =====");
+        try {
+            // Validate token
+            System.out.println("[AuthService] Step 1: Validating JWT token...");
+            if (token == null || token.trim().isEmpty()) {
+                System.out.println("[AuthService] ❌ Token is empty");
+                return AuthResponse.error("Token is required");
+            }
+            
+            // Remove "Bearer " prefix if present
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            
+            // Validate token format
+            if (!JwtUtil.validateToken(token)) {
+                System.out.println("[AuthService] ❌ Invalid token");
+                return AuthResponse.error("Invalid token");
+            }
+            System.out.println("[AuthService] ✓ Token is valid");
+            
+            // Extract user ID from token
+            System.out.println("[AuthService] Step 2: Extracting user ID from token...");
+            Long userId = JwtUtil.extractUserId(token);
+            System.out.println("[AuthService] ✓ User ID extracted: " + userId);
+            
+            // Find user in database
+            System.out.println("[AuthService] Step 3: Finding user in database...");
+            Optional<User> userOptional = userRepository.findById(userId);
+            
+            if (userOptional.isEmpty()) {
+                System.out.println("[AuthService] ❌ User not found with ID: " + userId);
+                return AuthResponse.error("User not found");
+            }
+            System.out.println("[AuthService] ✓ User found in database");
+            
+            User user = userOptional.get();
+            System.out.println("[AuthService] User: " + user.getUsername() + " (ID: " + user.getId() + ")");
+            
+            // Update user status to offline
+            System.out.println("[AuthService] Step 4: Updating user status to 'offline'...");
+            String previousStatus = user.getStatus();
+            user.setStatus("offline");
+            userRepository.save(user);
+            System.out.println("[AuthService] ✓ User status updated from '" + previousStatus + "' to 'offline'");
+            
+            // Return success response
+            System.out.println("[AuthService] ✅ Logout successful for user: " + user.getUsername() + " (ID: " + user.getId() + ")");
+            System.out.println("[AuthService] ===== LOGOUT PROCESS END =====");
+            return AuthResponse.success("Logout successful", null, null);
+            
+        } catch (Exception e) {
+            System.out.println("[AuthService] ❌❌❌ EXCEPTION OCCURRED ❌❌❌");
+            System.out.println("[AuthService] Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("[AuthService] ===== LOGOUT PROCESS END (FAILED) =====");
+            return AuthResponse.error("Logout failed: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Forgot password - Send OTP to user's email
+     * 
+     * @param request ForgotPasswordRequest with email
+     * @return ForgotPasswordResponse with success status and message
+     */
+    public ForgotPasswordResponse forgotPassword(ForgotPasswordRequest request) {
+        System.out.println("[AuthService] ===== FORGOT PASSWORD PROCESS START =====");
+        try {
+            // Validate input
+            System.out.println("[AuthService] Step 1: Validating input...");
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                System.out.println("[AuthService] ❌ Validation failed: Email is empty");
+                return ForgotPasswordResponse.error("Email is required");
+            }
+            System.out.println("[AuthService] ✓ Input validation passed");
+            
+            // Check if email exists in database
+            System.out.println("[AuthService] Step 2: Checking if email exists...");
+            Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+            
+            if (userOptional.isEmpty()) {
+                System.out.println("[AuthService] ❌ Email not found: " + request.getEmail());
+                return ForgotPasswordResponse.error("Email không tồn tại trong hệ thống");
+            }
+            System.out.println("[AuthService] ✓ Email found in database");
+            
+            User user = userOptional.get();
+            System.out.println("[AuthService] User: " + user.getUsername() + " (ID: " + user.getId() + ")");
+            
+            // Generate 6-digit OTP
+            System.out.println("[AuthService] Step 3: Generating OTP...");
+            String otp = otpService.generateOtp();
+            System.out.println("[AuthService] ✓ OTP generated: " + otp);
+            
+            // Store OTP with expiration time
+            System.out.println("[AuthService] Step 4: Storing OTP...");
+            otpService.storeOtp(request.getEmail(), otp);
+            System.out.println("[AuthService] ✓ OTP stored successfully");
+            
+            // Send OTP via email
+            System.out.println("[AuthService] Step 5: Sending OTP email...");
+            emailService.sendOtpEmail(request.getEmail(), otp);
+            System.out.println("[AuthService] ✓ OTP email sent successfully");
+            
+            // Return success response
+            System.out.println("[AuthService] ✅ Forgot password process successful for email: " + request.getEmail());
+            System.out.println("[AuthService] ===== FORGOT PASSWORD PROCESS END =====");
+            return ForgotPasswordResponse.success("Mã OTP đã được gửi đến email của bạn");
+            
+        } catch (Exception e) {
+            System.out.println("[AuthService] ❌❌❌ EXCEPTION OCCURRED ❌❌❌");
+            System.out.println("[AuthService] Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("[AuthService] ===== FORGOT PASSWORD PROCESS END (FAILED) =====");
+            return ForgotPasswordResponse.error("Không thể gửi email. Vui lòng thử lại sau.");
         }
     }
     

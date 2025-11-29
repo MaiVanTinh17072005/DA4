@@ -25,11 +25,7 @@ public class ServerMain {
         
         System.out.println("=================================");
         System.out.println("Server Started Successfully!");
-        System.out.println("API Endpoints:");
-        System.out.println("  POST http://localhost:8080/api/v1/auth/register");
-        System.out.println("  POST http://localhost:8080/api/v1/auth/login");
-        System.out.println("  POST http://localhost:8080/api/v1/auth/logout");
-        System.out.println("  GET  http://localhost:8080/api/v1/auth/health");
+
         System.out.println("=================================");
     }
 }

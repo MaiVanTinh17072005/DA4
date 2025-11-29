@@ -1,6 +1,8 @@
 package controller;
 
 import dto.AuthResponse;
+import dto.ForgotPasswordRequest;
+import dto.ForgotPasswordResponse;
 import dto.LoginRequest;
 import dto.RegisterRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,20 +75,61 @@ public class AuthController {
     }
     
     /**
-     * Logout user (optional - mainly clears client-side token)
+     * Logout user
      * POST /api/v1/auth/logout
+     * Updates user status to offline
      * 
-     * @return Success message
+     * @param authHeader Authorization header containing JWT token
+     * @return AuthResponse with success status and message
      */
     @PostMapping("/logout")
-    public ResponseEntity<AuthResponse> logout() {
+    public ResponseEntity<AuthResponse> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         System.out.println("=== LOGOUT REQUEST ===");
+        System.out.println("Authorization Header: " + (authHeader != null ? "Present" : "Missing"));
         
-        AuthResponse response = new AuthResponse(true, "Logout successful");
+        // Validate Authorization header
+        if (authHeader == null || authHeader.trim().isEmpty()) {
+            System.out.println("❌ Missing Authorization header");
+            AuthResponse response = AuthResponse.error("Authorization header is required");
+            System.out.println("======================");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
         
+        // Call service to handle logout
+        AuthResponse response = authService.logout(authHeader);
+        
+        System.out.println("Response: " + response);
         System.out.println("======================");
         
-        return ResponseEntity.ok(response);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+    
+    /**
+     * Forgot password - Send OTP to user's email
+     * POST /api/v1/auth/forgot-password
+     * 
+     * @param request ForgotPasswordRequest with email
+     * @return ForgotPasswordResponse with success status and message
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ForgotPasswordResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        System.out.println("=== FORGOT PASSWORD REQUEST ===");
+        System.out.println("Email: " + request.getEmail());
+        
+        ForgotPasswordResponse response = authService.forgotPassword(request);
+        
+        System.out.println("Response: " + response);
+        System.out.println("===============================");
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
     }
     
     /**

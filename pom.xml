@@ -136,6 +136,13 @@
             </exclusions>
         </dependency>
 
+        <!-- Spring Boot Mail for sending emails -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+            <version>3.3.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>
