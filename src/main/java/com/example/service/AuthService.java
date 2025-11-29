@@ -6,6 +6,8 @@ import com.example.api.dto.ForgotPasswordRequest;
 import com.example.api.dto.ForgotPasswordResponse;
 import com.example.api.dto.LoginRequest;
 import com.example.api.dto.RegisterRequest;
+import com.example.api.dto.VerifyOtpRequest;
+import com.example.api.dto.VerifyOtpResponse;
 import com.example.config.ApiConfig;
 
 import java.nio.charset.StandardCharsets;
@@ -122,6 +124,32 @@ public class AuthService {
         );
         
         System.out.println("Forgot password response: " + response);
+        
+        return response;
+    }
+    
+    /**
+     * Verify OTP code
+     * 
+     * @param email User email
+     * @param otp OTP code to verify
+     * @return VerifyOtpResponse from server
+     * @throws Exception if request fails
+     */
+    public VerifyOtpResponse verifyOtp(String email, String otp) throws Exception {
+        System.out.println("Verifying OTP for email: " + email);
+        
+        // Create request
+        VerifyOtpRequest request = new VerifyOtpRequest(email, otp);
+        
+        // Send to server
+        VerifyOtpResponse response = apiClient.post(
+                ApiConfig.VERIFY_OTP_ENDPOINT,
+                request,
+                VerifyOtpResponse.class
+        );
+        
+        System.out.println("Verify OTP response: " + response);
         
         return response;
     }

@@ -1,5 +1,8 @@
 package com.example.ui;
 
+import com.example.api.dto.ForgotPasswordResponse;
+import com.example.api.dto.VerifyOtpResponse;
+import com.example.service.AuthService;
 import com.example.util.SceneManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -192,90 +195,107 @@ public class OTPVerificationScene {
     }
 
     /**
-     * Perform OTP verification
-     * TODO: Replace mock with actual BackendApi call
+     * Perform OTP verification using AuthService
      */
     private void performOTPVerification(String otp) {
-        // Mock API call delay
-        simulateNetworkDelay(1500);
-
-        // Mock verification (replace with real API)
-        // Accept any OTP except "000000" for testing
-        boolean success = !otp.equals("000000");
-
-        Platform.runLater(() -> {
-            setLoading(false);
-            if (success) {
-                navigateToChangePassword();
-            } else {
-                showError("Invalid verification code. Please try again.");
-                clearOTPFields();
-            }
-        });
-
-        // TODO: Actual implementation
-        /*
         try {
-            OTPVerificationResponse response = backendApi.verifyOTP(email, otp);
+            System.out.println("[OTPVerification] Verifying OTP for email: " + email);
+            
+            // Call the API through AuthService
+            AuthService authService = AuthService.getInstance();
+            VerifyOtpResponse response = authService.verifyOtp(email, otp);
+            
+            System.out.println("[OTPVerification] Response received: " + response);
+            
+            // Handle response on UI thread
             Platform.runLater(() -> {
                 setLoading(false);
                 if (response.isSuccess()) {
+                    // Success - navigate to change password
+                    System.out.println("[OTPVerification] Success! Navigating to change password");
                     navigateToChangePassword();
                 } else {
-                    showError(response.getErrorMessage());
+                    // Server returned error message
+                    System.out.println("[OTPVerification] Error from server: " + response.getMessage());
+                    showError(response.getMessage() != null ? response.getMessage() : "Mã OTP không hợp lệ. Vui lòng thử lại.");
                     clearOTPFields();
                 }
             });
-        } catch (Exception e) {
+        } catch (java.net.SocketTimeoutException e) {
+            // Timeout error
+            System.err.println("[OTPVerification] Timeout error: " + e.getMessage());
+            e.printStackTrace();
             Platform.runLater(() -> {
                 setLoading(false);
-                showError("Connection error: " + e.getMessage());
+                showError("Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại.");
+            });
+        } catch (java.net.ConnectException e) {
+            // Server not running
+            System.err.println("[OTPVerification] Connection error: " + e.getMessage());
+            e.printStackTrace();
+            Platform.runLater(() -> {
+                setLoading(false);
+                showError("Không thể kết nối đến server.\nVui lòng kiểm tra server đã chạy chưa.");
+            });
+        } catch (Exception e) {
+            // Network or other error
+            System.err.println("[OTPVerification] General error: " + e.getMessage());
+            e.printStackTrace();
+            Platform.runLater(() -> {
+                setLoading(false);
+                showError("Lỗi kết nối: " + e.getMessage());
             });
         }
-        */
     }
 
     /**
-     * Resend OTP code
-     * TODO: Replace mock with actual BackendApi call
+     * Resend OTP code using AuthService
      */
     private void resendOTP() {
-        simulateNetworkDelay(1000);
-
-        boolean success = true; // Mock success
-
-        Platform.runLater(() -> {
-            setLoading(false);
-            if (success) {
-                showSuccess("Verification code has been resent to your email.");
-                clearOTPFields();
-                startResendTimer();
-            } else {
-                showError("Failed to resend code. Please try again.");
-            }
-        });
-
-        // TODO: Actual implementation
-        /*
         try {
-            PasswordResetResponse response = backendApi.requestPasswordReset(email);
+            System.out.println("[OTPVerification] Resending OTP for email: " + email);
+            
+            // Call the forgot password API again to resend OTP
+            AuthService authService = AuthService.getInstance();
+            ForgotPasswordResponse response = authService.forgotPassword(email);
+            
+            System.out.println("[OTPVerification] Resend response: " + response);
+            
+            // Handle response on UI thread
             Platform.runLater(() -> {
                 setLoading(false);
                 if (response.isSuccess()) {
-                    showSuccess("Verification code has been resent.");
+                    System.out.println("[OTPVerification] OTP resent successfully");
+                    showSuccess("Mã xác minh đã được gửi lại đến email của bạn.");
                     clearOTPFields();
                     startResendTimer();
                 } else {
-                    showError(response.getErrorMessage());
+                    System.out.println("[OTPVerification] Resend failed: " + response.getMessage());
+                    showError(response.getMessage() != null ? response.getMessage() : "Không thể gửi lại mã. Vui lòng thử lại.");
                 }
             });
-        } catch (Exception e) {
+        } catch (java.net.SocketTimeoutException e) {
+            System.err.println("[OTPVerification] Timeout error: " + e.getMessage());
+            e.printStackTrace();
             Platform.runLater(() -> {
                 setLoading(false);
-                showError("Connection error: " + e.getMessage());
+                showError("Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại.");
+            });
+        } catch (java.net.ConnectException e) {
+            System.err.println("[OTPVerification] Connection error: " + e.getMessage());
+            e.printStackTrace();
+            Platform.runLater(() -> {
+                setLoading(false);
+                showError("Không thể kết nối đến server.");
+            });
+        } catch (Exception e) {
+            System.err.println("[OTPVerification] General error: " + e.getMessage());
+            e.printStackTrace();
+            Platform.runLater(() -> {
+                setLoading(false);
+                showError("Lỗi kết nối: " + e.getMessage());
             });
         }
-        */
     }
 
     /**
