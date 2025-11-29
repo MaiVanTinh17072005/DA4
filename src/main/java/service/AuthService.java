@@ -36,6 +36,9 @@ public class AuthService {
     @Autowired
     private OtpService otpService;
     
+    @Autowired
+    private RedisService redisService;
+    
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
     
     /**
@@ -179,6 +182,11 @@ public class AuthService {
             System.out.println("[AuthService] Step 6: Converting to DTO...");
             UserDTO userDTO = convertToDTO(user);
             System.out.println("[AuthService] ✓ DTO created");
+            
+            // Cache user information in Redis (10 days TTL)
+            System.out.println("[AuthService] Step 7: Caching user information in Redis...");
+            redisService.cacheUser(user);
+            System.out.println("[AuthService] ✓ User cached in Redis");
             
             // Return success response
             System.out.println("[AuthService] ✅ Login successful for user: " + user.getUsername() + " (ID: " + user.getId() + ")");
