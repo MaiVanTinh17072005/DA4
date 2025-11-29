@@ -1,5 +1,7 @@
 package com.example.ui;
 
+import com.example.api.dto.ResetPasswordResponse;
+import com.example.service.AuthService;
 import com.example.util.SceneManager;
 import com.example.util.ValidationUtil;
 import javafx.application.Platform;
@@ -218,42 +220,27 @@ public class ChangePasswordScene {
     }
 
     /**
-     * Perform password change
-     * TODO: Replace mock with actual BackendApi call
+     * Perform password change using AuthService
      */
     private void performPasswordChange(String newPassword) {
-        // Mock API call delay
-        simulateNetworkDelay(1500);
-
-        // Mock success (replace with real API)
-        boolean success = true;
-
-        Platform.runLater(() -> {
-            setLoading(false);
-            if (success) {
-                showSuccess("Password changed successfully! Redirecting to login...");
-                // Navigate to login after 2 seconds
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(2000);
-                        Platform.runLater(() -> handleBackToLogin());
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-                }).start();
-            } else {
-                showError("Failed to change password. Please try again.");
-            }
-        });
-
-        // TODO: Actual implementation
-        /*
         try {
-            PasswordChangeResponse response = backendApi.changePassword(email, newPassword);
+            System.out.println("[ChangePassword] Resetting password for email: " + email);
+            
+            // Call the API through AuthService
+            AuthService authService = AuthService.getInstance();
+            ResetPasswordResponse response = authService.resetPassword(email, newPassword);
+            
+            System.out.println("[ChangePassword] Response received: " + response);
+            
+            // Handle response on UI thread
             Platform.runLater(() -> {
                 setLoading(false);
                 if (response.isSuccess()) {
-                    showSuccess("Password changed successfully! Redirecting to login...");
+                    // Success - show message and navigate to login
+                    System.out.println("[ChangePassword] Success! Navigating to login");
+                    showSuccess("Mật khẩu đã được đổi thành công! Đang chuyển đến đăng nhập...");
+                    
+                    // Navigate to login after 2 seconds
                     new Thread(() -> {
                         try {
                             Thread.sleep(2000);
@@ -263,16 +250,36 @@ public class ChangePasswordScene {
                         }
                     }).start();
                 } else {
-                    showError(response.getErrorMessage());
+                    // Server returned error message
+                    System.out.println("[ChangePassword] Error from server: " + response.getMessage());
+                    showError(response.getMessage() != null ? response.getMessage() : "Không thể đổi mật khẩu. Vui lòng thử lại.");
                 }
             });
-        } catch (Exception e) {
+        } catch (java.net.SocketTimeoutException e) {
+            // Timeout error
+            System.err.println("[ChangePassword] Timeout error: " + e.getMessage());
+            e.printStackTrace();
             Platform.runLater(() -> {
                 setLoading(false);
-                showError("Connection error: " + e.getMessage());
+                showError("Yêu cầu mất quá nhiều thời gian. Vui lòng thử lại.");
+            });
+        } catch (java.net.ConnectException e) {
+            // Server not running
+            System.err.println("[ChangePassword] Connection error: " + e.getMessage());
+            e.printStackTrace();
+            Platform.runLater(() -> {
+                setLoading(false);
+                showError("Không thể kết nối đến server.\nVui lòng kiểm tra server đã chạy chưa.");
+            });
+        } catch (Exception e) {
+            // Network or other error
+            System.err.println("[ChangePassword] General error: " + e.getMessage());
+            e.printStackTrace();
+            Platform.runLater(() -> {
+                setLoading(false);
+                showError("Lỗi kết nối: " + e.getMessage());
             });
         }
-        */
     }
 
     /**

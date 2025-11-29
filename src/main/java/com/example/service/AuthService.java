@@ -6,6 +6,8 @@ import com.example.api.dto.ForgotPasswordRequest;
 import com.example.api.dto.ForgotPasswordResponse;
 import com.example.api.dto.LoginRequest;
 import com.example.api.dto.RegisterRequest;
+import com.example.api.dto.ResetPasswordRequest;
+import com.example.api.dto.ResetPasswordResponse;
 import com.example.api.dto.VerifyOtpRequest;
 import com.example.api.dto.VerifyOtpResponse;
 import com.example.config.ApiConfig;
@@ -150,6 +152,35 @@ public class AuthService {
         );
         
         System.out.println("Verify OTP response: " + response);
+        
+        return response;
+    }
+    
+    /**
+     * Reset password with new password
+     * 
+     * @param email User email
+     * @param newPassword New password (will be hashed before sending)
+     * @return ResetPasswordResponse from server
+     * @throws Exception if request fails
+     */
+    public ResetPasswordResponse resetPassword(String email, String newPassword) throws Exception {
+        System.out.println("Resetting password for email: " + email);
+        
+        // Hash password before sending
+        String hashedPassword = hashPassword(newPassword);
+        
+        // Create request
+        ResetPasswordRequest request = new ResetPasswordRequest(email, hashedPassword);
+        
+        // Send to server
+        ResetPasswordResponse response = apiClient.post(
+                ApiConfig.RESET_PASSWORD_ENDPOINT,
+                request,
+                ResetPasswordResponse.class
+        );
+        
+        System.out.println("Reset password response: " + response);
         
         return response;
     }

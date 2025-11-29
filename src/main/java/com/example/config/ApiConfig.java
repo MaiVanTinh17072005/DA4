@@ -19,6 +19,7 @@ public class ApiConfig {
     public static final String LOGOUT_ENDPOINT = AUTH_BASE + "/logout";
     public static final String FORGOT_PASSWORD_ENDPOINT = AUTH_BASE + "/forgot-password";
     public static final String VERIFY_OTP_ENDPOINT = AUTH_BASE + "/verify-otp";
+    public static final String RESET_PASSWORD_ENDPOINT = AUTH_BASE + "/reset-password";
     
     // User Endpoints
     public static final String USER_BASE = API_VERSION + "/users";
