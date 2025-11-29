@@ -2,6 +2,8 @@ package com.example.service;
 
 import com.example.api.ApiClient;
 import com.example.api.dto.AuthResponse;
+import com.example.api.dto.ForgotPasswordRequest;
+import com.example.api.dto.ForgotPasswordResponse;
 import com.example.api.dto.LoginRequest;
 import com.example.api.dto.RegisterRequest;
 import com.example.config.ApiConfig;
@@ -100,10 +102,56 @@ public class AuthService {
     }
     
     /**
-     * Logout user
+     * Request password reset - sends OTP to user's email
+     * 
+     * @param email User email
+     * @return ForgotPasswordResponse from server
+     * @throws Exception if request fails
      */
-    public void logout() {
-        apiClient.clearAuthToken();
+    public ForgotPasswordResponse forgotPassword(String email) throws Exception {
+        System.out.println("Requesting password reset for email: " + email);
+        
+        // Create request
+        ForgotPasswordRequest request = new ForgotPasswordRequest(email);
+        
+        // Send to server
+        ForgotPasswordResponse response = apiClient.post(
+                ApiConfig.FORGOT_PASSWORD_ENDPOINT,
+                request,
+                ForgotPasswordResponse.class
+        );
+        
+        System.out.println("Forgot password response: " + response);
+        
+        return response;
+    }
+    
+    /**
+     * Logout user
+     * Sends logout request to server to update status to offline
+     * 
+     * @throws Exception if logout request fails
+     */
+    public void logout() throws Exception {
+        try {
+            System.out.println("Logging out user...");
+            
+            // Send logout request to server to update status to offline
+            // The server will use the auth token to identify the user
+            apiClient.post(
+                    ApiConfig.LOGOUT_ENDPOINT,
+                    new Object(), // Empty body, server uses token to identify user
+                    AuthResponse.class
+            );
+            
+            System.out.println("Logout successful - status updated to offline");
+        } catch (Exception e) {
+            System.err.println("Error during logout: " + e.getMessage());
+            // Continue with local logout even if server request fails
+        } finally {
+            // Always clear local token
+            apiClient.clearAuthToken();
+        }
     }
     
     /**

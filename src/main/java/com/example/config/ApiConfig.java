@@ -17,14 +17,15 @@ public class ApiConfig {
     public static final String LOGIN_ENDPOINT = AUTH_BASE + "/login";
     public static final String REGISTER_ENDPOINT = AUTH_BASE + "/register";
     public static final String LOGOUT_ENDPOINT = AUTH_BASE + "/logout";
+    public static final String FORGOT_PASSWORD_ENDPOINT = AUTH_BASE + "/forgot-password";
     
     // User Endpoints
     public static final String USER_BASE = API_VERSION + "/users";
     public static final String USER_PROFILE_ENDPOINT = USER_BASE + "/profile";
     
     // Timeout settings (milliseconds)
-    public static final int CONNECTION_TIMEOUT = 10000; // 10 seconds
-    public static final int READ_TIMEOUT = 10000; // 10 seconds
+    public static final int CONNECTION_TIMEOUT = 30000; // 30 seconds (increased for email sending)
+    public static final int READ_TIMEOUT = 30000; // 30 seconds (increased for email sending)
     
     // Headers
     public static final String CONTENT_TYPE_JSON = "application/json";

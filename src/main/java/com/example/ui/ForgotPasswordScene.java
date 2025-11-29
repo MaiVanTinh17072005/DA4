@@ -1,5 +1,7 @@
 package com.example.ui;
 
+import com.example.api.dto.ForgotPasswordResponse;
+import com.example.service.AuthService;
 import com.example.util.SceneManager;
 import com.example.util.ValidationUtil;
 import com.example.util.ValidationUtil.ValidationResult;
@@ -96,44 +98,56 @@ public class ForgotPasswordScene {
     }
 
     /**
-     * Perform password reset request
-     * TODO: Replace mock with actual BackendApi call
+     * Perform password reset request using AuthService
      */
     private void performPasswordResetRequest(String email) {
-        // Mock API call delay
-        simulateNetworkDelay(1500);
-
-        // Mock success (replace with real API)
-        boolean success = !email.equals("fail@test.com");
-
-        Platform.runLater(() -> {
-            setLoading(false);
-            if (success) {
-                navigateToOTPVerification(email);
-            } else {
-                showError("Không tìm thấy email. Vui lòng kiểm tra và thử lại.");
-            }
-        });
-
-        // TODO: Actual implementation
-        /*
         try {
-            PasswordResetResponse response = backendApi.requestPasswordReset(email);
+            System.out.println("[ForgotPassword] Sending request for email: " + email);
+            
+            // Call the API through AuthService
+            AuthService authService = AuthService.getInstance();
+            ForgotPasswordResponse response = authService.forgotPassword(email);
+            
+            System.out.println("[ForgotPassword] Response received: " + response);
+            
+            // Handle response on UI thread
             Platform.runLater(() -> {
                 setLoading(false);
                 if (response.isSuccess()) {
+                    // Success - navigate to OTP verification
+                    System.out.println("[ForgotPassword] Success! Navigating to OTP verification");
                     navigateToOTPVerification(email);
                 } else {
-                    showError(response.getErrorMessage());
+                    // Server returned error message
+                    System.out.println("[ForgotPassword] Error from server: " + response.getMessage());
+                    showError(response.getMessage() != null ? response.getMessage() : "Không tìm thấy email. Vui lòng kiểm tra và thử lại.");
                 }
             });
-        } catch (Exception e) {
+        } catch (java.net.SocketTimeoutException e) {
+            // Specific handling for timeout
+            System.err.println("[ForgotPassword] Timeout error: " + e.getMessage());
+            e.printStackTrace();
             Platform.runLater(() -> {
                 setLoading(false);
-                showError("Connection error: " + e.getMessage());
+                showError("Yêu cầu mất quá nhiều thời gian. Vui lòng kiểm tra:\n1. Server đã chạy chưa?\n2. Kết nối mạng ổn định không?");
+            });
+        } catch (java.net.ConnectException e) {
+            // Server not running
+            System.err.println("[ForgotPassword] Connection error: " + e.getMessage());
+            e.printStackTrace();
+            Platform.runLater(() -> {
+                setLoading(false);
+                showError("Không thể kết nối đến server.\nVui lòng kiểm tra server đã chạy chưa.");
+            });
+        } catch (Exception e) {
+            // Network or other error
+            System.err.println("[ForgotPassword] General error: " + e.getMessage());
+            e.printStackTrace();
+            Platform.runLater(() -> {
+                setLoading(false);
+                showError("Lỗi kết nối: " + e.getMessage());
             });
         }
-        */
     }
 
     /**
@@ -190,18 +204,4 @@ public class ForgotPasswordScene {
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
     }
-
-    // ===== Utility Methods =====
-
-    /**
-     * Simulate network delay (for testing)
-     */
-    private void simulateNetworkDelay(int milliseconds) {
-        try {
-            Thread.sleep(milliseconds);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
 }
-

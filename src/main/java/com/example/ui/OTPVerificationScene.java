@@ -4,7 +4,7 @@ import com.example.util.SceneManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import javafx.scene.text.Text;
 
 import java.util.concurrent.CompletableFuture;
@@ -30,7 +30,7 @@ public class OTPVerificationScene {
     @FXML private ProgressIndicator loadingIndicator;
     @FXML private Text titleText;
     @FXML private Text descriptionText;
-    @FXML private VBox otpContainer;
+    @FXML private HBox otpContainer;
 
     // ===== State =====
     private String email;
