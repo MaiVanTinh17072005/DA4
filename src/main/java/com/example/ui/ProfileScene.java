@@ -1,11 +1,15 @@
 package com.example.ui;
 
+import com.example.api.dto.UserDTO;
+import com.example.util.SessionManager;
 import com.example.util.ValidationUtil;
 import javafx.animation.PauseTransition;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -14,9 +18,13 @@ import javafx.util.Duration;
 import java.io.File;
 
 /**
- * Profile Controller with Validation
+ * Profile Controller with Real-Time Validation
  * Manages user profile: avatar, email, username, password
  * Uses ValidationUtil for comprehensive input validation
+ * Loads user data from SessionManager (Redis cache)
+ * Validates email and username in real-time as user types
+ * Loads default avatar image from resources
+ * Save button is always visible
  */
 public class ProfileScene {
 
@@ -46,13 +54,18 @@ public class ProfileScene {
     private Button saveButton;
     
     private PauseTransition hideNotificationTimer;
+    private PauseTransition validationDelayTimer;
     
     // Track if data has been modified
     private boolean isModified = false;
     private String originalEmail;
     private String originalUsername;
+    
+    // Track validation state
+    private boolean isEmailValid = true;
+    private boolean isUsernameValid = true;
 
-    // ===== User Data =====
+    // ===== User Data (Fallback) =====
     private static class UserData {
         static String email = "minhanh@gmail.com";
         static String username = "Minh Anh";
@@ -60,22 +73,79 @@ public class ProfileScene {
 
     @FXML
     public void initialize() {
-        // Initialize fields with current user data
-        if (emailField != null) {
-            emailField.setText(UserData.email);
-            originalEmail = UserData.email;
+        System.out.println("[ProfileScene] Initializing profile page...");
+        
+        // Load user data from SessionManager (data from Redis cache via login)
+        UserDTO currentUser = SessionManager.getCurrentUser();
+        
+        if (currentUser != null) {
+            System.out.println("[ProfileScene] Loading user data from session:");
+            System.out.println("  - User ID: " + currentUser.getId());
+            System.out.println("  - Email: " + currentUser.getEmail());
+            System.out.println("  - Username: " + currentUser.getUsername());
+            System.out.println("  - Status: " + currentUser.getStatus());
+            
+            // Initialize fields with current user data from session
+            if (emailField != null) {
+                emailField.setText(currentUser.getEmail());
+                originalEmail = currentUser.getEmail();
+            }
+            if (usernameField != null) {
+                usernameField.setText(currentUser.getUsername());
+                originalUsername = currentUser.getUsername();
+            }
+            if (usernameLabel != null) {
+                usernameLabel.setText(currentUser.getUsername());
+            }
+        } else {
+            System.out.println("[ProfileScene] ⚠ No user session found, using default values");
+            // Fallback to default values if no session exists
+            if (emailField != null) {
+                emailField.setText(UserData.email);
+                originalEmail = UserData.email;
+            }
+            if (usernameField != null) {
+                usernameField.setText(UserData.username);
+                originalUsername = UserData.username;
+            }
+            if (usernameLabel != null) {
+                usernameLabel.setText(UserData.username);
+            }
         }
-        if (usernameField != null) {
-            usernameField.setText(UserData.username);
-            originalUsername = UserData.username;
-        }
-        if (usernameLabel != null) {
-            usernameLabel.setText(UserData.username);
-        }
+        
+        // Load default avatar image
+        loadDefaultAvatar();
         
         // Initialize auto-hide timer for notifications
         hideNotificationTimer = new PauseTransition(Duration.seconds(5));
         hideNotificationTimer.setOnFinished(e -> hideNotification());
+        
+        // Initialize validation delay timer (wait 500ms after user stops typing)
+        validationDelayTimer = new PauseTransition(Duration.millis(500));
+        
+        System.out.println("[ProfileScene] Profile page initialized successfully");
+    }
+    
+    /**
+     * Load default avatar image
+     */
+    private void loadDefaultAvatar() {
+        try {
+            // Load default avatar image from resources
+            String imagePath = "/com/example/images/macdinh.jpg";
+            Image defaultAvatar = new Image(getClass().getResourceAsStream(imagePath));
+            
+            if (defaultAvatar != null && !defaultAvatar.isError()) {
+                // Set image as fill pattern for the circle
+                avatarCircle.setFill(new ImagePattern(defaultAvatar));
+                System.out.println("[ProfileScene] ✓ Default avatar loaded successfully");
+            } else {
+                System.out.println("[ProfileScene] ⚠ Failed to load default avatar image");
+            }
+        } catch (Exception e) {
+            System.out.println("[ProfileScene] ❌ Error loading default avatar: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     // ===== Event Handlers =====
@@ -91,7 +161,14 @@ public class ProfileScene {
         File file = fileChooser.showOpenDialog(stage);
 
         if (file != null) {
-            showAlert("Thành Công", "Ảnh đại diện sẽ được cập nhật: " + file.getName(), Alert.AlertType.INFORMATION);
+            try {
+                // Load selected image
+                Image newAvatar = new Image(file.toURI().toString());
+                avatarCircle.setFill(new ImagePattern(newAvatar));
+                showAlert("Thành Công", "Ảnh đại diện đã được cập nhật: " + file.getName(), Alert.AlertType.INFORMATION);
+            } catch (Exception e) {
+                showAlert("Lỗi", "Không thể tải ảnh: " + e.getMessage(), Alert.AlertType.ERROR);
+            }
         }
     }
 
@@ -101,12 +178,14 @@ public class ProfileScene {
         emailField.requestFocus();
         emailField.selectAll();
         
-        // Show save button when editing
-        showSaveButton();
-        
-        // Track changes
+        // Track changes and validate in real-time
         emailField.textProperty().addListener((obs, oldVal, newVal) -> {
             checkIfModified();
+            
+            // Delay validation to avoid validating on every keystroke
+            validationDelayTimer.stop();
+            validationDelayTimer.setOnFinished(e -> validateEmailField(newVal));
+            validationDelayTimer.playFromStart();
         });
     }
 
@@ -116,13 +195,81 @@ public class ProfileScene {
         usernameField.requestFocus();
         usernameField.selectAll();
         
-        // Show save button when editing
-        showSaveButton();
-        
-        // Track changes
+        // Track changes and validate in real-time
         usernameField.textProperty().addListener((obs, oldVal, newVal) -> {
             checkIfModified();
+            
+            // Delay validation to avoid validating on every keystroke
+            validationDelayTimer.stop();
+            validationDelayTimer.setOnFinished(e -> validateUsernameField(newVal));
+            validationDelayTimer.playFromStart();
         });
+    }
+    
+    /**
+     * Validate email field in real-time
+     */
+    private void validateEmailField(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            // Clear styling if empty
+            emailField.setStyle("");
+            isEmailValid = false;
+            return;
+        }
+        
+        ValidationUtil.ValidationResult result = ValidationUtil.validateEmail(email.trim());
+        if (!result.isValid()) {
+            // Show validation error with red border
+            emailField.setStyle("-fx-border-color: #f04747; -fx-border-width: 2px;");
+            showNotification("⚠", "Email: " + result.getErrorMessage(), false);
+            isEmailValid = false;
+        } else {
+            // Clear error styling with green border
+            emailField.setStyle("-fx-border-color: #43b581; -fx-border-width: 2px;");
+            hideNotification();
+            isEmailValid = true;
+        }
+        
+        // Update save button state
+        updateSaveButtonState();
+    }
+    
+    /**
+     * Validate username field in real-time
+     */
+    private void validateUsernameField(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            // Clear styling if empty
+            usernameField.setStyle("");
+            isUsernameValid = false;
+            return;
+        }
+        
+        ValidationUtil.ValidationResult result = ValidationUtil.validateUsername(username);
+        if (!result.isValid()) {
+            // Show validation error with red border
+            usernameField.setStyle("-fx-border-color: #f04747; -fx-border-width: 2px;");
+            showNotification("⚠", "Username: " + result.getErrorMessage(), false);
+            isUsernameValid = false;
+        } else {
+            // Clear error styling with green border
+            usernameField.setStyle("-fx-border-color: #43b581; -fx-border-width: 2px;");
+            hideNotification();
+            isUsernameValid = true;
+        }
+        
+        // Update save button state
+        updateSaveButtonState();
+    }
+    
+    /**
+     * Update save button enabled/disabled state based on validation
+     */
+    private void updateSaveButtonState() {
+        if (saveButton != null) {
+            // Enable save button only if both fields are valid and modified
+            saveButton.setDisable(!isEmailValid || !isUsernameValid || !isModified);
+        }
     }
     
     @FXML
@@ -130,7 +277,7 @@ public class ProfileScene {
         String newEmail = emailField.getText().trim();
         String newUsername = usernameField.getText();
         
-        // Validate email
+        // Final validation before saving
         ValidationUtil.ValidationResult emailResult = ValidationUtil.validateEmail(newEmail);
         if (!emailResult.isValid()) {
             showNotification("⚠", "Email: " + emailResult.getErrorMessage(), false);
@@ -138,7 +285,6 @@ public class ProfileScene {
             return;
         }
         
-        // Validate username
         ValidationUtil.ValidationResult usernameResult = ValidationUtil.validateUsername(newUsername);
         if (!usernameResult.isValid()) {
             showNotification("⚠", "Username: " + usernameResult.getErrorMessage(), false);
@@ -151,16 +297,16 @@ public class ProfileScene {
         UserData.username = newUsername;
         usernameLabel.setText(newUsername);
         
-        // Disable editing
+        // Disable editing and clear styling
         emailField.setEditable(false);
+        emailField.setStyle("");
         usernameField.setEditable(false);
+        usernameField.setStyle("");
         
         // Update original values
         originalEmail = newEmail;
         originalUsername = newUsername;
         
-        // Hide save button
-        hideSaveButton();
         isModified = false;
         
         // Show success notification
@@ -326,26 +472,6 @@ public class ProfileScene {
     }
     
     /**
-     * Show save button
-     */
-    private void showSaveButton() {
-        if (saveButton != null) {
-            saveButton.setVisible(true);
-            saveButton.setManaged(true);
-        }
-    }
-    
-    /**
-     * Hide save button
-     */
-    private void hideSaveButton() {
-        if (saveButton != null) {
-            saveButton.setVisible(false);
-            saveButton.setManaged(false);
-        }
-    }
-    
-    /**
      * Check if data has been modified
      */
     private void checkIfModified() {
@@ -354,9 +480,7 @@ public class ProfileScene {
         
         isModified = !currentEmail.equals(originalEmail) || !currentUsername.equals(originalUsername);
         
-        // Show/hide save button based on modification status
-        if (isModified) {
-            showSaveButton();
-        }
+        // Update save button state
+        updateSaveButtonState();
     }
 }

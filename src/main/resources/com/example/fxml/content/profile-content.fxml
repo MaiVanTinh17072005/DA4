@@ -14,8 +14,6 @@
 
     <VBox alignment="TOP_CENTER" spacing="0" styleClass="profile-container">
 
-
-
         <!-- Main Content -->
         <VBox alignment="TOP_CENTER" spacing="30" styleClass="profile-content">
             <padding><Insets top="60" right="40" bottom="0" left="40"/></padding>
@@ -97,6 +95,12 @@
                             maxWidth="Infinity"/>
                 </VBox>
 
+                <!-- Save Button (Always visible) -->
+                <Button fx:id="saveButton"
+                        text="💾 Lưu Thay Đổi"
+                        styleClass="save-btn"
+                        onAction="#handleSaveChanges"
+                        maxWidth="Infinity"/>
 
             </VBox>
         </VBox>
