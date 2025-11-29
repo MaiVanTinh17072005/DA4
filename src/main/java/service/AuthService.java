@@ -6,6 +6,8 @@ import dto.ForgotPasswordResponse;
 import dto.LoginRequest;
 import dto.RegisterRequest;
 import dto.UserDTO;
+import dto.VerifyOtpRequest;
+import dto.VerifyOtpResponse;
 import model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -314,6 +316,60 @@ public class AuthService {
             e.printStackTrace();
             System.out.println("[AuthService] ===== FORGOT PASSWORD PROCESS END (FAILED) =====");
             return ForgotPasswordResponse.error("Không thể gửi email. Vui lòng thử lại sau.");
+        }
+    }
+    
+    /**
+     * Verify OTP code
+     * 
+     * @param request VerifyOtpRequest with email and OTP
+     * @return VerifyOtpResponse with success status and message
+     */
+    public VerifyOtpResponse verifyOtp(VerifyOtpRequest request) {
+        System.out.println("[AuthService] ===== VERIFY OTP PROCESS START =====");
+        try {
+            // Validate input
+            System.out.println("[AuthService] Step 1: Validating input...");
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                System.out.println("[AuthService] ❌ Validation failed: Email is empty");
+                return VerifyOtpResponse.error("Email is required");
+            }
+            if (request.getOtp() == null || request.getOtp().trim().isEmpty()) {
+                System.out.println("[AuthService] ❌ Validation failed: OTP is empty");
+                return VerifyOtpResponse.error("OTP is required");
+            }
+            System.out.println("[AuthService] ✓ Input validation passed");
+            
+            // Validate OTP
+            System.out.println("[AuthService] Step 2: Validating OTP...");
+            System.out.println("[AuthService] Email: " + request.getEmail());
+            System.out.println("[AuthService] OTP: " + request.getOtp());
+            
+            boolean isValid = otpService.validateOtp(request.getEmail(), request.getOtp());
+            
+            if (!isValid) {
+                System.out.println("[AuthService] ❌ OTP validation failed");
+                return VerifyOtpResponse.error("Mã OTP không hợp lệ hoặc đã hết hạn");
+            }
+            
+            System.out.println("[AuthService] ✓ OTP validated successfully");
+            
+            // Remove OTP after successful validation
+            System.out.println("[AuthService] Step 3: Removing OTP...");
+            otpService.removeOtp(request.getEmail());
+            System.out.println("[AuthService] ✓ OTP removed");
+            
+            // Return success response
+            System.out.println("[AuthService] ✅ Verify OTP process successful for email: " + request.getEmail());
+            System.out.println("[AuthService] ===== VERIFY OTP PROCESS END =====");
+            return VerifyOtpResponse.success("OTP xác minh thành công");
+            
+        } catch (Exception e) {
+            System.out.println("[AuthService] ❌❌❌ EXCEPTION OCCURRED ❌❌❌");
+            System.out.println("[AuthService] Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("[AuthService] ===== VERIFY OTP PROCESS END (FAILED) =====");
+            return VerifyOtpResponse.error("Lỗi xác minh OTP. Vui lòng thử lại.");
         }
     }
     

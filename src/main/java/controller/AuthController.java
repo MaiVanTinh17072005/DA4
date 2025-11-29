@@ -5,6 +5,8 @@ import dto.ForgotPasswordRequest;
 import dto.ForgotPasswordResponse;
 import dto.LoginRequest;
 import dto.RegisterRequest;
+import dto.VerifyOtpRequest;
+import dto.VerifyOtpResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -124,6 +126,31 @@ public class AuthController {
         
         System.out.println("Response: " + response);
         System.out.println("===============================");
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+    
+    /**
+     * Verify OTP code
+     * POST /api/v1/auth/verify-otp
+     * 
+     * @param request VerifyOtpRequest with email and OTP
+     * @return VerifyOtpResponse with success status and message
+     */
+    @PostMapping("/verify-otp")
+    public ResponseEntity<VerifyOtpResponse> verifyOtp(@RequestBody VerifyOtpRequest request) {
+        System.out.println("=== VERIFY OTP REQUEST ===");
+        System.out.println("Email: " + request.getEmail());
+        System.out.println("OTP: " + request.getOtp());
+        
+        VerifyOtpResponse response = authService.verifyOtp(request);
+        
+        System.out.println("Response: " + response);
+        System.out.println("==========================");
         
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
