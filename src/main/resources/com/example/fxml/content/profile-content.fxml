@@ -97,11 +97,7 @@
                             maxWidth="Infinity"/>
                 </VBox>
 
-                <!-- Logout -->
-                <Button text="Logout"
-                        styleClass="logout-btn"
-                        onAction="#handleLogout"
-                        maxWidth="Infinity"/>
+
             </VBox>
         </VBox>
     </VBox>
