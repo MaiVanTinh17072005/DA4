@@ -5,6 +5,8 @@ import dto.ForgotPasswordRequest;
 import dto.ForgotPasswordResponse;
 import dto.LoginRequest;
 import dto.RegisterRequest;
+import dto.ResetPasswordRequest;
+import dto.ResetPasswordResponse;
 import dto.UserDTO;
 import dto.VerifyOtpRequest;
 import dto.VerifyOtpResponse;
@@ -370,6 +372,67 @@ public class AuthService {
             e.printStackTrace();
             System.out.println("[AuthService] ===== VERIFY OTP PROCESS END (FAILED) =====");
             return VerifyOtpResponse.error("Lỗi xác minh OTP. Vui lòng thử lại.");
+        }
+    }
+    
+    /**
+     * Reset password - Update user's password
+     * 
+     * @param request ResetPasswordRequest with email and new password
+     * @return ResetPasswordResponse with success status and message
+     */
+    public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
+        System.out.println("[AuthService] ===== RESET PASSWORD PROCESS START =====");
+        try {
+            // Validate input
+            System.out.println("[AuthService] Step 1: Validating input...");
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                System.out.println("[AuthService] ❌ Validation failed: Email is empty");
+                return ResetPasswordResponse.error("Email is required");
+            }
+            if (request.getNewPassword() == null || request.getNewPassword().trim().isEmpty()) {
+                System.out.println("[AuthService] ❌ Validation failed: Password is empty");
+                return ResetPasswordResponse.error("Password is required");
+            }
+            System.out.println("[AuthService] ✓ Input validation passed");
+            
+            // Find user by email
+            System.out.println("[AuthService] Step 2: Finding user...");
+            Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+            
+            if (userOptional.isEmpty()) {
+                System.out.println("[AuthService] ❌ User not found: " + request.getEmail());
+                return ResetPasswordResponse.error("Email không tồn tại trong hệ thống");
+            }
+            System.out.println("[AuthService] ✓ User found");
+            
+            User user = userOptional.get();
+            System.out.println("[AuthService] User: " + user.getUsername() + " (ID: " + user.getId() + ")");
+            
+            // Hash the new password with BCrypt
+            // Note: Password from client is already SHA-256 hashed
+            // We hash it again with BCrypt for database storage
+            System.out.println("[AuthService] Step 3: Hashing new password...");
+            String hashedPassword = PasswordUtil.hashPassword(request.getNewPassword());
+            System.out.println("[AuthService] ✓ Password hashed with BCrypt");
+            
+            // Update user's password
+            System.out.println("[AuthService] Step 4: Updating password in database...");
+            user.setPassword(hashedPassword);
+            userRepository.save(user);
+            System.out.println("[AuthService] ✓ Password updated successfully");
+            
+            // Return success response
+            System.out.println("[AuthService] ✅ Reset password process successful for email: " + request.getEmail());
+            System.out.println("[AuthService] ===== RESET PASSWORD PROCESS END =====");
+            return ResetPasswordResponse.success("Mật khẩu đã được đổi thành công");
+            
+        } catch (Exception e) {
+            System.out.println("[AuthService] ❌❌❌ EXCEPTION OCCURRED ❌❌❌");
+            System.out.println("[AuthService] Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("[AuthService] ===== RESET PASSWORD PROCESS END (FAILED) =====");
+            return ResetPasswordResponse.error("Lỗi khi đổi mật khẩu. Vui lòng thử lại.");
         }
     }
     

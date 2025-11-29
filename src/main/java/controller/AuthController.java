@@ -5,6 +5,8 @@ import dto.ForgotPasswordRequest;
 import dto.ForgotPasswordResponse;
 import dto.LoginRequest;
 import dto.RegisterRequest;
+import dto.ResetPasswordRequest;
+import dto.ResetPasswordResponse;
 import dto.VerifyOtpRequest;
 import dto.VerifyOtpResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,6 +153,31 @@ public class AuthController {
         
         System.out.println("Response: " + response);
         System.out.println("==========================");
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+    
+    /**
+     * Reset password
+     * POST /api/v1/auth/reset-password
+     * 
+     * @param request ResetPasswordRequest with email and new password
+     * @return ResetPasswordResponse with success status and message
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<ResetPasswordResponse> resetPassword(@RequestBody ResetPasswordRequest request) {
+        System.out.println("=== RESET PASSWORD REQUEST ===");
+        System.out.println("Email: " + request.getEmail());
+        System.out.println("New Password: [PROTECTED]");
+        
+        ResetPasswordResponse response = authService.resetPassword(request);
+        
+        System.out.println("Response: " + response);
+        System.out.println("==============================");
         
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
