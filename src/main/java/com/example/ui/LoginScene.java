@@ -1,26 +1,19 @@
 package com.example.ui;
 
+import com.example.api.dto.AuthResponse;
+import com.example.service.AuthService;
 import com.example.util.SceneManager;
+import com.example.util.SessionManager;
 import com.example.util.ValidationUtil;
-import com.example.util.ValidationUtil.ValidationResult;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
-import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Controller for Login/Register Scene
- * Handles user authentication and navigation to main application
- */
 public class LoginScene {
 
     // ===== FXML Components =====
@@ -232,13 +225,13 @@ public class LoginScene {
     private boolean validateInput(String email, String username, String password) {
         if (isLoginMode) {
             // Login mode: email and password required (email only, no username)
-            ValidationResult emailResult = ValidationUtil.validateEmail(email);
+            ValidationUtil.ValidationResult emailResult = ValidationUtil.validateEmail(email);
             if (!emailResult.isValid()) {
                 showError(emailResult.getErrorMessage());
                 return false;
             }
             
-            ValidationResult passwordResult = ValidationUtil.validatePasswordForLogin(password);
+            ValidationUtil.ValidationResult passwordResult = ValidationUtil.validatePasswordForLogin(password);
             if (!passwordResult.isValid()) {
                 showError(passwordResult.getErrorMessage());
                 return false;
@@ -246,21 +239,21 @@ public class LoginScene {
         } else {
             // Register mode: email, username, password, and confirm password required
             // Email validation
-            ValidationResult emailResult = ValidationUtil.validateEmail(email);
+            ValidationUtil.ValidationResult emailResult = ValidationUtil.validateEmail(email);
             if (!emailResult.isValid()) {
                 showError(emailResult.getErrorMessage());
                 return false;
             }
             
             // Username validation
-            ValidationResult usernameResult = ValidationUtil.validateUsername(username);
+            ValidationUtil.ValidationResult usernameResult = ValidationUtil.validateUsername(username);
             if (!usernameResult.isValid()) {
                 showError(usernameResult.getErrorMessage());
                 return false;
             }
             
             // Password validation
-            ValidationResult passwordResult = ValidationUtil.validatePassword(password);
+            ValidationUtil.ValidationResult passwordResult = ValidationUtil.validatePassword(password);
             if (!passwordResult.isValid()) {
                 showError(passwordResult.getErrorMessage());
                 return false;
@@ -271,7 +264,7 @@ public class LoginScene {
                 ? confirmPasswordTextField.getText()
                 : confirmPasswordField.getText();
             
-            ValidationResult passwordMatchResult = ValidationUtil.validatePasswordMatch(password, confirmPass);
+            ValidationUtil.ValidationResult passwordMatchResult = ValidationUtil.validatePasswordMatch(password, confirmPass);
             if (!passwordMatchResult.isValid()) {
                 showError(passwordMatchResult.getErrorMessage());
                 return false;
@@ -283,88 +276,67 @@ public class LoginScene {
 
     /**
      * Perform login authentication
-     * TODO: Replace mock with actual BackendApi call
+     * Sends login request to server via AuthService
      */
     private void performLogin(String email, String password) {
-        // Mock API call delay
-        simulateNetworkDelay(1500);
-
-        // Mock authentication (replace with real API)
-        boolean success = !email.equals("fail@test.com");
-
-        Platform.runLater(() -> {
-            setLoading(false);
-            //test chức năng login vào trang chủ
-            navigateToMainScene();
-//            if (success) {
-//                navigateToMainScene();
-//            } else {
-//                showError("Invalid credentials. Please try again.");
-//            }
-        });
-
-        // TODO: Actual implementation
-        /*
         try {
-            AuthResponse response = backendApi.login(email, password);
+            // Call AuthService to login (password will be hashed automatically)
+            AuthResponse response = AuthService.getInstance().login(email, password);
+            
             Platform.runLater(() -> {
                 setLoading(false);
                 if (response.isSuccess()) {
                     // Save session
                     SessionManager.setCurrentUser(response.getUser());
+                    SessionManager.setAuthToken(response.getToken());
+                    
+                    // Show success message
+                    System.out.println("Login successful! User: " + response.getUser().getUsername());
+                    
+                    // Navigate to main scene
                     navigateToMainScene();
                 } else {
-                    showError(response.getErrorMessage());
+                    showError(response.getMessage() != null ? response.getMessage() : "Đăng nhập thất bại");
                 }
             });
         } catch (Exception e) {
+            e.printStackTrace();
             Platform.runLater(() -> {
                 setLoading(false);
-                showError("Connection error: " + e.getMessage());
+                showError("Lỗi kết nối: " + e.getMessage());
             });
         }
-        */
     }
 
     /**
      * Perform user registration
-     * TODO: Replace mock with actual BackendApi call
+     * Sends registration request to server via AuthService
      */
     private void performRegister(String email, String username, String password) {
-        simulateNetworkDelay(1500);
-
-        boolean success = true; // Mock success
-
-        Platform.runLater(() -> {
-            setLoading(false);
-            if (success) {
-                showSuccess("Tài khoản đã được tạo thành công! Vui lòng đăng nhập.");
-                switchToLoginMode();
-            } else {
-                showError("Đăng ký thất bại. Email hoặc tên người dùng có thể đã tồn tại.");
-            }
-        });
-
-        // TODO: Actual implementation
-        /*
         try {
-            AuthResponse response = backendApi.register(email, username, password);
+            // Call AuthService to register (password will be hashed automatically)
+            AuthResponse response = AuthService.getInstance().register(email, username, password);
+            
             Platform.runLater(() -> {
                 setLoading(false);
                 if (response.isSuccess()) {
-                    showSuccess("Account created! Please log in.");
+                    // Show success message
+                    showSuccess("Tài khoản đã được tạo thành công! Vui lòng đăng nhập.");
+                    System.out.println("Registration successful! User: " + response.getUser().getUsername());
+                    
+                    // Switch to login mode
                     switchToLoginMode();
                 } else {
-                    showError(response.getErrorMessage());
+                    showError(response.getMessage() != null ? response.getMessage() : "Đăng ký thất bại");
                 }
             });
         } catch (Exception e) {
+            e.printStackTrace();
             Platform.runLater(() -> {
                 setLoading(false);
-                showError("Registration error: " + e.getMessage());
+                showError("Lỗi đăng ký: " + e.getMessage());
             });
         }
-        */
     }
 
     /**
