@@ -196,4 +196,61 @@ public class AuthController {
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Auth service is running");
     }
+    
+    /**
+     * Update user profile (email, username, avatar URL)
+     * PUT /api/v1/auth/update-profile
+     * 
+     * @param authHeader Authorization header containing JWT token
+     * @param request UpdateProfileRequest with email, username, avatarUrl
+     * @return UpdateProfileResponse with success status and updated user data
+     */
+    @PutMapping("/update-profile")
+    public ResponseEntity<dto.UpdateProfileResponse> updateProfile(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody dto.UpdateProfileRequest request) {
+        System.out.println("=== UPDATE PROFILE REQUEST ===");
+        System.out.println("Email: " + request.getEmail());
+        System.out.println("Username: " + request.getUsername());
+        System.out.println("Avatar URL: " + request.getAvatarUrl());
+        System.out.println("Authorization Header: " + (authHeader != null ? "Present" : "Missing"));
+        
+        // Validate Authorization header
+        if (authHeader == null || authHeader.trim().isEmpty()) {
+            System.out.println("❌ Missing Authorization header");
+            dto.UpdateProfileResponse errorResponse = new dto.UpdateProfileResponse(false, "Authorization header is required", null);
+            System.out.println("==============================");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+        
+        // Remove "Bearer " prefix if present
+        String token = authHeader;
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        
+        // Validate token
+        if (!util.JwtUtil.validateToken(token)) {
+            System.out.println("❌ Invalid token");
+            dto.UpdateProfileResponse errorResponse = new dto.UpdateProfileResponse(false, "Invalid or expired token", null);
+            System.out.println("==============================");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+        
+        // Extract user ID from token
+        Long userId = util.JwtUtil.extractUserId(token);
+        System.out.println("✓ User ID extracted from token: " + userId);
+        
+        // Call service to update profile
+        dto.UpdateProfileResponse response = authService.updateProfile(userId, request);
+        
+        System.out.println("Response: " + response);
+        System.out.println("==============================");
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
 }

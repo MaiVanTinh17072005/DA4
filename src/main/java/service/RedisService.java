@@ -20,8 +20,8 @@ public class RedisService {
     private final JedisPool jedisPool;
     private final ObjectMapper objectMapper;
     
-    // TTL for user cache: 10 days in seconds
-    private static final int USER_CACHE_TTL = 10 * 24 * 60 * 60; // 864000 seconds
+    // TTL for user cache: 5 days in seconds
+    private static final int USER_CACHE_TTL = 5 * 24 * 60 * 60; // 432000 seconds
     
     // Redis key prefix for user cache
     private static final String USER_CACHE_PREFIX = "user:";
@@ -77,7 +77,7 @@ public class RedisService {
             System.out.println("  - Username: " + user.getUsername());
             System.out.println("  - Email: " + user.getEmail());
             System.out.println("  - Redis Key: " + key);
-            System.out.println("  - TTL: " + USER_CACHE_TTL + " seconds (10 days)");
+            System.out.println("  - TTL: " + USER_CACHE_TTL + " seconds (5 days)");
             
         } catch (JsonProcessingException e) {
             System.out.println("[RedisService] ❌ Failed to serialize user to JSON: " + e.getMessage());

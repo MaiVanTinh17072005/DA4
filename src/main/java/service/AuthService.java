@@ -460,4 +460,85 @@ public class AuthService {
         dto.setCreatedAt(user.getCreatedAt().format(DATE_FORMATTER));
         return dto;
     }
+    
+    /**
+     * Update user profile
+     * 
+     * @param userId ID of user to update
+     * @param request UpdateProfileRequest with new email, username, avatarUrl
+     * @return UpdateProfileResponse with success status and updated user data
+     */
+    public dto.UpdateProfileResponse updateProfile(Long userId, dto.UpdateProfileRequest request) {
+        System.out.println("[AuthService] Updating profile for user ID: " + userId);
+        
+        try {
+            // Find user by ID
+            Optional<User> userOptional = userRepository.findById(userId);
+            if (!userOptional.isPresent()) {
+                System.out.println("[AuthService] ❌ User not found: " + userId);
+                return new dto.UpdateProfileResponse(false, "Người dùng không tồn tại", null);
+            }
+            
+            User user = userOptional.get();
+            System.out.println("[AuthService] Found user: " + user.getEmail());
+            
+            // Validate email if changed
+            if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+                // Check if email is already taken by another user
+                Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+                if (existingUser.isPresent() && !existingUser.get().getId().equals(userId)) {
+                    System.out.println("[AuthService] ❌ Email already exists: " + request.getEmail());
+                    return new dto.UpdateProfileResponse(false, "Email đã được sử dụng bởi người dùng khác", null);
+                }
+                
+                // Update email
+                user.setEmail(request.getEmail());
+                System.out.println("[AuthService] Updated email to: " + request.getEmail());
+            }
+            
+            // Validate username if changed
+            if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
+                // Check if username is already taken by another user
+                Optional<User> existingUser = userRepository.findByUsername(request.getUsername());
+                if (existingUser.isPresent() && !existingUser.get().getId().equals(userId)) {
+                    System.out.println("[AuthService] ❌ Username already exists: " + request.getUsername());
+                    return new dto.UpdateProfileResponse(false, "Username đã được sử dụng bởi người dùng khác", null);
+                }
+                
+                // Update username
+                user.setUsername(request.getUsername());
+                System.out.println("[AuthService] Updated username to: " + request.getUsername());
+            }
+            
+            // Update avatar URL if provided
+            if (request.getAvatarUrl() != null && !request.getAvatarUrl().isEmpty()) {
+                user.setAvatarUrl(request.getAvatarUrl());
+                System.out.println("[AuthService] Updated avatar URL to: " + request.getAvatarUrl());
+            }
+            
+            // Save to database
+            User updatedUser = userRepository.save(user);
+            System.out.println("[AuthService] ✓ User saved to database");
+            
+            // Update Redis cache
+            try {
+                redisService.cacheUser(updatedUser);
+                System.out.println("[AuthService] ✓ User cached in Redis with 5-day TTL");
+            } catch (Exception e) {
+                System.out.println("[AuthService] ⚠ Failed to cache user in Redis: " + e.getMessage());
+                // Continue even if Redis caching fails
+            }
+            
+            // Convert to DTO
+            UserDTO userDTO = convertToDTO(updatedUser);
+            
+            System.out.println("[AuthService] ✓ Profile updated successfully");
+            return new dto.UpdateProfileResponse(true, "Cập nhật thông tin thành công", userDTO);
+            
+        } catch (Exception e) {
+            System.out.println("[AuthService] ❌ Error updating profile: " + e.getMessage());
+            e.printStackTrace();
+            return new dto.UpdateProfileResponse(false, "Lỗi hệ thống: " + e.getMessage(), null);
+        }
+    }
 }
