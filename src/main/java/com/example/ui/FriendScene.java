@@ -1,13 +1,17 @@
 package com.example.ui;
 
+import com.example.api.dto.UserDTO;
 import com.example.util.SceneManager;
+import com.example.util.SessionManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 
 import java.time.LocalDate;
@@ -24,6 +28,7 @@ public class FriendScene {
     @FXML private TextField searchField;
     @FXML private Label currentUserNameLabel;
     @FXML private Label currentUserStatusLabel;
+    @FXML private Circle userAvatarCircle;
     @FXML private Label headerTitleLabel;
     @FXML private Label headerSubtitleLabel;
     @FXML private ToggleButton filterAllButton;
@@ -66,9 +71,67 @@ public class FriendScene {
     }
 
     private void initProfile() {
-        currentUserNameLabel.setText("Minh Anh");
-        currentUserStatusLabel.setText("🟢 Online");
+        // Load user data from SessionManager
+        UserDTO currentUser = SessionManager.getCurrentUser();
+        
+        if (currentUser != null) {
+            currentUserNameLabel.setText(currentUser.getUsername());
+            
+            // Map status to display format
+            String status = currentUser.getStatus();
+            String statusDisplay = switch (status != null ? status.toLowerCase() : "online") {
+                case "online" -> "🟢 Online";
+                case "idle" -> "🟡 Idle";
+                case "dnd", "do_not_disturb" -> "🔴 Do Not Disturb";
+                case "offline" -> "⚫ Offline";
+                default -> "🟢 Online";
+            };
+            currentUserStatusLabel.setText(statusDisplay);
+            
+            // Load avatar
+            loadUserAvatar(currentUser.getAvatarUrl());
+            
+            System.out.println("[FriendScene] Loaded user profile: " + currentUser.getUsername());
+        } else {
+            // Fallback to defaults
+            currentUserNameLabel.setText("Guest");
+            currentUserStatusLabel.setText("⚫ Offline");
+            loadUserAvatar(null);
+            System.out.println("[FriendScene] ⚠ No user session found, using default profile");
+        }
     }
+    
+    private void loadUserAvatar(String avatarUrl) {
+        try {
+            javafx.scene.image.Image avatarImage;
+            
+            if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
+                // Try to load user's avatar
+                try {
+                    avatarImage = new javafx.scene.image.Image(getClass().getResourceAsStream(avatarUrl));
+                    if (avatarImage.isError()) {
+                        throw new Exception("Failed to load avatar from: " + avatarUrl);
+                    }
+                    System.out.println("[FriendScene] ✓ Loaded user avatar: " + avatarUrl);
+                } catch (Exception e) {
+                    System.out.println("[FriendScene] ⚠ Failed to load avatar, using default: " + e.getMessage());
+                    avatarImage = new javafx.scene.image.Image(getClass().getResourceAsStream("/com/example/images/macdinh.jpg"));
+                }
+            } else {
+                // Load default avatar
+                avatarImage = new javafx.scene.image.Image(getClass().getResourceAsStream("/com/example/images/macdinh.jpg"));
+                System.out.println("[FriendScene] Using default avatar");
+            }
+            
+            if (userAvatarCircle != null && avatarImage != null && !avatarImage.isError()) {
+                userAvatarCircle.setFill(new javafx.scene.paint.ImagePattern(avatarImage));
+            }
+        } catch (Exception e) {
+            System.out.println("[FriendScene] ❌ Error loading avatar: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 
     private void initFriends() {
         allFriends.addAll(
@@ -272,21 +335,39 @@ public class FriendScene {
     // ===== Friend Actions =====
     @FXML
     private void handleAddFriend() {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Thêm bạn");
-        dialog.setHeaderText("Gửi lời mời kết bạn");
-        dialog.setContentText("Nhập username hoặc email:");
-
-        dialog.showAndWait().ifPresent(input -> {
-            if (!input.trim().isEmpty()) {
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Thành công");
-                alert.setHeaderText(null);
-                alert.setContentText("Đã gửi lời mời kết bạn đến " + input);
-                alert.showAndWait();
-            }
-        });
+        try {
+            // Load the Add Friend dialog
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(
+                getClass().getResource("/com/example/fxml/add-friend-dialog.fxml")
+            );
+            javafx.scene.Parent root = loader.load();
+            
+            // Get the controller and set the stage
+            AddFriendDialog controller = loader.getController();
+            
+            // Create a new stage for the dialog
+            javafx.stage.Stage dialogStage = new javafx.stage.Stage();
+            dialogStage.setTitle("Thêm Bạn Bè");
+            dialogStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            dialogStage.initStyle(javafx.stage.StageStyle.UNDECORATED);
+            dialogStage.setScene(new javafx.scene.Scene(root));
+            
+            // Set the stage in the controller
+            controller.setDialogStage(dialogStage);
+            
+            // Show the dialog
+            dialogStage.showAndWait();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Lỗi");
+            alert.setHeaderText(null);
+            alert.setContentText("Không thể mở cửa sổ thêm bạn: " + e.getMessage());
+            alert.showAndWait();
+        }
     }
+
 
     @FXML
     private void handleSendMessage() {

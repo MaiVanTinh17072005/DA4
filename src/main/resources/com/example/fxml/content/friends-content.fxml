@@ -11,7 +11,7 @@
       spacing="0" 
       HBox.hgrow="ALWAYS" 
       VBox.vgrow="ALWAYS"
-      stylesheets="@../../css/friends.css"
+      stylesheets="@../../css/friends.css, @../../css/friends_profile.css"
       styleClass="friends-root">
     
     <!-- ========== LEFT PANEL: Friends List ========== -->
@@ -47,16 +47,17 @@
         </ScrollPane>
 
         <!-- User Profile at Bottom -->
-        <HBox styleClass="friends-user-profile-bar" alignment="CENTER_LEFT" spacing="10"
+        <HBox styleClass="user-profile-bar" alignment="CENTER_LEFT" spacing="10"
               onMouseClicked="#handleOpenProfile"
               style="-fx-cursor: hand;">
-            <Circle radius="20" styleClass="friend-avatar"/>
+            <Circle fx:id="userAvatarCircle" radius="20" styleClass="user-avatar"/>
             <VBox spacing="2" HBox.hgrow="ALWAYS">
                 <Label fx:id="currentUserNameLabel" text="Minh Anh" styleClass="user-name"/>
                 <Label fx:id="currentUserStatusLabel" text="🟢 Online" styleClass="user-status"/>
             </VBox>
         </HBox>
     </VBox>
+
 
     <!-- ========== RIGHT PANEL: Friend Details / Requests ========== -->
     <VBox styleClass="friends-main-area" HBox.hgrow="ALWAYS">

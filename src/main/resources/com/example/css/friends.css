@@ -332,112 +332,286 @@
 }
 
 .empty-state-icon {
-    -fx-text-fill: #4e5058;
-    -fx-font-size: 64px;
-}
+    .friend-badge.blocked {
+        -fx-background-color: #f04747;
+    }
 
-.empty-state-title {
-    -fx-text-fill: #ffffff;
-    -fx-font-size: 18px;
-    -fx-font-weight: bold;
-}
+    /* Section Header */
+    .section-header {
+        -fx-text-fill: #96989d;
+        -fx-font-size: 12px;
+        -fx-font-weight: bold;
+        -fx-letter-spacing: 0.5px;
+        -fx-padding: 16px 16px 8px 16px;
+    }
 
-.empty-state-subtitle {
-    -fx-text-fill: #96989d;
-    -fx-font-size: 14px;
-    -fx-text-alignment: center;
-    -fx-wrap-text: true;
-}
+    /* Info Label */
+    .info-label {
+        -fx-text-fill: #b9bbbe;
+        -fx-font-size: 13px;
+    }
 
-/* User Profile Bar (Bottom) */
-.friends-user-profile-bar {
-    -fx-background-color: #232428;
-    -fx-padding: 10px 12px;
-    -fx-border-color: rgba(0, 0, 0, 0.3);
-    -fx-border-width: 1px 0 0 0;
-}
+    .info-value {
+        -fx-text-fill: #ffffff;
+        -fx-font-size: 14px;
+        -fx-font-weight: 600;
+    }
 
-/* Badge */
-.friend-badge {
-    -fx-background-color: #5865f2;
-    -fx-text-fill: white;
-    -fx-font-size: 11px;
-    -fx-font-weight: bold;
-    -fx-padding: 3px 8px;
-    -fx-background-radius: 10px;
-}
+    /* ===== SCROLL BARS ===== */
+    .friends-scroll .scroll-bar {
+        -fx-background-color: transparent;
+    }
 
-.friend-badge.pending {
-    -fx-background-color: #faa61a;
-}
+    .friends-scroll .scroll-bar .thumb {
+        -fx-background-color: #202225;
+        -fx-background-radius: 4px;
+    }
 
-.friend-badge.blocked {
-    -fx-background-color: #f04747;
-}
+    .friends-scroll .scroll-bar .thumb:hover {
+        -fx-background-color: #2f3136;
+    }
 
-/* Section Header */
-.section-header {
-    -fx-text-fill: #96989d;
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-letter-spacing: 0.5px;
-    -fx-padding: 16px 16px 8px 16px;
-}
+    .friends-scroll .scroll-bar .thumb:pressed {
+        -fx-background-color: #5865f2;
+    }
 
-/* Info Label */
-.info-label {
-    -fx-text-fill: #b9bbbe;
-    -fx-font-size: 13px;
-}
+    .friends-scroll .scroll-bar .track {
+        -fx-background-color: transparent;
+    }
 
-.info-value {
-    -fx-text-fill: #ffffff;
-    -fx-font-size: 14px;
-    -fx-font-weight: 600;
-}
+    .friends-scroll .scroll-bar .increment-button,
+    .friends-scroll .scroll-bar .decrement-button {
+        -fx-background-color: transparent;
+        -fx-padding: 0;
+    }
 
-/* ===== SCROLL BARS ===== */
-.friends-scroll .scroll-bar {
-    -fx-background-color: transparent;
-}
+    /* ===== ANIMATIONS & TRANSITIONS ===== */
+    .friend-action-btn,
+    .add-friend-btn,
+    .accept-btn,
+    .decline-btn,
+    .friends-filter-tab {
+        -fx-transition: all 0.2s ease;
+    }
 
-.friends-scroll .scroll-bar .thumb {
-    -fx-background-color: #202225;
-    -fx-background-radius: 4px;
-}
+    .friend-detail-card {
+        -fx-background-color: #2f3136;
+        -fx-background-radius: 12px;
+        -fx-padding: 20px;
+        -fx-spacing: 12px;
+        -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 8, 0, 0, 2);
+    }
 
-.friends-scroll .scroll-bar .thumb:hover {
-    -fx-background-color: #2f3136;
-}
+    .friend-detail-avatar {
+        -fx-fill: linear-gradient(to bottom right, #5865f2, #7289da);
+        -fx-stroke: #36393f;
+        -fx-stroke-width: 3;
+    }
 
-.friends-scroll .scroll-bar .thumb:pressed {
-    -fx-background-color: #5865f2;
-}
+    .friend-detail-name {
+        -fx-text-fill: #ffffff;
+        -fx-font-size: 24px;
+        -fx-font-weight: bold;
+    }
 
-.friends-scroll .scroll-bar .track {
-    -fx-background-color: transparent;
-}
+    .friend-detail-username {
+        -fx-text-fill: #b9bbbe;
+        -fx-font-size: 16px;
+    }
 
-.friends-scroll .scroll-bar .increment-button,
-.friends-scroll .scroll-bar .decrement-button {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-}
+    .friend-detail-status {
+        -fx-text-fill: #43b581;
+        -fx-font-size: 14px;
+        -fx-font-weight: 600;
+    }
 
-/* ===== ANIMATIONS & TRANSITIONS ===== */
-.friend-action-btn,
-.add-friend-btn,
-.accept-btn,
-.decline-btn,
-.friends-filter-tab {
-    -fx-transition: all 0.2s ease;
-}
+    /* Action Buttons */
+    .friend-action-btn {
+        -fx-background-color: #4e5058;
+        -fx-text-fill: white;
+        -fx-font-size: 14px;
+        -fx-font-weight: 600;
+        -fx-padding: 10px 20px;
+        -fx-background-radius: 6px;
+        -fx-cursor: hand;
+    }
 
-/* Hover Effects */
-.friend-cell:hover {
-    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.1), 4, 0, 0, 1);
-}
+    .friend-action-btn:hover {
+        -fx-background-color: #5865f2;
+    }
 
-.friend-request-card:hover {
-    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.2), 8, 0, 0, 2);
-}
+    .friend-action-btn.message {
+        -fx-background-color: #5865f2;
+    }
+
+    .friend-action-btn.message:hover {
+        -fx-background-color: #4752c4;
+    }
+
+    .friend-action-btn.call {
+        -fx-background-color: #43b581;
+    }
+
+    .friend-action-btn.call:hover {
+        -fx-background-color: #3ca374;
+    }
+
+    .friend-action-btn.remove {
+        -fx-background-color: #f04747;
+    }
+
+    .friend-action-btn.remove:hover {
+        -fx-background-color: #d84040;
+    }
+
+    /* Friend Request Card */
+    .friend-request-card {
+        -fx-background-color: #2f3136;
+        -fx-background-radius: 8px;
+        -fx-padding: 16px;
+        -fx-spacing: 12px;
+        -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 6, 0, 0, 2);
+    }
+
+    .friend-request-name {
+        -fx-text-fill: #ffffff;
+        -fx-font-size: 16px;
+        -fx-font-weight: bold;
+    }
+
+    .friend-request-message {
+        -fx-text-fill: #b9bbbe;
+        -fx-font-size: 13px;
+        -fx-wrap-text: true;
+    }
+
+    .friend-request-time {
+        -fx-text-fill: #72767d;
+        -fx-font-size: 12px;
+    }
+
+    /* Request Action Buttons */
+    .accept-btn {
+        -fx-background-color: #43b581;
+        -fx-text-fill: white;
+        -fx-font-size: 13px;
+        -fx-font-weight: bold;
+        -fx-padding: 8px 16px;
+        -fx-background-radius: 6px;
+        -fx-cursor: hand;
+    }
+
+    .accept-btn:hover {
+        -fx-background-color: #3ca374;
+    }
+
+    .decline-btn {
+        -fx-background-color: #4e5058;
+        -fx-text-fill: white;
+        -fx-font-size: 13px;
+        -fx-font-weight: bold;
+        -fx-padding: 8px 16px;
+        -fx-background-radius: 6px;
+        -fx-cursor: hand;
+    }
+
+    .decline-btn:hover {
+        -fx-background-color: #f04747;
+    }
+
+    /* Empty State */
+    .empty-state {
+        -fx-background-color: transparent;
+        -fx-padding: 40px;
+        -fx-alignment: CENTER;
+    }
+
+    .empty-state-icon {
+        -fx-text-fill: #4e5058;
+        -fx-font-size: 64px;
+    }
+
+    .empty-state-title {
+        -fx-text-fill: #ffffff;
+        -fx-font-size: 18px;
+        -fx-font-weight: bold;
+    }
+
+    .empty-state-subtitle {
+        -fx-text-fill: #96989d;
+        -fx-font-size: 14px;
+        -fx-text-alignment: center;
+        -fx-wrap-text: true;
+    }
+
+    /* Friend Badge */
+    .friend-badge.blocked {
+        -fx-background-color: #f04747;
+    }
+
+    /* Section Header */
+    .section-header {
+        -fx-text-fill: #96989d;
+        -fx-font-size: 12px;
+        -fx-font-weight: bold;
+        -fx-letter-spacing: 0.5px;
+        -fx-padding: 16px 16px 8px 16px;
+    }
+
+    /* Info Label */
+    .info-label {
+        -fx-text-fill: #b9bbbe;
+        -fx-font-size: 13px;
+    }
+
+    .info-value {
+        -fx-text-fill: #ffffff;
+        -fx-font-size: 14px;
+        -fx-font-weight: 600;
+    }
+
+    /* ===== SCROLL BARS ===== */
+    .friends-scroll .scroll-bar {
+        -fx-background-color: transparent;
+    }
+
+    .friends-scroll .scroll-bar .thumb {
+        -fx-background-color: #202225;
+        -fx-background-radius: 4px;
+    }
+
+    .friends-scroll .scroll-bar .thumb:hover {
+        -fx-background-color: #2f3136;
+    }
+
+    .friends-scroll .scroll-bar .thumb:pressed {
+        -fx-background-color: #5865f2;
+    }
+
+    .friends-scroll .scroll-bar .track {
+        -fx-background-color: transparent;
+    }
+
+    .friends-scroll .scroll-bar .increment-button,
+    .friends-scroll .scroll-bar .decrement-button {
+        -fx-background-color: transparent;
+        -fx-padding: 0;
+    }
+
+    /* ===== ANIMATIONS & TRANSITIONS ===== */
+    .friend-action-btn,
+    .add-friend-btn,
+    .accept-btn,
+    .decline-btn,
+    .friends-filter-tab {
+        -fx-transition: all 0.2s ease;
+    }
+
+    /* Hover Effects */
+    .friend-cell:hover {
+        -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.1), 4, 0, 0, 1);
+    }
+
+    .friend-request-card:hover {
+        -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.2), 8, 0, 0, 2);
+    }

@@ -1,0 +1,23 @@
+/* User Profile Bar - Matching Chat Interface */
+.user-profile-bar {
+    -fx-background-color: #232428;
+    -fx-padding: 10px 12px;
+    -fx-border-color: rgba(0, 0, 0, 0.3);
+    -fx-border-width: 1px 0 0 0;
+}
+
+.user-avatar {
+    -fx-stroke: #232428;
+    -fx-stroke-width: 2;
+}
+
+.user-name {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.user-status {
+    -fx-text-fill: #b9bbbe;
+    -fx-font-size: 12px;
+}
