@@ -25,6 +25,7 @@ public class ApiConfig {
     public static final String USER_BASE = API_VERSION + "/users";
     public static final String USER_PROFILE_ENDPOINT = USER_BASE + "/profile";
     public static final String UPDATE_PROFILE_ENDPOINT = AUTH_BASE + "/update-profile"; // PUT request
+    public static final String CHANGE_PASSWORD_ENDPOINT = AUTH_BASE + "/change-password"; // PUT request
 
     
     // Timeout settings (milliseconds)

@@ -1,8 +1,11 @@
 package com.example.ui;
 
+import com.example.api.dto.ChangePasswordRequest;
+import com.example.api.dto.ChangePasswordResponse;
 import com.example.api.dto.UpdateProfileRequest;
 import com.example.api.dto.UpdateProfileResponse;
 import com.example.api.dto.UserDTO;
+import com.example.crypto.PasswordHashUtil;
 import com.example.service.UserService;
 import com.example.util.SessionManager;
 import com.example.util.ValidationUtil;
@@ -398,19 +401,50 @@ public class ProfileScene {
 
         dialog.showAndWait().ifPresent(result -> {
             if (result == changeBtn) {
+                // Validate new password
                 ValidationUtil.ValidationResult passwordResult = ValidationUtil.validatePassword(newPwd.getText());
                 if (!passwordResult.isValid()) {
                     showAlert("Lỗi", passwordResult.getErrorMessage(), Alert.AlertType.ERROR);
                     return;
                 }
                 
+                // Validate password match
                 ValidationUtil.ValidationResult matchResult = ValidationUtil.validatePasswordMatch(newPwd.getText(), confirmPwd.getText());
                 if (!matchResult.isValid()) {
                     showAlert("Lỗi", matchResult.getErrorMessage(), Alert.AlertType.ERROR);
                     return;
                 }
                 
-                showAlert("Thành Công", "Mật khẩu đã được thay đổi!", Alert.AlertType.INFORMATION);
+                // Hash passwords with SHA-256
+                String hashedCurrent = PasswordHashUtil.hashSHA256(currentPwd.getText());
+                String hashedNew = PasswordHashUtil.hashSHA256(newPwd.getText());
+                
+                // Create request
+                ChangePasswordRequest request = new ChangePasswordRequest(hashedCurrent, hashedNew);
+                System.out.println("[ProfileScene] Sending change password request");
+                
+                // Call API in background
+                new Thread(() -> {
+                    try {
+                        ChangePasswordResponse response = userService.changePassword(request);
+                        
+                        Platform.runLater(() -> {
+                            if (response.isSuccess()) {
+                                System.out.println("[ProfileScene] ✓ Password changed successfully");
+                                showAlert("Thành Công", response.getMessage(), Alert.AlertType.INFORMATION);
+                            } else {
+                                System.out.println("[ProfileScene] ❌ Change password failed: " + response.getMessage());
+                                showAlert("Lỗi", response.getMessage(), Alert.AlertType.ERROR);
+                            }
+                        });
+                        
+                    } catch (IOException e) {
+                        System.out.println("[ProfileScene] ❌ Network error: " + e.getMessage());
+                        Platform.runLater(() -> {
+                            showAlert("Lỗi", "Không thể kết nối đến server: " + e.getMessage(), Alert.AlertType.ERROR);
+                        });
+                    }
+                }).start();
             }
         });
     }
