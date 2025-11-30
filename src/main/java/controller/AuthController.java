@@ -1,6 +1,8 @@
 package controller;
 
 import dto.AuthResponse;
+import dto.ChangePasswordRequest;
+import dto.ChangePasswordResponse;
 import dto.ForgotPasswordRequest;
 import dto.ForgotPasswordResponse;
 import dto.LoginRequest;
@@ -246,6 +248,62 @@ public class AuthController {
         
         System.out.println("Response: " + response);
         System.out.println("==============================");
+        
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+    
+    /**
+     * Change password
+     * PUT /api/v1/auth/change-password
+     * Requires JWT token in Authorization header
+     * Verifies current password before updating to new password
+     * 
+     * @param authHeader Authorization header containing JWT token
+     * @param request ChangePasswordRequest with current and new passwords (SHA-256 hashed)
+     * @return ChangePasswordResponse with success status and message
+     */
+    @PutMapping("/change-password")
+    public ResponseEntity<ChangePasswordResponse> changePassword(
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestBody ChangePasswordRequest request) {
+        System.out.println("=== CHANGE PASSWORD REQUEST ===");
+        System.out.println("Authorization Header: " + (authHeader != null ? "Present" : "Missing"));
+        
+        // Validate Authorization header
+        if (authHeader == null || authHeader.trim().isEmpty()) {
+            System.out.println("❌ Missing Authorization header");
+            ChangePasswordResponse errorResponse = ChangePasswordResponse.error("Authorization header is required");
+            System.out.println("===============================");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+        
+        // Remove "Bearer " prefix if present
+        String token = authHeader;
+        if (token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+        
+        // Validate token
+        if (!util.JwtUtil.validateToken(token)) {
+            System.out.println("❌ Invalid token");
+            ChangePasswordResponse errorResponse = ChangePasswordResponse.error("Invalid or expired token");
+            System.out.println("===============================");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+        
+        // Extract user ID from token
+        Long userId = util.JwtUtil.extractUserId(token);
+        System.out.println("✓ User ID extracted from token: " + userId);
+        
+        // Call service to change password
+        ChangePasswordResponse response = authService.changePassword(userId, request);
+        
+        System.out.println("Response: " + response);
+        System.out.println("===============================");
         
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);

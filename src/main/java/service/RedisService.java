@@ -197,6 +197,15 @@ public class RedisService {
     }
     
     /**
+     * Delete user from cache (alias for removeCachedUser)
+     * 
+     * @param userId User ID
+     */
+    public void deleteUser(Long userId) {
+        removeCachedUser(userId);
+    }
+    
+    /**
      * Close Jedis pool (call on application shutdown)
      */
     public void close() {

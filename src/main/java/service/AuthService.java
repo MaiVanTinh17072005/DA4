@@ -1,6 +1,8 @@
 package service;
 
 import dto.AuthResponse;
+import dto.ChangePasswordRequest;
+import dto.ChangePasswordResponse;
 import dto.ForgotPasswordRequest;
 import dto.ForgotPasswordResponse;
 import dto.LoginRequest;
@@ -539,6 +541,91 @@ public class AuthService {
             System.out.println("[AuthService] ❌ Error updating profile: " + e.getMessage());
             e.printStackTrace();
             return new dto.UpdateProfileResponse(false, "Lỗi hệ thống: " + e.getMessage(), null);
+        }
+    }
+    
+    /**
+     * Change user password
+     * Verifies current password before updating to new password
+     * 
+     * @param userId ID of user changing password
+     * @param request ChangePasswordRequest with current and new passwords (SHA-256 hashed)
+     * @return ChangePasswordResponse with success status and message
+     */
+    public ChangePasswordResponse changePassword(Long userId, ChangePasswordRequest request) {
+        System.out.println("[AuthService] ===== CHANGE PASSWORD PROCESS START =====");
+        System.out.println("[AuthService] User ID: " + userId);
+        
+        try {
+            // Validate input
+            System.out.println("[AuthService] Step 1: Validating input...");
+            if (request.getCurrentPassword() == null || request.getCurrentPassword().trim().isEmpty()) {
+                System.out.println("[AuthService] ❌ Current password is empty");
+                return ChangePasswordResponse.error("Mật khẩu hiện tại không được để trống");
+            }
+            if (request.getNewPassword() == null || request.getNewPassword().trim().isEmpty()) {
+                System.out.println("[AuthService] ❌ New password is empty");
+                return ChangePasswordResponse.error("Mật khẩu mới không được để trống");
+            }
+            System.out.println("[AuthService] ✓ Input validation passed");
+            
+            // Find user by ID
+            System.out.println("[AuthService] Step 2: Finding user...");
+            Optional<User> userOptional = userRepository.findById(userId);
+            if (userOptional.isEmpty()) {
+                System.out.println("[AuthService] ❌ User not found: " + userId);
+                return ChangePasswordResponse.error("Người dùng không tồn tại");
+            }
+            System.out.println("[AuthService] ✓ User found");
+            
+            User user = userOptional.get();
+            System.out.println("[AuthService] User: " + user.getUsername() + " (ID: " + user.getId() + ")");
+            
+            // Verify current password
+            System.out.println("[AuthService] Step 3: Verifying current password...");
+            if (!PasswordUtil.verifyPassword(request.getCurrentPassword(), user.getPassword())) {
+                System.out.println("[AuthService] ❌ Current password is incorrect");
+                return ChangePasswordResponse.error("Mật khẩu hiện tại không đúng");
+            }
+            System.out.println("[AuthService] ✓ Current password verified");
+            
+            // Check if new password is same as current
+            if (request.getCurrentPassword().equals(request.getNewPassword())) {
+                System.out.println("[AuthService] ❌ New password same as current");
+                return ChangePasswordResponse.error("Mật khẩu mới phải khác mật khẩu hiện tại");
+            }
+            
+            // Hash new password with BCrypt
+            System.out.println("[AuthService] Step 4: Hashing new password...");
+            String hashedNewPassword = PasswordUtil.hashPassword(request.getNewPassword());
+            System.out.println("[AuthService] ✓ New password hashed");
+            
+            // Update password in database
+            System.out.println("[AuthService] Step 5: Updating password in database...");
+            user.setPassword(hashedNewPassword);
+            userRepository.save(user);
+            System.out.println("[AuthService] ✓ Password updated in database");
+            
+            // Update Redis cache with new password
+            System.out.println("[AuthService] Step 6: Updating Redis cache...");
+            try {
+                redisService.cacheUser(user);
+                System.out.println("[AuthService] ✓ Redis cache updated with new password");
+            } catch (Exception e) {
+                System.out.println("[AuthService] ⚠ Failed to update Redis cache: " + e.getMessage());
+                // Continue even if Redis fails
+            }
+            
+            System.out.println("[AuthService] ✅ Password changed successfully for user: " + user.getUsername());
+            System.out.println("[AuthService] ===== CHANGE PASSWORD PROCESS END =====");
+            return ChangePasswordResponse.success("Đổi mật khẩu thành công");
+            
+        } catch (Exception e) {
+            System.out.println("[AuthService] ❌❌❌ EXCEPTION OCCURRED ❌❌❌");
+            System.out.println("[AuthService] Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("[AuthService] ===== CHANGE PASSWORD PROCESS END (FAILED) =====");
+            return ChangePasswordResponse.error("Lỗi hệ thống: " + e.getMessage());
         }
     }
 }
