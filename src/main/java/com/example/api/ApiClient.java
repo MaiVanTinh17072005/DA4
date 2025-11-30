@@ -174,4 +174,86 @@ public class ApiClient {
             connection.disconnect();
         }
     }
+    
+    /**
+     * Send PUT request with JSON body
+     * 
+     * @param endpoint API endpoint
+     * @param jsonBody JSON string to send
+     * @return HttpURLConnection for reading response
+     * @throws Exception if request fails
+     */
+    public HttpURLConnection put(String endpoint, String jsonBody) throws Exception {
+        String fullUrl = ApiConfig.getFullUrl(endpoint);
+        URL url = new URL(fullUrl);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        
+        // Setup connection
+        connection.setRequestMethod("PUT");
+        connection.setRequestProperty("Content-Type", ApiConfig.CONTENT_TYPE_JSON);
+        connection.setRequestProperty("Accept", ApiConfig.CONTENT_TYPE_JSON);
+        
+        // Add auth token if available
+        if (authToken != null && !authToken.isEmpty()) {
+            connection.setRequestProperty(ApiConfig.AUTHORIZATION_HEADER, 
+                    ApiConfig.BEARER_PREFIX + authToken);
+        }
+        
+        connection.setDoOutput(true);
+        connection.setConnectTimeout(ApiConfig.CONNECTION_TIMEOUT);
+        connection.setReadTimeout(ApiConfig.READ_TIMEOUT);
+        
+        // Send request body
+        System.out.println("PUT Request to: " + fullUrl);
+        System.out.println("Request Body: " + jsonBody);
+        
+        try (OutputStream os = connection.getOutputStream()) {
+            byte[] input = jsonBody.getBytes(StandardCharsets.UTF_8);
+            os.write(input, 0, input.length);
+        }
+        
+        return connection;
+    }
+    
+    /**
+     * Read response from connection
+     * 
+     * @param connection HttpURLConnection
+     * @return Response body as string
+     * @throws Exception if reading fails
+     */
+    public String readResponse(HttpURLConnection connection) throws Exception {
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+        
+        StringBuilder response = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            response.append(line);
+        }
+        reader.close();
+        
+        return response.toString();
+    }
+    
+    /**
+     * Read error response from connection
+     * 
+     * @param connection HttpURLConnection
+     * @return Error response body as string
+     * @throws Exception if reading fails
+     */
+    public String readErrorResponse(HttpURLConnection connection) throws Exception {
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(connection.getErrorStream(), StandardCharsets.UTF_8));
+        
+        StringBuilder response = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            response.append(line);
+        }
+        reader.close();
+        
+        return response.toString();
+    }
 }

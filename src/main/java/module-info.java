@@ -20,7 +20,7 @@ module com.example.fe_app {
     opens com.example.app to javafx.fxml, javafx.graphics;
     opens com.example.ui to javafx.fxml;
     opens com.example.service to javafx.fxml;
-    opens com.example.api.dto to com.google.gson;
+    opens com.example.api.dto to com.google.gson, com.fasterxml.jackson.databind;
 
     exports com.example.app;
     exports com.example.ui;

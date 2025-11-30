@@ -24,6 +24,8 @@ public class ApiConfig {
     // User Endpoints
     public static final String USER_BASE = API_VERSION + "/users";
     public static final String USER_PROFILE_ENDPOINT = USER_BASE + "/profile";
+    public static final String UPDATE_PROFILE_ENDPOINT = AUTH_BASE + "/update-profile"; // PUT request
+
     
     // Timeout settings (milliseconds)
     public static final int CONNECTION_TIMEOUT = 30000; // 30 seconds (increased for email sending)
