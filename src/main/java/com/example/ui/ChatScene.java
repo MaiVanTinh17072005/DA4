@@ -1,13 +1,18 @@
 package com.example.ui;
 
+import com.example.api.dto.UserDTO;
 import com.example.util.SceneManager;
+import com.example.util.SessionManager;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.Circle;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -33,6 +38,7 @@ public class ChatScene {
     @FXML private Label lanModeLabel;
     @FXML private Label currentUserNameLabel;
     @FXML private Label currentUserStatusLabel;
+    @FXML private Circle userAvatarCircle;
     @FXML private ToggleButton filterDMButton;
     @FXML private ToggleButton filterGroupButton;
 
@@ -56,11 +62,69 @@ public class ChatScene {
     }
 
     private void initProfile() {
-        currentUserNameLabel.setText("Minh Anh");
-        currentUserStatusLabel.setText("🟢 Online");
+        // Load user data from SessionManager
+        UserDTO currentUser = SessionManager.getCurrentUser();
+        
+        if (currentUser != null) {
+            currentUserNameLabel.setText(currentUser.getUsername());
+            
+            // Map status to display format
+            String status = currentUser.getStatus();
+            String statusDisplay = switch (status != null ? status.toLowerCase() : "online") {
+                case "online" -> "🟢 Online";
+                case "idle" -> "🟡 Idle";
+                case "dnd", "do_not_disturb" -> "🔴 Do Not Disturb";
+                case "offline" -> "⚫ Offline";
+                default -> "🟢 Online";
+            };
+            currentUserStatusLabel.setText(statusDisplay);
+            
+            // Load avatar
+            loadUserAvatar(currentUser.getAvatarUrl());
+            
+            System.out.println("[ChatScene] Loaded user profile: " + currentUser.getUsername());
+        } else {
+            // Fallback to defaults
+            currentUserNameLabel.setText("Guest");
+            currentUserStatusLabel.setText("⚫ Offline");
+            loadUserAvatar(null);
+            System.out.println("[ChatScene] ⚠ No user session found, using default profile");
+        }
+        
         connectionStatusLabel.setText("🟢 Đã kết nối với máy chủ");
         encryptionStatusLabel.setText("🔒 E2EE đang hoạt động");
         lanModeLabel.setText("🌐 Hybrid P2P Mode");
+    }
+    
+    private void loadUserAvatar(String avatarUrl) {
+        try {
+            Image avatarImage;
+            
+            if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
+                // Try to load user's avatar
+                try {
+                    avatarImage = new Image(getClass().getResourceAsStream(avatarUrl));
+                    if (avatarImage.isError()) {
+                        throw new Exception("Failed to load avatar from: " + avatarUrl);
+                    }
+                    System.out.println("[ChatScene] ✓ Loaded user avatar: " + avatarUrl);
+                } catch (Exception e) {
+                    System.out.println("[ChatScene] ⚠ Failed to load avatar, using default: " + e.getMessage());
+                    avatarImage = new Image(getClass().getResourceAsStream("/com/example/images/macdinh.jpg"));
+                }
+            } else {
+                // Load default avatar
+                avatarImage = new Image(getClass().getResourceAsStream("/com/example/images/macdinh.jpg"));
+                System.out.println("[ChatScene] Using default avatar");
+            }
+            
+            if (userAvatarCircle != null && avatarImage != null && !avatarImage.isError()) {
+                userAvatarCircle.setFill(new ImagePattern(avatarImage));
+            }
+        } catch (Exception e) {
+            System.out.println("[ChatScene] ❌ Error loading avatar: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void initConversations() {

@@ -46,7 +46,7 @@
         <HBox styleClass="user-profile-bar" alignment="CENTER_LEFT" spacing="10"
               onMouseClicked="#handleOpenProfile"
               style="-fx-cursor: hand;">
-            <Circle radius="20" styleClass="user-avatar"/>
+            <Circle fx:id="userAvatarCircle" radius="20" styleClass="user-avatar"/>
             <VBox spacing="2" HBox.hgrow="ALWAYS">
                 <Label fx:id="currentUserNameLabel" text="Minh Anh" styleClass="user-name"/>
                 <Label fx:id="currentUserStatusLabel" text="🟢 Online" styleClass="user-status"/>
