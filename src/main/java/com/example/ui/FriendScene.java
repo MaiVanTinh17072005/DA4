@@ -1,8 +1,12 @@
 package com.example.ui;
 
+import com.example.api.dto.PendingFriendRequestDTO;
 import com.example.api.dto.UserDTO;
+import com.example.service.FriendService;
+import com.example.util.NotificationBadge;
 import com.example.util.SceneManager;
 import com.example.util.SessionManager;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -10,12 +14,16 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 /**
  * Friends management interface controller
@@ -35,6 +43,7 @@ public class FriendScene {
     @FXML private ToggleButton filterOnlineButton;
     @FXML private ToggleButton filterPendingButton;
     @FXML private Button addFriendButton;
+    @FXML private StackPane notificationBadgeContainer; // Container for notification badge
     
     // Main content sections
     @FXML private VBox mainContentArea;
@@ -55,8 +64,12 @@ public class FriendScene {
 
     private final ObservableList<FriendItem> allFriends = FXCollections.observableArrayList();
     private final ObservableList<FriendItem> filteredFriends = FXCollections.observableArrayList();
-    private final ObservableList<FriendRequest> pendingRequests = FXCollections.observableArrayList();
+    private final ObservableList<PendingFriendRequestDTO> pendingRequests = FXCollections.observableArrayList();
     private FriendItem selectedFriend;
+    
+    // Services
+    private final FriendService friendService = new FriendService();
+    private NotificationBadge notificationBadge;
 
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -64,6 +77,7 @@ public class FriendScene {
     public void initialize() {
         initProfile();
         initFriends();
+        initNotificationBadge();
         initFriendRequests();
         initFriendsList();
         initFilters();
@@ -134,6 +148,7 @@ public class FriendScene {
 
 
     private void initFriends() {
+        // TODO: Load real friends from API
         allFriends.addAll(
             new FriendItem("Huy Pham", "@huypham", "Online", LocalDate.of(2023, 5, 15), 2),
             new FriendItem("An Nguyen", "@annguyen", "Online", LocalDate.of(2023, 8, 20), 1),
@@ -144,12 +159,57 @@ public class FriendScene {
         );
         filteredFriends.setAll(allFriends);
     }
+    
+    private void initNotificationBadge() {
+        // Initialize notification badge
+        notificationBadge = NotificationBadge.getInstance();
+        
+        if (notificationBadgeContainer != null) {
+            StackPane badge = notificationBadge.createBadge();
+            notificationBadgeContainer.getChildren().add(badge);
+            
+            // Start polling for pending requests
+            notificationBadge.startPolling();
+            
+            System.out.println("[FriendScene] ✅ Notification badge initialized");
+        }
+    }
 
     private void initFriendRequests() {
-        pendingRequests.addAll(
-            new FriendRequest("Nam Pham", "@nampham", "Chào bạn! Mình thấy bạn trong nhóm UI Design.", "2 giờ trước"),
-            new FriendRequest("Thao Nguyen", "@thaonguyen", "Hi! Kết bạn nhé!", "1 ngày trước")
-        );
+        // Load real pending requests from API
+        loadPendingRequests();
+    }
+    
+    /**
+     * Load pending friend requests from server
+     */
+    private void loadPendingRequests() {
+        new Thread(() -> {
+            try {
+                List<PendingFriendRequestDTO> requests = friendService.getPendingRequests();
+                
+                Platform.runLater(() -> {
+                    pendingRequests.clear();
+                    pendingRequests.addAll(requests);
+                    
+                    // Update notification badge
+                    if (notificationBadge != null) {
+                        notificationBadge.updateCount(requests.size());
+                    }
+                    
+                    // Refresh UI if showing pending requests
+                    if (filterPendingButton.isSelected()) {
+                        showPendingRequests();
+                    }
+                    
+                    System.out.println("[FriendScene] ✅ Loaded " + requests.size() + " pending requests");
+                });
+                
+            } catch (Exception e) {
+                System.err.println("[FriendScene] ❌ Error loading pending requests: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     private void initFriendsList() {
@@ -235,6 +295,9 @@ public class FriendScene {
     }
 
     private void showPendingRequests() {
+        System.out.println("[FriendScene] showPendingRequests() called");
+        System.out.println("[FriendScene]    └─ Pending requests count: " + pendingRequests.size());
+        
         friendDetailsSection.setVisible(false);
         friendDetailsSection.setManaged(false);
         emptyStateSection.setVisible(false);
@@ -245,6 +308,8 @@ public class FriendScene {
         friendRequestsContainer.getChildren().clear();
         
         if (pendingRequests.isEmpty()) {
+            System.out.println("[FriendScene]    └─ No pending requests, showing empty state");
+            
             VBox emptyBox = new VBox(16);
             emptyBox.setAlignment(Pos.CENTER);
             emptyBox.getStyleClass().add("empty-state");
@@ -263,13 +328,16 @@ public class FriendScene {
             emptyBox.getChildren().addAll(icon, title, subtitle);
             friendRequestsContainer.getChildren().add(emptyBox);
         } else {
-            for (FriendRequest request : pendingRequests) {
+            System.out.println("[FriendScene]    └─ Creating " + pendingRequests.size() + " request cards");
+            
+            for (PendingFriendRequestDTO request : pendingRequests) {
+                System.out.println("[FriendScene]       └─ Request from: " + request.getSenderUsername());
                 friendRequestsContainer.getChildren().add(createRequestCard(request));
             }
         }
     }
 
-    private VBox createRequestCard(FriendRequest request) {
+    private VBox createRequestCard(PendingFriendRequestDTO request) {
         VBox card = new VBox(12);
         card.getStyleClass().add("friend-request-card");
 
@@ -282,22 +350,29 @@ public class FriendScene {
         VBox info = new VBox(4);
         HBox.setHgrow(info, javafx.scene.layout.Priority.ALWAYS);
 
-        Label name = new Label(request.getName());
+        Label name = new Label(request.getSenderUsername());
         name.getStyleClass().add("friend-request-name");
 
-        Label username = new Label(request.getUsername());
-        username.getStyleClass().add("friend-detail-username");
+        Label email = new Label(request.getSenderEmail());
+        email.getStyleClass().add("friend-detail-username");
 
-        info.getChildren().addAll(name, username);
+        info.getChildren().addAll(name, email);
 
-        Label time = new Label(request.getTime());
+        // Format timestamp
+        String timeAgo = formatTimeAgo(request.getTimestamp());
+        Label time = new Label(timeAgo);
         time.getStyleClass().add("friend-request-time");
 
         header.getChildren().addAll(avatar, info, time);
 
-        Label message = new Label(request.getMessage());
-        message.getStyleClass().add("friend-request-message");
-        message.setWrapText(true);
+        // Message (optional)
+        String message = request.getMessage();
+        if (message == null || message.trim().isEmpty()) {
+            message = "Muốn kết bạn với bạn";
+        }
+        Label messageLabel = new Label(message);
+        messageLabel.getStyleClass().add("friend-request-message");
+        messageLabel.setWrapText(true);
 
         HBox actions = new HBox(12);
         actions.setAlignment(Pos.CENTER_RIGHT);
@@ -312,8 +387,32 @@ public class FriendScene {
 
         actions.getChildren().addAll(acceptBtn, declineBtn);
 
-        card.getChildren().addAll(header, message, actions);
+        card.getChildren().addAll(header, messageLabel, actions);
         return card;
+    }
+    
+    /**
+     * Format timestamp to relative time (e.g., "2 giờ trước")
+     */
+    private String formatTimeAgo(String timestamp) {
+        try {
+            LocalDateTime requestTime = LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_DATE_TIME);
+            LocalDateTime now = LocalDateTime.now();
+            
+            long minutes = ChronoUnit.MINUTES.between(requestTime, now);
+            long hours = ChronoUnit.HOURS.between(requestTime, now);
+            long days = ChronoUnit.DAYS.between(requestTime, now);
+            
+            if (minutes < 60) {
+                return minutes + " phút trước";
+            } else if (hours < 24) {
+                return hours + " giờ trước";
+            } else {
+                return days + " ngày trước";
+            }
+        } catch (Exception e) {
+            return "Vừa xong";
+        }
     }
 
     // ===== Filter Actions =====
@@ -329,6 +428,8 @@ public class FriendScene {
 
     @FXML
     private void handleFilterPending() {
+        // Refresh pending requests when tab is clicked
+        loadPendingRequests();
         applyFilters();
     }
 
@@ -407,27 +508,102 @@ public class FriendScene {
         }
     }
 
-    private void handleAcceptRequest(FriendRequest request) {
-        pendingRequests.remove(request);
-        allFriends.add(new FriendItem(
-            request.getName(), 
-            request.getUsername(), 
-            "Offline", 
-            LocalDate.now(), 
-            0
-        ));
-        showPendingRequests();
+    private void handleAcceptRequest(PendingFriendRequestDTO request) {
+        System.out.println("[FriendScene] Accepting friend request: " + request.getRequestId());
         
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Thành công");
-        alert.setHeaderText(null);
-        alert.setContentText("Đã chấp nhận lời mời kết bạn từ " + request.getName());
-        alert.showAndWait();
+        new Thread(() -> {
+            try {
+                boolean success = friendService.acceptFriendRequest(request.getRequestId());
+                
+                Platform.runLater(() -> {
+                    if (success) {
+                        // Remove from pending list
+                        pendingRequests.remove(request);
+                        
+                        // Refresh pending requests view
+                        showPendingRequests();
+                        
+                        // Update notification badge
+                        if (notificationBadge != null) {
+                            notificationBadge.updateCount(pendingRequests.size());
+                        }
+                        
+                        // Show success message
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Thành công");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Đã chấp nhận lời mời kết bạn từ " + request.getSenderUsername());
+                        alert.showAndWait();
+                        
+                        // TODO: Reload friends list from API
+                        System.out.println("✅ [FriendScene] Accepted friend request successfully");
+                    } else {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Lỗi");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Không thể chấp nhận lời mời kết bạn. Vui lòng thử lại.");
+                        alert.showAndWait();
+                    }
+                });
+                
+            } catch (Exception e) {
+                System.err.println("❌ [FriendScene] Error accepting friend request: " + e.getMessage());
+                e.printStackTrace();
+                
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Lỗi");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Đã xảy ra lỗi: " + e.getMessage());
+                    alert.showAndWait();
+                });
+            }
+        }).start();
     }
 
-    private void handleDeclineRequest(FriendRequest request) {
-        pendingRequests.remove(request);
-        showPendingRequests();
+    private void handleDeclineRequest(PendingFriendRequestDTO request) {
+        System.out.println("[FriendScene] Declining friend request: " + request.getRequestId());
+        
+        new Thread(() -> {
+            try {
+                boolean success = friendService.rejectFriendRequest(request.getRequestId());
+                
+                Platform.runLater(() -> {
+                    if (success) {
+                        // Remove from pending list
+                        pendingRequests.remove(request);
+                        
+                        // Refresh pending requests view
+                        showPendingRequests();
+                        
+                        // Update notification badge
+                        if (notificationBadge != null) {
+                            notificationBadge.updateCount(pendingRequests.size());
+                        }
+                        
+                        System.out.println("✅ [FriendScene] Declined friend request successfully");
+                    } else {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Lỗi");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Không thể từ chối lời mời kết bạn. Vui lòng thử lại.");
+                        alert.showAndWait();
+                    }
+                });
+                
+            } catch (Exception e) {
+                System.err.println("❌ [FriendScene] Error declining friend request: " + e.getMessage());
+                e.printStackTrace();
+                
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Lỗi");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Đã xảy ra lỗi: " + e.getMessage());
+                    alert.showAndWait();
+                });
+            }
+        }).start();
     }
 
     @FXML
@@ -449,18 +625,6 @@ public class FriendScene {
         String getStatus() { return status; }
         LocalDate getFriendSince() { return friendSince; }
         int getMutualGroups() { return mutualGroups; }
-    }
-
-    private record FriendRequest(
-        String name, 
-        String username, 
-        String message, 
-        String time
-    ) {
-        String getName() { return name; }
-        String getUsername() { return username; }
-        String getMessage() { return message; }
-        String getTime() { return time; }
     }
 
     private class FriendCell extends ListCell<FriendItem> {

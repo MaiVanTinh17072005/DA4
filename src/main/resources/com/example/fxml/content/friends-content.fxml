@@ -35,10 +35,20 @@
                           text="Online" 
                           onAction="#handleFilterOnline"
                           styleClass="friends-filter-tab"/>
-            <ToggleButton fx:id="filterPendingButton" 
-                          text="Đang chờ" 
-                          onAction="#handleFilterPending"
-                          styleClass="friends-filter-tab"/>
+            
+            <!-- Pending Tab with Badge -->
+            <StackPane>
+                <ToggleButton fx:id="filterPendingButton" 
+                              text="Đang chờ" 
+                              onAction="#handleFilterPending"
+                              styleClass="friends-filter-tab"/>
+                <!-- Notification Badge -->
+                <StackPane fx:id="notificationBadgeContainer" 
+                           prefWidth="22" 
+                           prefHeight="22"
+                           StackPane.alignment="TOP_RIGHT"
+                           style="-fx-translate-x: 10; -fx-translate-y: -6;"/>
+            </StackPane>
         </HBox>
 
         <!-- Friends List -->

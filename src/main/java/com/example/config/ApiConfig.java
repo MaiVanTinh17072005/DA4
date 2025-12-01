@@ -32,6 +32,17 @@ public class ApiConfig {
     public static final String P2P_REGISTER_ENDPOINT = P2P_BASE + "/register"; // POST request
     public static final String P2P_PEER_ENDPOINT = P2P_BASE + "/peer"; // GET request with /{userId}
 
+    // Friend Endpoints
+    public static final String FRIEND_BASE = API_VERSION + "/friends";
+    public static final String FRIEND_SUGGESTIONS_ENDPOINT = FRIEND_BASE + "/suggestions"; // GET request with ?limit=10
+    public static final String FRIEND_SEARCH_ENDPOINT = FRIEND_BASE + "/search"; // GET request with ?query=...
+    public static final String FRIEND_REQUEST_ENDPOINT = FRIEND_BASE + "/request"; // POST request with targetId
+    public static final String FRIEND_CANCEL_REQUEST_ENDPOINT = FRIEND_BASE + "/cancel"; // DELETE request with /{targetId}
+    public static final String FRIEND_PENDING_ENDPOINT = FRIEND_BASE + "/pending"; // GET request - get pending requests
+    public static final String FRIEND_ACCEPT_ENDPOINT = FRIEND_BASE + "/accept"; // POST request with requestId
+    public static final String FRIEND_REJECT_ENDPOINT = FRIEND_BASE + "/reject"; // POST request with requestId
+
+
     
     // Timeout settings (milliseconds)
     public static final int CONNECTION_TIMEOUT = 30000; // 30 seconds (increased for email sending)
