@@ -41,6 +41,9 @@ public class AuthService {
     @Autowired
     private RedisService redisService;
     
+    @Autowired
+    private UserDataCacheService userDataCacheService;
+    
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
     
     /**
@@ -189,6 +192,16 @@ public class AuthService {
             System.out.println("[AuthService] Step 7: Caching user information in Redis...");
             redisService.cacheUser(user);
             System.out.println("[AuthService] ✓ User cached in Redis");
+            
+            // Cache user's friends, groups, and messages (30 min TTL)
+            System.out.println("[AuthService] Step 8: Caching user data (friends, groups, messages)...");
+            try {
+                userDataCacheService.cacheUserDataOnLogin(user.getId());
+                System.out.println("[AuthService] ✓ User data cached successfully");
+            } catch (Exception e) {
+                System.out.println("[AuthService] ⚠ Failed to cache user data: " + e.getMessage());
+                // Continue even if caching fails - not critical
+            }
             
             // Return success response
             System.out.println("[AuthService] ✅ Login successful for user: " + user.getUsername() + " (ID: " + user.getId() + ")");

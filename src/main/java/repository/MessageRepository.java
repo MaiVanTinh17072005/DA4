@@ -37,4 +37,10 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
      * Find unread messages for a user
      */
     List<Message> findByReceiverIdAndIsReadFalse(Long receiverId);
+    
+    /**
+     * Find all messages where user is sender or receiver
+     * Used for caching user's message history
+     */
+    List<Message> findBySenderIdOrReceiverId(Long senderId, Long receiverId);
 }
