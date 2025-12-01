@@ -345,4 +345,85 @@ public class FriendController {
                     .body(FriendResponseDTO.error("Internal server error"));
         }
     }
+    
+    /**
+     * Get friend request notifications
+     * GET /api/v1/friends/notifications
+     * 
+     * @param authorization JWT token from Authorization header
+     * @return List of notifications
+     */
+    @GetMapping("/notifications")
+    public ResponseEntity<List<dto.FriendNotificationDTO>> getNotifications(
+            @RequestHeader("Authorization") String authorization) {
+        
+        System.out.println("=== GET FRIEND NOTIFICATIONS ===");
+        
+        try {
+            // Extract user ID from JWT token
+            String token = authorization.replace("Bearer ", "");
+            Long userId = JwtUtil.extractUserId(token);
+            
+            System.out.println("User ID: " + userId);
+            
+            // Get notifications
+            List<dto.FriendNotificationDTO> notifications = friendService.getNotifications(userId);
+            
+            System.out.println("✅ Retrieved " + notifications.size() + " notifications");
+            System.out.println("=============================");
+            return ResponseEntity.ok(notifications);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("=============================");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+    
+    /**
+     * Mark notification as read
+     * DELETE /api/v1/friends/notifications/{notificationId}
+     * 
+     * @param notificationId Notification ID to mark as read
+     * @param authorization JWT token from Authorization header
+     * @return Success response
+     */
+    @DeleteMapping("/notifications/{notificationId}")
+    public ResponseEntity<FriendResponseDTO> markNotificationAsRead(
+            @PathVariable("notificationId") String notificationId,
+            @RequestHeader("Authorization") String authorization) {
+        
+        System.out.println("=== MARK NOTIFICATION AS READ ===");
+        System.out.println("Notification ID: " + notificationId);
+        
+        try {
+            // Extract user ID from JWT token
+            String token = authorization.replace("Bearer ", "");
+            Long userId = JwtUtil.extractUserId(token);
+            
+            System.out.println("User ID: " + userId);
+            
+            // Mark as read
+            boolean success = friendService.markNotificationAsRead(userId, notificationId);
+            
+            if (success) {
+                System.out.println("✅ Notification marked as read");
+                System.out.println("=============================");
+                return ResponseEntity.ok(FriendResponseDTO.success("Notification marked as read"));
+            } else {
+                System.err.println("❌ Failed to mark notification as read");
+                System.out.println("=============================");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(FriendResponseDTO.error("Failed to mark notification as read"));
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("=============================");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(FriendResponseDTO.error("Internal server error"));
+        }
+    }
 }

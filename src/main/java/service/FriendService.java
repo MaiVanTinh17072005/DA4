@@ -345,6 +345,10 @@ public class FriendService {
             jedis.srem(pendingKey, requestId);
             jedis.del(requestKey);
             
+            // Create notification for sender
+            createNotification(jedis, senderId, userId, "FRIEND_REQUEST_ACCEPTED", 
+                "đã chấp nhận lời mời kết bạn của bạn");
+            
             System.out.println("[FriendService] ✅ Friend request accepted successfully");
             return true;
             
@@ -368,12 +372,25 @@ public class FriendService {
                 return false;
             }
             
+            String requestKey = REQUEST_KEY_PREFIX + requestId;
+            String requestJson = jedis.get(requestKey);
+            
+            if (requestJson == null) {
+                System.err.println("[FriendService] ❌ Request not found or expired");
+                return false;
+            }
+            
+            PendingFriendRequestDTO request = objectMapper.readValue(
+                requestJson, PendingFriendRequestDTO.class);
+            
             // Remove from Redis
             String pendingKey = PENDING_KEY_PREFIX + userId;
-            String requestKey = REQUEST_KEY_PREFIX + requestId;
-            
             jedis.srem(pendingKey, requestId);
             jedis.del(requestKey);
+            
+            // Create notification for sender
+            createNotification(jedis, request.getSenderId(), userId, "FRIEND_REQUEST_REJECTED", 
+                "đã từ chối lời mời kết bạn của bạn");
             
             System.out.println("[FriendService] ✅ Friend request rejected");
             return true;
@@ -465,5 +482,102 @@ public class FriendService {
         dto.setStatus(user.getStatus());
         dto.setCreatedAt(user.getCreatedAt().format(DATE_FORMATTER));
         return dto;
+    }
+    
+    /**
+     * Create notification for user
+     */
+    private void createNotification(Jedis jedis, Long targetUserId, Long fromUserId, String type, String message) {
+        try {
+            // Get from user info
+            Optional<User> fromUserOpt = userRepository.findById(fromUserId);
+            if (fromUserOpt.isEmpty()) {
+                return;
+            }
+            
+            User fromUser = fromUserOpt.get();
+            String notificationId = "notif_" + System.currentTimeMillis() + "_" + targetUserId;
+            
+            dto.FriendNotificationDTO notification = new dto.FriendNotificationDTO(
+                notificationId,
+                type,
+                fromUserId,
+                fromUser.getUsername(),
+                fromUser.getUsername() + " " + message,
+                LocalDateTime.now().format(DATE_FORMATTER)
+            );
+            
+            String notificationJson = objectMapper.writeValueAsString(notification);
+            String notificationKey = "notification:" + notificationId;
+            String userNotificationsKey = "user:notifications:" + targetUserId;
+            
+            // Store notification (TTL 24 hours)
+            jedis.setex(notificationKey, 24 * 60 * 60, notificationJson);
+            
+            // Add to user's notifications list
+            jedis.lpush(userNotificationsKey, notificationId);
+            jedis.expire(userNotificationsKey, 24 * 60 * 60);
+            
+            System.out.println("[FriendService] ✅ Created notification for user " + targetUserId);
+            
+        } catch (Exception e) {
+            System.err.println("[FriendService] ❌ Error creating notification: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Get unread notifications for user
+     */
+    public List<dto.FriendNotificationDTO> getNotifications(Long userId) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String userNotificationsKey = "user:notifications:" + userId;
+            List<String> notificationIds = jedis.lrange(userNotificationsKey, 0, -1);
+            
+            List<dto.FriendNotificationDTO> notifications = new ArrayList<>();
+            
+            for (String notificationId : notificationIds) {
+                String notificationKey = "notification:" + notificationId;
+                String notificationJson = jedis.get(notificationKey);
+                
+                if (notificationJson != null) {
+                    dto.FriendNotificationDTO notification = objectMapper.readValue(
+                        notificationJson, dto.FriendNotificationDTO.class);
+                    notifications.add(notification);
+                }
+            }
+            
+            System.out.println("[FriendService] ✅ Retrieved " + notifications.size() + " notifications for user " + userId);
+            return notifications;
+            
+        } catch (Exception e) {
+            System.err.println("[FriendService] ❌ Error getting notifications: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Mark notification as read and remove it
+     */
+    public boolean markNotificationAsRead(Long userId, String notificationId) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String userNotificationsKey = "user:notifications:" + userId;
+            String notificationKey = "notification:" + notificationId;
+            
+            // Remove from user's list
+            jedis.lrem(userNotificationsKey, 1, notificationId);
+            
+            // Delete notification
+            jedis.del(notificationKey);
+            
+            System.out.println("[FriendService] ✅ Marked notification as read: " + notificationId);
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println("[FriendService] ❌ Error marking notification as read: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 }
