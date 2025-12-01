@@ -29,10 +29,14 @@ public class AddFriendDialog {
     private FriendService friendService;
     private Stage dialogStage;
     private List<Long> sentRequests = new ArrayList<>(); // Track sent friend requests
+    
+    // Static instance for refresh callback
+    private static AddFriendDialog currentInstance;
 
     @FXML
     public void initialize() {
         friendService = new FriendService();
+        currentInstance = this; // Track current instance
         loadSuggestions();
         setupSearchListener();
     }
@@ -78,6 +82,19 @@ public class AddFriendDialog {
             for (UserDTO user : suggestions) {
                 suggestionsContainer.getChildren().add(createUserCard(user));
             }
+        }
+    }
+    
+    /**
+     * Static method to refresh suggestions from external callers
+     * (e.g., when notification is received)
+     */
+    public static void refreshSuggestions() {
+        if (currentInstance != null) {
+            javafx.application.Platform.runLater(() -> {
+                System.out.println("[AddFriendDialog] Refreshing suggestions...");
+                currentInstance.loadSuggestions();
+            });
         }
     }
 

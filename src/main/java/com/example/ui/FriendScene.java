@@ -4,6 +4,7 @@ import com.example.api.dto.PendingFriendRequestDTO;
 import com.example.api.dto.UserDTO;
 import com.example.service.FriendService;
 import com.example.util.NotificationBadge;
+import com.example.util.NotificationToast;
 import com.example.util.SceneManager;
 import com.example.util.SessionManager;
 import javafx.application.Platform;
@@ -44,6 +45,7 @@ public class FriendScene {
     @FXML private ToggleButton filterPendingButton;
     @FXML private Button addFriendButton;
     @FXML private StackPane notificationBadgeContainer; // Container for notification badge
+    @FXML private VBox toastContainer; // Container for toast notifications
     
     // Main content sections
     @FXML private VBox mainContentArea;
@@ -70,6 +72,8 @@ public class FriendScene {
     // Services
     private final FriendService friendService = new FriendService();
     private NotificationBadge notificationBadge;
+    private NotificationToast notificationToast;
+    private com.example.util.NotificationPoller notificationPoller;
 
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -78,6 +82,8 @@ public class FriendScene {
         initProfile();
         initFriends();
         initNotificationBadge();
+        initToast();
+        initNotificationPoller();
         initFriendRequests();
         initFriendsList();
         initFilters();
@@ -173,6 +179,48 @@ public class FriendScene {
             
             System.out.println("[FriendScene] ✅ Notification badge initialized");
         }
+    }
+    
+    private void initToast() {
+        // Initialize toast notification
+        notificationToast = NotificationToast.getInstance();
+        
+        if (toastContainer != null) {
+            notificationToast.setContainer(toastContainer);
+            System.out.println("[FriendScene] ✅ Toast notification initialized");
+        }
+    }
+    
+    private void initNotificationPoller() {
+        // Initialize notification poller
+        notificationPoller = com.example.util.NotificationPoller.getInstance();
+        
+        // Set callback for when notification is received
+        notificationPoller.setOnNotificationReceived(notification -> {
+            System.out.println("[FriendScene] 📬 Received notification: " + notification.getMessage());
+            
+            if (notificationToast != null) {
+                // Display toast based on notification type
+                if ("FRIEND_REQUEST_ACCEPTED".equals(notification.getType())) {
+                    notificationToast.showSuccess(notification.getMessage());
+                    
+                    // Refresh AddFriendDialog if it's open (user is now friend, remove from suggestions)
+                    AddFriendDialog.refreshSuggestions();
+                    System.out.println("[FriendScene] ✅ Friend request accepted - refreshed suggestions");
+                    
+                } else if ("FRIEND_REQUEST_REJECTED".equals(notification.getType())) {
+                    notificationToast.showInfo(notification.getMessage());
+                    
+                    // Refresh AddFriendDialog if it's open (request no longer pending, show "Thêm bạn" again)
+                    AddFriendDialog.refreshSuggestions();
+                    System.out.println("[FriendScene] ✅ Friend request rejected - refreshed suggestions");
+                }
+            }
+        });
+        
+        // Start polling
+        notificationPoller.startPolling();
+        System.out.println("[FriendScene] ✅ Notification poller started");
     }
 
     private void initFriendRequests() {
@@ -528,21 +576,17 @@ public class FriendScene {
                             notificationBadge.updateCount(pendingRequests.size());
                         }
                         
-                        // Show success message
-                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                        alert.setTitle("Thành công");
-                        alert.setHeaderText(null);
-                        alert.setContentText("Đã chấp nhận lời mời kết bạn từ " + request.getSenderUsername());
-                        alert.showAndWait();
+                        // Show success toast
+                        if (notificationToast != null) {
+                            notificationToast.showSuccess("Đã chấp nhận lời mời kết bạn từ " + request.getSenderUsername());
+                        }
                         
                         // TODO: Reload friends list from API
                         System.out.println("✅ [FriendScene] Accepted friend request successfully");
                     } else {
-                        Alert alert = new Alert(Alert.AlertType.ERROR);
-                        alert.setTitle("Lỗi");
-                        alert.setHeaderText(null);
-                        alert.setContentText("Không thể chấp nhận lời mời kết bạn. Vui lòng thử lại.");
-                        alert.showAndWait();
+                        if (notificationToast != null) {
+                            notificationToast.showError("Không thể chấp nhận lời mời kết bạn");
+                        }
                     }
                 });
                 
@@ -581,13 +625,16 @@ public class FriendScene {
                             notificationBadge.updateCount(pendingRequests.size());
                         }
                         
+                        // Show info toast
+                        if (notificationToast != null) {
+                            notificationToast.showInfo("Đã từ chối lời mời kết bạn từ " + request.getSenderUsername());
+                        }
+                        
                         System.out.println("✅ [FriendScene] Declined friend request successfully");
                     } else {
-                        Alert alert = new Alert(Alert.AlertType.ERROR);
-                        alert.setTitle("Lỗi");
-                        alert.setHeaderText(null);
-                        alert.setContentText("Không thể từ chối lời mời kết bạn. Vui lòng thử lại.");
-                        alert.showAndWait();
+                        if (notificationToast != null) {
+                            notificationToast.showError("Không thể từ chối lời mời kết bạn");
+                        }
                     }
                 });
                 

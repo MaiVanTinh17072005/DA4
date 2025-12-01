@@ -3,6 +3,7 @@ package com.example.service;
 import com.example.api.dto.UserDTO;
 import com.example.config.ApiConfig;
 import com.example.util.SessionManager;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -449,6 +450,83 @@ public class FriendService {
             
         } catch (Exception e) {
             System.err.println("❌ [FriendService] Error rejecting friend request: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Get friend request notifications
+     */
+    public List<com.example.api.dto.FriendNotificationDTO> getNotifications() {
+        try {
+            String token = SessionManager.getAuthToken();
+            
+            String url = ApiConfig.BASE_URL + ApiConfig.GET_NOTIFICATIONS;
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            conn.setRequestProperty("Content-Type", "application/json");
+            
+            int responseCode = conn.getResponseCode();
+            
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                
+                while ((line = in.readLine()) != null) {
+                    response.append(line);
+                }
+                in.close();
+                
+                // Parse JSON array
+                ObjectMapper mapper = new ObjectMapper();
+                List<com.example.api.dto.FriendNotificationDTO> notifications = mapper.readValue(
+                    response.toString(),
+                    mapper.getTypeFactory().constructCollectionType(
+                        List.class, com.example.api.dto.FriendNotificationDTO.class)
+                );
+                
+                System.out.println("[FriendService] ✅ Retrieved " + notifications.size() + " notifications");
+                return notifications;
+            } else {
+                System.err.println("[FriendService] ❌ Failed to get notifications: " + responseCode);
+                return new ArrayList<>();
+            }
+            
+        } catch (Exception e) {
+            System.err.println("[FriendService] ❌ Error getting notifications: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
+     * Mark notification as read
+     */
+    public boolean markNotificationAsRead(String notificationId) {
+        try {
+            String token = SessionManager.getAuthToken();
+            
+            String url = ApiConfig.BASE_URL + ApiConfig.MARK_NOTIFICATION_READ + notificationId;
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setRequestMethod("DELETE");
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            conn.setRequestProperty("Content-Type", "application/json");
+            
+            int responseCode = conn.getResponseCode();
+            
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                System.out.println("[FriendService] ✅ Notification marked as read");
+                return true;
+            } else {
+                System.err.println("[FriendService] ❌ Failed to mark notification as read: " + responseCode);
+                return false;
+            }
+            
+        } catch (Exception e) {
+            System.err.println("[FriendService] ❌ Error marking notification as read: " + e.getMessage());
             e.printStackTrace();
             return false;
         }

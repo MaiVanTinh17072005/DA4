@@ -11,7 +11,7 @@
       spacing="0" 
       HBox.hgrow="ALWAYS" 
       VBox.vgrow="ALWAYS"
-      stylesheets="@../../css/friends.css, @../../css/friends_profile.css"
+      stylesheets="@../../css/friends.css, @../../css/friends_profile.css, @../../css/notification-toast.css"
       styleClass="friends-root">
     
     <!-- ========== LEFT PANEL: Friends List ========== -->
@@ -91,6 +91,15 @@
                 <tooltip><Tooltip text="Gửi lời mời kết bạn"/></tooltip>
             </Button>
         </HBox>
+
+        <!-- Toast Notification Container -->
+        <VBox fx:id="toastContainer" 
+              styleClass="toast-container" 
+              spacing="8" 
+              alignment="TOP_RIGHT"
+              pickOnBounds="false"
+              mouseTransparent="true"
+              style="-fx-padding: 16px;"/>
 
         <!-- Main Content Area -->
         <ScrollPane styleClass="friends-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">

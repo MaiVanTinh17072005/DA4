@@ -20,12 +20,12 @@ public class ApiConfig {
     public static final String FORGOT_PASSWORD_ENDPOINT = AUTH_BASE + "/forgot-password";
     public static final String VERIFY_OTP_ENDPOINT = AUTH_BASE + "/verify-otp";
     public static final String RESET_PASSWORD_ENDPOINT = AUTH_BASE + "/reset-password";
-    
+    public static final String UPDATE_PROFILE_ENDPOINT = AUTH_BASE + "/update-profile"; // PUT request
+    public static final String CHANGE_PASSWORD_ENDPOINT = AUTH_BASE + "/change-password"; // PUT request
+
     // User Endpoints
     public static final String USER_BASE = API_VERSION + "/users";
     public static final String USER_PROFILE_ENDPOINT = USER_BASE + "/profile";
-    public static final String UPDATE_PROFILE_ENDPOINT = AUTH_BASE + "/update-profile"; // PUT request
-    public static final String CHANGE_PASSWORD_ENDPOINT = AUTH_BASE + "/change-password"; // PUT request
 
     // P2P Endpoints
     public static final String P2P_BASE = API_VERSION + "/p2p";
@@ -41,9 +41,9 @@ public class ApiConfig {
     public static final String FRIEND_PENDING_ENDPOINT = FRIEND_BASE + "/pending"; // GET request - get pending requests
     public static final String FRIEND_ACCEPT_ENDPOINT = FRIEND_BASE + "/accept"; // POST request with requestId
     public static final String FRIEND_REJECT_ENDPOINT = FRIEND_BASE + "/reject"; // POST request with requestId
+    public static final String GET_NOTIFICATIONS = FRIEND_BASE + "/notifications"; // GET request - get notifications
+    public static final String MARK_NOTIFICATION_READ = FRIEND_BASE + "/notifications/"; // DELETE request - mark as read + notificationId
 
-
-    
     // Timeout settings (milliseconds)
     public static final int CONNECTION_TIMEOUT = 30000; // 30 seconds (increased for email sending)
     public static final int READ_TIMEOUT = 30000; // 30 seconds (increased for email sending)
