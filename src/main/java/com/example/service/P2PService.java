@@ -39,13 +39,9 @@ public class P2PService {
      * @throws Exception if registration fails
      */
     public P2PInfoResponse registerP2PInfo(Long userId, String ipAddress, Integer tcpPort, Integer udpPort) throws Exception {
-        System.out.println("[P2PService] Registering P2P info for user " + userId);
-        
         // Create request
         P2PInfoRequest request = new P2PInfoRequest(userId, ipAddress, tcpPort, udpPort);
         String jsonRequest = gson.toJson(request);
-        
-        System.out.println("[P2PService] Request: " + jsonRequest);
         
         // Create connection
         URL url = new URL(ApiConfig.getFullUrl(ApiConfig.P2P_REGISTER_ENDPOINT));
@@ -67,17 +63,16 @@ public class P2PService {
             
             // Get response
             int responseCode = conn.getResponseCode();
-            System.out.println("[P2PService] Response code: " + responseCode);
             
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 // Success
-                P2PInfoResponse response = new P2PInfoResponse(true, "P2P info registered successfully");
-                System.out.println("[P2PService] ✅ P2P info registered successfully");
+                P2PInfoResponse response = new P2PInfoResponse(true, "Đã đăng ký P2P thành công");
+                System.out.println("✅ [P2P] Đã gửi thông tin lên server");
                 return response;
             } else {
                 // Error
-                String errorMessage = "Failed to register P2P info. Response code: " + responseCode;
-                System.err.println("[P2PService] ❌ " + errorMessage);
+                String errorMessage = "Lỗi đăng ký P2P (Code: " + responseCode + ")";
+                System.err.println("❌ [P2P] " + errorMessage);
                 return new P2PInfoResponse(false, errorMessage);
             }
             
@@ -93,7 +88,6 @@ public class P2PService {
      * @throws Exception if request fails
      */
     public P2PInfoRequest getPeerInfo(Long userId) throws Exception {
-        System.out.println("[P2PService] Getting P2P info for user " + userId);
         
         // Create connection
         URL url = new URL(ApiConfig.getFullUrl(ApiConfig.P2P_PEER_ENDPOINT + "/" + userId));
@@ -108,7 +102,6 @@ public class P2PService {
             
             // Get response
             int responseCode = conn.getResponseCode();
-            System.out.println("[P2PService] Response code: " + responseCode);
             
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 // Read response
@@ -121,13 +114,13 @@ public class P2PService {
                 }
                 
                 P2PInfoRequest peerInfo = gson.fromJson(response.toString(), P2PInfoRequest.class);
-                System.out.println("[P2PService] ✅ Got peer info: " + peerInfo);
+                System.out.println("✅ [P2P] Đã lấy thông tin peer: " + peerInfo.getIpAddress() + ":" + peerInfo.getTcpPort());
                 return peerInfo;
             } else if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
-                System.out.println("[P2PService] ⚠ Peer not found or offline");
+                System.out.println("⚠ [P2P] Peer không online hoặc không tìm thấy");
                 return null;
             } else {
-                System.err.println("[P2PService] ❌ Failed to get peer info. Response code: " + responseCode);
+                System.err.println("❌ [P2P] Lỗi lấy thông tin peer (Code: " + responseCode + ")");
                 return null;
             }
             

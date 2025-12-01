@@ -56,13 +56,16 @@ public class UDPServer {
                                 
                                 handlePacket(packet);
                                 
+                            } catch (java.net.SocketTimeoutException e) {
+                                // Timeout là bình thường - không có packet đến
+                                // Không cần log để tránh làm rối console
                             } catch (SocketException e) {
                                 if (running.get()) {
-                                    LOGGER.warning("Socket timeout hoặc đã đóng");
+                                    LOGGER.warning("Socket đã đóng hoặc lỗi kết nối");
                                 }
                             } catch (IOException e) {
                                 if (running.get()) {
-                                    LOGGER.warning("Lỗi khi nhận UDP packet: " + e.getMessage());
+                                    LOGGER.warning("⚠ [UDP] Lỗi nhận packet: " + e.getMessage());
                                 }
                             }
                         }
