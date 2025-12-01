@@ -12,7 +12,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 
+import java.net.InetAddress;
 import java.util.concurrent.CompletableFuture;
+
+import com.example.network.PortAllocator;
+import com.example.network.PeerManager;
 
 public class LoginScene {
 
@@ -43,10 +47,6 @@ public class LoginScene {
 
     // ===== State =====
     private boolean isLoginMode = true;
-
-    // ===== Services (TODO: Inject later) =====
-    // private AuthService authService;
-    // private BackendApi backendApi;
 
     /**
      * Initialize controller - called after FXML is loaded
@@ -290,6 +290,9 @@ public class LoginScene {
                     SessionManager.setCurrentUser(response.getUser());
                     SessionManager.setAuthToken(response.getToken());
                     
+                    // Initialize P2P for this user
+                    initializeP2PForUser();
+                    
                     // Show success message
                     System.out.println("Login successful! User: " + response.getUser().getUsername());
                     
@@ -337,6 +340,78 @@ public class LoginScene {
                 showError("Lỗi đăng ký: " + e.getMessage());
             });
         }
+    }
+
+    /**
+     * Initialize P2P for current user
+     * Allocates TCP/UDP ports and starts PeerManager
+     */
+    private void initializeP2PForUser() {
+        try {
+            // Allocate ports
+            int tcpPort = PortAllocator.allocatePort();
+            int udpPort = PortAllocator.allocatePort();
+            
+            if (tcpPort == -1 || udpPort == -1) {
+                System.err.println("❌ [P2P] Failed to allocate ports");
+                return;
+            }
+            
+            // Start P2P
+            PeerManager.getInstance().startP2P(tcpPort, udpPort);
+            
+            // Save to session
+            SessionManager.setP2PPorts(tcpPort, udpPort);
+            
+            // Get local IP
+            String localIP = InetAddress.getLocalHost().getHostAddress();
+            
+            System.out.println("✅ [P2P] Initialized successfully");
+            System.out.println("   └─ Local IP: " + localIP);
+            System.out.println("   └─ TCP Port: " + tcpPort);
+            System.out.println("   └─ UDP Port: " + udpPort);
+            
+            // Send P2P info to server
+            sendP2PInfoToServer(localIP, tcpPort, udpPort);
+            
+        } catch (Exception e) {
+            System.err.println("❌ [P2P] Initialization failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Send P2P information to server
+     * Runs asynchronously to avoid blocking UI
+     */
+    private void sendP2PInfoToServer(String ipAddress, int tcpPort, int udpPort) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                Long userId = SessionManager.getCurrentUserId();
+                if (userId == null) {
+                    System.err.println("⚠ [P2P] Cannot send info - user ID is null");
+                    return;
+                }
+                
+                System.out.println("📡 [P2P] Sending info to server...");
+                
+                com.example.service.P2PService p2pService = com.example.service.P2PService.getInstance();
+                com.example.api.dto.P2PInfoResponse response = p2pService.registerP2PInfo(
+                    userId, ipAddress, tcpPort, udpPort
+                );
+                
+                if (response.isSuccess()) {
+                    System.out.println("✅ [P2P] Info sent to server successfully");
+                } else {
+                    System.err.println("❌ [P2P] Failed to send info: " + response.getMessage());
+                }
+                
+            } catch (Exception e) {
+                System.err.println("❌ [P2P] Error sending info to server: " + e.getMessage());
+                e.printStackTrace();
+                // Non-critical error - P2P still works locally
+            }
+        });
     }
 
     /**

@@ -27,6 +27,11 @@ public class ApiConfig {
     public static final String UPDATE_PROFILE_ENDPOINT = AUTH_BASE + "/update-profile"; // PUT request
     public static final String CHANGE_PASSWORD_ENDPOINT = AUTH_BASE + "/change-password"; // PUT request
 
+    // P2P Endpoints
+    public static final String P2P_BASE = API_VERSION + "/p2p";
+    public static final String P2P_REGISTER_ENDPOINT = P2P_BASE + "/register"; // POST request
+    public static final String P2P_PEER_ENDPOINT = P2P_BASE + "/peer"; // GET request with /{userId}
+
     
     // Timeout settings (milliseconds)
     public static final int CONNECTION_TIMEOUT = 30000; // 30 seconds (increased for email sending)

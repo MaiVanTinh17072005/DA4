@@ -11,6 +11,10 @@ public class SessionManager {
     private static UserDTO currentUser;
     private static String authToken;
     
+    // P2P Port Information
+    private static int tcpPort = -1;
+    private static int udpPort = -1;
+    
     /**
      * Set current logged-in user
      */
@@ -52,6 +56,8 @@ public class SessionManager {
     public static void clearSession() {
         currentUser = null;
         authToken = null;
+        tcpPort = -1;
+        udpPort = -1;
     }
     
     /**
@@ -73,5 +79,27 @@ public class SessionManager {
      */
     public static String getCurrentUserEmail() {
         return currentUser != null ? currentUser.getEmail() : null;
+    }
+    
+    /**
+     * Set P2P ports for current session
+     */
+    public static void setP2PPorts(int tcp, int udp) {
+        tcpPort = tcp;
+        udpPort = udp;
+    }
+    
+    /**
+     * Get TCP port for P2P
+     */
+    public static int getTcpPort() {
+        return tcpPort;
+    }
+    
+    /**
+     * Get UDP port for P2P
+     */
+    public static int getUdpPort() {
+        return udpPort;
     }
 }

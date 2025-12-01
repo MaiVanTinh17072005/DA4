@@ -3,6 +3,7 @@ package com.example.ui;
 import com.example.service.AuthService;
 import com.example.util.SceneManager;
 import com.example.util.SessionManager;
+import com.example.network.PeerManager;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -38,6 +39,14 @@ public class SidebarController {
         new Thread(() -> {
             try {
                 System.out.println("Initiating logout...");
+                
+                // Stop P2P before logout
+                try {
+                    PeerManager.getInstance().stopP2P();
+                    System.out.println("✅ [P2P] Stopped successfully");
+                } catch (Exception e) {
+                    System.err.println("⚠ [P2P] Error during stop: " + e.getMessage());
+                }
                 
                 // Call logout API to update status to offline on server
                 authService.logout();

@@ -11,6 +11,7 @@ module com.example.fe_app {
     requires redis.clients.jedis;
 
     // Logging
+    requires java.logging;
     requires org.slf4j;
     requires org.apache.httpcomponents.client5.httpclient5;
     requires org.apache.httpcomponents.core5.httpcore5;
