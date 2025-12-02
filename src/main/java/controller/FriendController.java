@@ -25,6 +25,41 @@ public class FriendController {
     private FriendService friendService;
     
     /**
+     * Get friends list
+     * GET /api/v1/friends
+     * 
+     * @param authorization JWT token from Authorization header
+     * @return List of friends
+     */
+    @GetMapping
+    public ResponseEntity<List<UserDTO>> getFriendsList(
+            @RequestHeader("Authorization") String authorization) {
+        
+        System.out.println("=== GET FRIENDS LIST ===");
+        
+        try {
+            // Extract user ID from JWT token
+            String token = authorization.replace("Bearer ", "");
+            Long userId = JwtUtil.extractUserId(token);
+            
+            System.out.println("User ID: " + userId);
+            
+            // Get friends list
+            List<UserDTO> friends = friendService.getFriends(userId);
+            
+            System.out.println("✅ Returning " + friends.size() + " friends");
+            System.out.println("========================");
+            return ResponseEntity.ok(friends);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("========================");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+    
+    /**
      * Get friend suggestions
      * GET /api/v1/friends/suggestions?limit=10
      * 
@@ -102,14 +137,14 @@ public class FriendController {
     
     /**
      * Send friend request
-     * POST /api/v1/friends/request
+     * POST /api/v1/friends/send
      * Body: { "targetId": 123 }
      * 
      * @param request Friend request DTO
      * @param authorization JWT token from Authorization header
      * @return Success/error response
      */
-    @PostMapping("/request")
+    @PostMapping("/send")
     public ResponseEntity<FriendResponseDTO> sendFriendRequest(
             @RequestBody FriendRequestDTO request,
             @RequestHeader("Authorization") String authorization) {

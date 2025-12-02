@@ -148,6 +148,64 @@ public class FriendService {
     }
     
     /**
+     * Get friends list for a user (from Redis cache or DB)
+     */
+    public List<UserDTO> getFriends(Long userId) {
+        System.out.println("[FriendService] Getting friends for user: " + userId);
+        
+        try (Jedis jedis = jedisPool.getResource()) {
+            // Try to get from Redis cache first
+            String cacheKey = FRIENDS_CACHE_PREFIX + userId;
+            String cachedFriends = jedis.get(cacheKey);
+            
+            if (cachedFriends != null) {
+                System.out.println("[FriendService] ✅ Found friends in Redis cache");
+                // Parse cached friends (List<Friend>)
+                List<Friend> friends = objectMapper.readValue(
+                    cachedFriends,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, Friend.class)
+                );
+                
+                // Convert to UserDTO list
+                List<UserDTO> friendDTOs = new ArrayList<>();
+                for (Friend friend : friends) {
+                    Optional<User> userOpt = userRepository.findById(friend.getTargetId());
+                    if (userOpt.isPresent()) {
+                        friendDTOs.add(convertToDTO(userOpt.get()));
+                    }
+                }
+                
+                System.out.println("[FriendService] ✅ Returning " + friendDTOs.size() + " friends from cache");
+                return friendDTOs;
+            }
+            
+            // Cache miss - get from DB and update cache
+            System.out.println("[FriendService] ⚠️ Cache miss - fetching from DB");
+            List<Friend> friends = friendRepository.findByUserIdAndStatus(userId, "accepted");
+            
+            // Convert to UserDTO list
+            List<UserDTO> friendDTOs = new ArrayList<>();
+            for (Friend friend : friends) {
+                Optional<User> userOpt = userRepository.findById(friend.getTargetId());
+                if (userOpt.isPresent()) {
+                    friendDTOs.add(convertToDTO(userOpt.get()));
+                }
+            }
+            
+            // Update cache
+            updateFriendsCache(userId);
+            
+            System.out.println("[FriendService] ✅ Returning " + friendDTOs.size() + " friends from DB");
+            return friendDTOs;
+            
+        } catch (Exception e) {
+            System.err.println("[FriendService] ❌ Error getting friends: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+    
+    /**
      * Search users by username or email
      */
     public List<UserDTO> searchUsers(Long userId, String query) {
