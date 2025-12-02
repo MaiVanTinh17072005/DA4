@@ -146,6 +146,52 @@ public class FriendService {
             return new ArrayList<>();
         }
     }
+    
+    /**
+     * Get friends list
+     */
+    public List<UserDTO> getFriendsList() {
+        try {
+            String token = SessionManager.getAuthToken();
+            
+            String url = ApiConfig.BASE_URL + ApiConfig.GET_FRIENDS_LIST;
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setConnectTimeout(ApiConfig.CONNECTION_TIMEOUT);
+            conn.setReadTimeout(ApiConfig.READ_TIMEOUT);
+            
+            int responseCode = conn.getResponseCode();
+            System.out.println("✅ [FriendService] Get friends list response code: " + responseCode);
+            
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder response = new StringBuilder();
+                String line;
+                
+                while ((line = in.readLine()) != null) {
+                    response.append(line);
+                }
+                in.close();
+                
+                // Parse JSON array
+                Type listType = new TypeToken<List<UserDTO>>(){}.getType();
+                List<UserDTO> friends = new Gson().fromJson(response.toString(), listType);
+                
+                System.out.println("✅ [FriendService] Got " + friends.size() + " friends");
+                return friends;
+            } else {
+                System.err.println("❌ [FriendService] Failed to get friends list: " + responseCode);
+                return new ArrayList<>();
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [FriendService] Error getting friends list: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
 
     /**
      * Send friend request to a user

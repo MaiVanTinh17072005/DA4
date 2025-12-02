@@ -152,18 +152,33 @@ public class FriendScene {
         }
     }
 
-
     private void initFriends() {
-        // TODO: Load real friends from API
-        allFriends.addAll(
-            new FriendItem("Huy Pham", "@huypham", "Online", LocalDate.of(2023, 5, 15), 2),
-            new FriendItem("An Nguyen", "@annguyen", "Online", LocalDate.of(2023, 8, 20), 1),
-            new FriendItem("Minh Tran", "@minhtran", "Offline", LocalDate.of(2024, 1, 10), 3),
-            new FriendItem("Linh Vo", "@linhvo", "Online", LocalDate.of(2023, 12, 5), 2),
-            new FriendItem("Khoa Le", "@khoale", "Idle", LocalDate.of(2024, 2, 14), 1),
-            new FriendItem("Tuan Nguyen", "@tuannguyen", "Offline", LocalDate.of(2023, 9, 30), 4)
-        );
-        filteredFriends.setAll(allFriends);
+        // Load real friends from API
+        new Thread(() -> {
+            try {
+                List<UserDTO> friendsList = friendService.getFriendsList();
+                
+                Platform.runLater(() -> {
+                    allFriends.clear();
+                    for (UserDTO friend : friendsList) {
+                        allFriends.add(new FriendItem(
+                            friend.getId(),
+                            friend.getUsername(),
+                            friend.getAvatarUrl(),
+                            friend.getStatus() != null ? friend.getStatus() : "Offline"
+                        ));
+                    }
+                    
+                    filteredFriends.setAll(allFriends);
+                    
+                    System.out.println("[FriendScene] ✅ Loaded " + allFriends.size() + " friends from server");
+                });
+                
+            } catch (Exception e) {
+                System.err.println("[FriendScene] ❌ Error loading friends: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }).start();
     }
     
     private void initNotificationBadge() {
@@ -661,17 +676,20 @@ public class FriendScene {
 
     // ===== Helper Classes =====
     private record FriendItem(
-        String name, 
-        String username, 
-        String status, 
-        LocalDate friendSince, 
-        int mutualGroups
+        Long id,
+        String username,
+        String avatarUrl,
+        String status
     ) {
-        String getName() { return name; }
+        String getName() { return username; }
         String getUsername() { return username; }
         String getStatus() { return status; }
-        LocalDate getFriendSince() { return friendSince; }
-        int getMutualGroups() { return mutualGroups; }
+        String getAvatarUrl() { return avatarUrl; }
+        Long getId() { return id; }
+        
+        // Mock data for compatibility with existing UI code
+        LocalDate getFriendSince() { return LocalDate.now().minusDays(30); }
+        int getMutualGroups() { return 0; }
     }
 
     private class FriendCell extends ListCell<FriendItem> {

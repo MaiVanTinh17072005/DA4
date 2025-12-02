@@ -36,13 +36,14 @@ public class ApiConfig {
     public static final String FRIEND_BASE = API_VERSION + "/friends";
     public static final String FRIEND_SUGGESTIONS_ENDPOINT = FRIEND_BASE + "/suggestions"; // GET request with ?limit=10
     public static final String FRIEND_SEARCH_ENDPOINT = FRIEND_BASE + "/search"; // GET request with ?query=...
-    public static final String FRIEND_REQUEST_ENDPOINT = FRIEND_BASE + "/request"; // POST request with targetId
+    public static final String FRIEND_REQUEST_ENDPOINT = FRIEND_BASE + "/send"; // POST request with targetId
     public static final String FRIEND_CANCEL_REQUEST_ENDPOINT = FRIEND_BASE + "/cancel"; // DELETE request with /{targetId}
     public static final String FRIEND_PENDING_ENDPOINT = FRIEND_BASE + "/pending"; // GET request - get pending requests
     public static final String FRIEND_ACCEPT_ENDPOINT = FRIEND_BASE + "/accept"; // POST request with requestId
     public static final String FRIEND_REJECT_ENDPOINT = FRIEND_BASE + "/reject"; // POST request with requestId
     public static final String GET_NOTIFICATIONS = FRIEND_BASE + "/notifications"; // GET request - get notifications
     public static final String MARK_NOTIFICATION_READ = FRIEND_BASE + "/notifications/"; // DELETE request - mark as read + notificationId
+    public static final String GET_FRIENDS_LIST = FRIEND_BASE; // GET request - get friends list
 
     // Timeout settings (milliseconds)
     public static final int CONNECTION_TIMEOUT = 30000; // 30 seconds (increased for email sending)
