@@ -638,4 +638,45 @@ public class FriendService {
             return false;
         }
     }
+    
+    /**
+     * Remove friend (delete bidirectional friendship)
+     */
+    public boolean removeFriend(Long userId, Long friendId) {
+        System.out.println("[FriendService] Removing friend: userId=" + userId + ", friendId=" + friendId);
+        
+        try {
+            // Find and delete both directions of friendship
+            Optional<Friend> friendship1 = friendRepository.findByUserIdAndTargetId(userId, friendId);
+            Optional<Friend> friendship2 = friendRepository.findByUserIdAndTargetId(friendId, userId);
+            
+            if (friendship1.isEmpty() && friendship2.isEmpty()) {
+                System.err.println("[FriendService] ❌ Friendship not found");
+                return false;
+            }
+            
+            // Delete both directions
+            friendship1.ifPresent(friend -> {
+                friendRepository.delete(friend);
+                System.out.println("[FriendService] ✅ Deleted friendship: " + userId + " -> " + friendId);
+            });
+            
+            friendship2.ifPresent(friend -> {
+                friendRepository.delete(friend);
+                System.out.println("[FriendService] ✅ Deleted friendship: " + friendId + " -> " + userId);
+            });
+            
+            // Update Redis cache for both users
+            updateFriendsCache(userId);
+            updateFriendsCache(friendId);
+            
+            System.out.println("[FriendService] ✅ Friend removed successfully");
+            return true;
+            
+        } catch (Exception e) {
+            System.err.println("[FriendService] ❌ Error removing friend: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

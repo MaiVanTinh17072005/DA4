@@ -461,4 +461,50 @@ public class FriendController {
                     .body(FriendResponseDTO.error("Internal server error"));
         }
     }
+    
+    /**
+     * Remove friend
+     * DELETE /api/v1/friends/remove/{friendId}
+     * 
+     * @param friendId Friend ID to remove
+     * @param authorization JWT token from Authorization header
+     * @return Success/error response
+     */
+    @DeleteMapping("/remove/{friendId}")
+    public ResponseEntity<FriendResponseDTO> removeFriend(
+            @PathVariable("friendId") Long friendId,
+            @RequestHeader("Authorization") String authorization) {
+        
+        System.out.println("=== REMOVE FRIEND ===");
+        System.out.println("Friend ID: " + friendId);
+        
+        try {
+            // Extract user ID from JWT token
+            String token = authorization.replace("Bearer ", "");
+            Long userId = JwtUtil.extractUserId(token);
+            
+            System.out.println("User ID: " + userId);
+            
+            // Remove friend
+            boolean success = friendService.removeFriend(userId, friendId);
+            
+            if (success) {
+                System.out.println("✅ Friend removed successfully");
+                System.out.println("=====================");
+                return ResponseEntity.ok(FriendResponseDTO.success("Friend removed successfully"));
+            } else {
+                System.err.println("❌ Failed to remove friend");
+                System.out.println("=====================");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(FriendResponseDTO.error("Failed to remove friend"));
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("=====================");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(FriendResponseDTO.error("Internal server error"));
+        }
+    }
 }
