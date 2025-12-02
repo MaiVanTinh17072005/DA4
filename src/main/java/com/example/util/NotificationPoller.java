@@ -82,6 +82,11 @@ public class NotificationPoller {
      * Check for new notifications
      */
     private void checkNotifications() {
+        // Don't check if user is not logged in
+        if (!com.example.util.SessionManager.isLoggedIn()) {
+            return;
+        }
+        
         try {
             List<FriendNotificationDTO> notifications = friendService.getNotifications();
             

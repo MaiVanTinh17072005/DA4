@@ -133,6 +133,11 @@ public class NotificationBadge {
      * Fetch pending request count from server
      */
     private void fetchPendingCount() {
+        // Don't fetch if user is not logged in
+        if (!com.example.util.SessionManager.isLoggedIn()) {
+            return;
+        }
+        
         List<PendingFriendRequestDTO> requests = friendService.getPendingRequests();
         updateCount(requests.size());
     }
