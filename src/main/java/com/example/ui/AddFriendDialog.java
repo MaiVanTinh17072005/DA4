@@ -148,6 +148,9 @@ public class AddFriendDialog {
         // Avatar
         Circle avatar = new Circle(24);
         avatar.getStyleClass().add("user-avatar");
+        
+        // Load avatar image
+        loadAvatar(avatar, user.getAvatarUrl());
 
         // User Info
         VBox info = new VBox(4);
@@ -261,6 +264,50 @@ public class AddFriendDialog {
 
         emptyState.getChildren().addAll(iconLabel, titleLabel, messageLabel);
         return emptyState;
+    }
+    
+    /**
+     * Load avatar image into Circle
+     */
+    private void loadAvatar(Circle avatarCircle, String avatarUrl) {
+        System.out.println("[AddFriendDialog] Loading avatar: " + avatarUrl);
+        try {
+            javafx.scene.image.Image avatarImage;
+            
+            if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
+                // Try to load user's avatar
+                try {
+                    System.out.println("[AddFriendDialog] Attempting to load from resources: " + avatarUrl);
+                    avatarImage = new javafx.scene.image.Image(
+                        getClass().getResourceAsStream(avatarUrl));
+                    if (avatarImage.isError()) {
+                        throw new Exception("Failed to load avatar from: " + avatarUrl);
+                    }
+                    System.out.println("[AddFriendDialog] ✓ Successfully loaded avatar: " + avatarUrl);
+                } catch (Exception e) {
+                    System.out.println("[AddFriendDialog] ⚠ Failed to load avatar '" + avatarUrl + "': " + e.getMessage());
+                    System.out.println("[AddFriendDialog] Using default avatar");
+                    // Fallback to default avatar
+                    avatarImage = new javafx.scene.image.Image(
+                        getClass().getResourceAsStream("/com/example/images/macdinh.jpg"));
+                }
+            } else {
+                System.out.println("[AddFriendDialog] Avatar URL is null or empty, using default");
+                // Load default avatar
+                avatarImage = new javafx.scene.image.Image(
+                    getClass().getResourceAsStream("/com/example/images/macdinh.jpg"));
+            }
+            
+            if (avatarCircle != null && avatarImage != null && !avatarImage.isError()) {
+                avatarCircle.setFill(new javafx.scene.paint.ImagePattern(avatarImage));
+                System.out.println("[AddFriendDialog] ✓ Avatar set to circle");
+            } else {
+                System.err.println("[AddFriendDialog] ❌ Failed to set avatar - circle or image is null/error");
+            }
+        } catch (Exception e) {
+            System.err.println("[AddFriendDialog] ❌ Error loading avatar: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     /**

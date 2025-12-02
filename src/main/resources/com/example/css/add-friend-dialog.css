@@ -177,7 +177,7 @@
 }
 
 .user-avatar {
-    -fx-fill: linear-gradient(to bottom right, #5865f2, #7289da, #43b581);
+    /* Removed -fx-fill to allow ImagePattern from Java code */
     -fx-stroke: linear-gradient(to bottom right, #7289da, #5865f2);
     -fx-stroke-width: 3;
     -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.5), 6, 0.5, 0, 2);
@@ -372,7 +372,7 @@
 }
 
 .user-avatar {
-    -fx-fill: linear-gradient(to bottom right, #5865f2, #7289da, #43b581);
+    /* Removed -fx-fill to allow ImagePattern from Java code */
     -fx-stroke: linear-gradient(to bottom right, #7289da, #5865f2);
     -fx-stroke-width: 3;
     -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.5), 6, 0.5, 0, 2);

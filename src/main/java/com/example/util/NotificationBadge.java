@@ -103,7 +103,7 @@ public class NotificationBadge {
     
     /**
      * Start polling for pending requests
-     * Polls every 30 seconds
+     * Polls every 5 seconds
      */
     public void startPolling() {
         // Initial fetch
@@ -116,7 +116,7 @@ public class NotificationBadge {
             } catch (Exception e) {
                 System.err.println("❌ [NotificationBadge] Error polling pending requests: " + e.getMessage());
             }
-        }, 30, 30, TimeUnit.SECONDS);
+        }, 5, 5, TimeUnit.SECONDS);
         
         System.out.println("✅ [NotificationBadge] Started polling for pending requests");
     }

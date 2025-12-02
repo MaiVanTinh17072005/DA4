@@ -577,6 +577,71 @@ public class FriendService {
             return false;
         }
     }
+    
+    /**
+     * Remove friend
+     * @param friendId ID of the friend to remove
+     * @return true if successful, false otherwise
+     */
+    public boolean removeFriend(Long friendId) {
+        try {
+            String urlString = ApiConfig.getFullUrl(ApiConfig.FRIEND_REMOVE_ENDPOINT) + "/" + friendId;
+            URL url = new URL(urlString);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            
+            try {
+                // Configure connection
+                conn.setRequestMethod("DELETE");
+                conn.setRequestProperty("Content-Type", ApiConfig.CONTENT_TYPE_JSON);
+                conn.setRequestProperty(ApiConfig.AUTHORIZATION_HEADER, 
+                    ApiConfig.BEARER_PREFIX + SessionManager.getAuthToken());
+                conn.setConnectTimeout(ApiConfig.CONNECTION_TIMEOUT);
+                conn.setReadTimeout(ApiConfig.READ_TIMEOUT);
+                
+                System.out.println("[FriendService] Removing friend: " + friendId);
+                
+                // Get response
+                int responseCode = conn.getResponseCode();
+                
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    // Read response body
+                    BufferedReader br = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+                    StringBuilder response = new StringBuilder();
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        response.append(responseLine.trim());
+                    }
+                    
+                    System.out.println("✅ [FriendService] Server response: " + response.toString());
+                    System.out.println("✅ [FriendService] Friend removed successfully");
+                    return true;
+                } else {
+                    // Read error response
+                    BufferedReader br = new BufferedReader(
+                        new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8));
+                    StringBuilder errorResponse = new StringBuilder();
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        errorResponse.append(responseLine.trim());
+                    }
+                    
+                    System.err.println("❌ [FriendService] Failed to remove friend");
+                    System.err.println("   Response code: " + responseCode);
+                    System.err.println("   Error: " + errorResponse.toString());
+                    return false;
+                }
+                
+            } finally {
+                conn.disconnect();
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ [FriendService] Error removing friend: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
 
 

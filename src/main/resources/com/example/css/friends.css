@@ -100,7 +100,7 @@
 }
 
 .friend-avatar {
-    -fx-fill: linear-gradient(to bottom right, #5865f2, #7289da);
+    /* Removed -fx-fill to allow ImagePattern from Java code */
     -fx-stroke: #2f3136;
     -fx-stroke-width: 2;
 }
@@ -208,7 +208,7 @@
 }
 
 .friend-detail-avatar {
-    -fx-fill: linear-gradient(to bottom right, #5865f2, #7289da);
+    /* Removed -fx-fill to allow ImagePattern from Java code */
     -fx-stroke: #36393f;
     -fx-stroke-width: 3;
 }
@@ -403,7 +403,7 @@
     }
 
     .friend-detail-avatar {
-        -fx-fill: linear-gradient(to bottom right, #5865f2, #7289da);
+        /* Removed -fx-fill to allow ImagePattern from Java code */
         -fx-stroke: #36393f;
         -fx-stroke-width: 3;
     }

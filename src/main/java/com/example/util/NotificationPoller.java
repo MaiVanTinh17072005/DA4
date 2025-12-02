@@ -24,7 +24,7 @@ public class NotificationPoller {
     private Set<String> processedNotificationIds;
     private boolean isRunning = false;
     
-    private static final int POLLING_INTERVAL = 30000; // 30 seconds
+    private static final int POLLING_INTERVAL = 5000; // 5 seconds
     
     private NotificationPoller() {
         this.friendService = new FriendService();
@@ -63,7 +63,7 @@ public class NotificationPoller {
             public void run() {
                 checkNotifications();
             }
-        }, 0, POLLING_INTERVAL); // Check immediately, then every 30 seconds
+        }, 0, POLLING_INTERVAL); // Check immediately, then every 5 seconds
     }
     
     /**

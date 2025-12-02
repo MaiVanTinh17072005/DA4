@@ -41,7 +41,6 @@ public class FriendScene {
     @FXML private Label headerTitleLabel;
     @FXML private Label headerSubtitleLabel;
     @FXML private ToggleButton filterAllButton;
-    @FXML private ToggleButton filterOnlineButton;
     @FXML private ToggleButton filterPendingButton;
     @FXML private Button addFriendButton;
     @FXML private StackPane notificationBadgeContainer; // Container for notification badge
@@ -148,6 +147,46 @@ public class FriendScene {
             }
         } catch (Exception e) {
             System.out.println("[FriendScene] ❌ Error loading avatar: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Load friend avatar into a Circle
+     */
+    private void loadFriendAvatar(Circle avatarCircle, String avatarUrl) {
+        System.out.println("[FriendScene] Loading friend avatar: " + avatarUrl);
+        try {
+            javafx.scene.image.Image avatarImage;
+            
+            if (avatarUrl != null && !avatarUrl.trim().isEmpty()) {
+                // Try to load friend's avatar
+                try {
+                    System.out.println("[FriendScene] Attempting to load from resources: " + avatarUrl);
+                    avatarImage = new javafx.scene.image.Image(getClass().getResourceAsStream(avatarUrl));
+                    if (avatarImage.isError()) {
+                        throw new Exception("Failed to load avatar from: " + avatarUrl);
+                    }
+                    System.out.println("[FriendScene] ✓ Loaded friend avatar: " + avatarUrl);
+                } catch (Exception e) {
+                    System.out.println("[FriendScene] ⚠ Failed to load friend avatar '" + avatarUrl + "': " + e.getMessage());
+                    System.out.println("[FriendScene] Using default avatar");
+                    avatarImage = new javafx.scene.image.Image(getClass().getResourceAsStream("/com/example/images/macdinh.jpg"));
+                }
+            } else {
+                // Load default avatar
+                System.out.println("[FriendScene] Avatar URL is null or empty, using default");
+                avatarImage = new javafx.scene.image.Image(getClass().getResourceAsStream("/com/example/images/macdinh.jpg"));
+            }
+            
+            if (avatarCircle != null && avatarImage != null && !avatarImage.isError()) {
+                avatarCircle.setFill(new javafx.scene.paint.ImagePattern(avatarImage));
+                System.out.println("[FriendScene] ✓ Avatar set to circle");
+            } else {
+                System.err.println("[FriendScene] ❌ Failed to set avatar - circle or image is null/error");
+            }
+        } catch (Exception e) {
+            System.out.println("[FriendScene] ❌ Error loading friend avatar: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -292,7 +331,6 @@ public class FriendScene {
     private void initFilters() {
         ToggleGroup filterGroup = new ToggleGroup();
         filterAllButton.setToggleGroup(filterGroup);
-        filterOnlineButton.setToggleGroup(filterGroup);
         filterPendingButton.setToggleGroup(filterGroup);
     }
 
@@ -303,9 +341,7 @@ public class FriendScene {
                 .filter(friend -> friend.getName().toLowerCase().contains(keyword) 
                                || friend.getUsername().toLowerCase().contains(keyword))
                 .filter(friend -> {
-                    if (filterOnlineButton.isSelected()) {
-                        return "Online".equals(friend.getStatus());
-                    } else if (filterPendingButton.isSelected()) {
+                    if (filterPendingButton.isSelected()) {
                         return false; // Will show pending requests instead
                     }
                     return true;
@@ -342,6 +378,9 @@ public class FriendScene {
 
         detailName.setText(friend.getName());
         detailUsername.setText(friend.getUsername());
+        
+        // Load avatar
+        loadFriendAvatar(detailAvatar, friend.getAvatarUrl());
         
         String statusEmoji = switch (friend.getStatus()) {
             case "Online" -> "🟢";
@@ -409,6 +448,9 @@ public class FriendScene {
 
         Circle avatar = new Circle(24);
         avatar.getStyleClass().add("friend-avatar");
+        
+        // Load avatar
+        loadFriendAvatar(avatar, request.getSenderAvatarUrl());
 
         VBox info = new VBox(4);
         HBox.setHgrow(info, javafx.scene.layout.Priority.ALWAYS);
@@ -484,10 +526,7 @@ public class FriendScene {
         applyFilters();
     }
 
-    @FXML
-    private void handleFilterOnline() {
-        applyFilters();
-    }
+
 
     @FXML
     private void handleFilterPending() {
@@ -563,9 +602,48 @@ public class FriendScene {
 
             confirm.showAndWait().ifPresent(response -> {
                 if (response == ButtonType.OK) {
-                    allFriends.remove(selectedFriend);
-                    filteredFriends.remove(selectedFriend);
-                    showEmptyState();
+                    System.out.println("[FriendScene] Removing friend: " + selectedFriend.getId());
+                    
+                    // Call API in background thread
+                    new Thread(() -> {
+                        try {
+                            boolean success = friendService.removeFriend(selectedFriend.getId());
+                            
+                            Platform.runLater(() -> {
+                                if (success) {
+                                    // Remove from local lists
+                                    allFriends.remove(selectedFriend);
+                                    filteredFriends.remove(selectedFriend);
+                                    
+                                    // Show empty state
+                                    showEmptyState();
+                                    
+                                    // Show success toast
+                                    if (notificationToast != null) {
+                                        notificationToast.showSuccess("Đã xóa " + selectedFriend.getName() + " khỏi danh sách bạn bè");
+                                    }
+                                    
+                                    System.out.println("✅ [FriendScene] Friend removed successfully");
+                                } else {
+                                    // Show error toast
+                                    if (notificationToast != null) {
+                                        notificationToast.showError("Không thể xóa bạn bè. Vui lòng thử lại!");
+                                    }
+                                    System.err.println("❌ [FriendScene] Failed to remove friend");
+                                }
+                            });
+                            
+                        } catch (Exception e) {
+                            System.err.println("❌ [FriendScene] Error removing friend: " + e.getMessage());
+                            e.printStackTrace();
+                            
+                            Platform.runLater(() -> {
+                                if (notificationToast != null) {
+                                    notificationToast.showError("Đã xảy ra lỗi khi xóa bạn bè");
+                                }
+                            });
+                        }
+                    }).start();
                 }
             });
         }
@@ -724,6 +802,9 @@ public class FriendScene {
                 statusLabel.setText(item.getStatus());
                 statusLabel.getStyleClass().removeAll("online", "offline");
                 statusLabel.getStyleClass().add(item.getStatus().toLowerCase());
+                
+                // Load avatar
+                loadFriendAvatar(avatar, item.getAvatarUrl());
                 
                 statusIndicator.getStyleClass().removeAll("online", "offline", "idle", "dnd");
                 statusIndicator.getStyleClass().add(item.getStatus().toLowerCase());

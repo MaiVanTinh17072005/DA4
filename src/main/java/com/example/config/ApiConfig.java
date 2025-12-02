@@ -41,6 +41,7 @@ public class ApiConfig {
     public static final String FRIEND_PENDING_ENDPOINT = FRIEND_BASE + "/pending"; // GET request - get pending requests
     public static final String FRIEND_ACCEPT_ENDPOINT = FRIEND_BASE + "/accept"; // POST request with requestId
     public static final String FRIEND_REJECT_ENDPOINT = FRIEND_BASE + "/reject"; // POST request with requestId
+    public static final String FRIEND_REMOVE_ENDPOINT = FRIEND_BASE + "/remove"; // DELETE request with /{friendId}
     public static final String GET_NOTIFICATIONS = FRIEND_BASE + "/notifications"; // GET request - get notifications
     public static final String MARK_NOTIFICATION_READ = FRIEND_BASE + "/notifications/"; // DELETE request - mark as read + notificationId
     public static final String GET_FRIENDS_LIST = FRIEND_BASE; // GET request - get friends list
