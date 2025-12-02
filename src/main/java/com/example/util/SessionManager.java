@@ -54,14 +54,6 @@ public class SessionManager {
      * Clear session (logout)
      */
     public static void clearSession() {
-        // Stop notification polling to prevent JWT errors
-        try {
-            NotificationPoller.getInstance().stopPolling();
-            System.out.println("[SessionManager] ✓ Stopped notification polling");
-        } catch (Exception e) {
-            System.err.println("[SessionManager] ⚠ Error stopping notification polling: " + e.getMessage());
-        }
-        
         currentUser = null;
         authToken = null;
         tcpPort = -1;

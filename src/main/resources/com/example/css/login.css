@@ -1,140 +1,131 @@
 /* ========================================
-   DISCORD MINI - LOGIN SCENE CSS
-   Dark Theme with Modern Design
+   DISCORD MINI - REFINED LOGIN CSS
+   Elegant & Subtle Design
    ======================================== */
-
-/* ===== Discord Color Palette ===== */
-/*
-  Background: #36393f (main), #2f3136 (secondary), #202225 (dark)
-  Primary: #5865f2 (blurple), #4752c4 (hover)
-  Success: #43b581 (green)
-  Danger: #f04747 (red)
-  Text: #ffffff (white), #dcddde (normal), #b9bbbe (muted), #72767d (disabled)
-*/
 
 /* ===== ROOT & BACKGROUND ===== */
 .root {
-    -fx-background-color: #36393f;
-    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    -fx-min-width: 100%;
-    -fx-min-height: 100%;
+    -fx-background-color: #1a1d2e;
+    -fx-font-family: "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
 }
 
 .login-background {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #36393f 0%, #2f3136 50%, #202225 100%);
+    -fx-background-color: linear-gradient(to bottom right, #1a1d2e 0%, #252840 50%, #1e2235 100%);
     -fx-padding: 40px;
-    -fx-min-width: 100%;
-    -fx-min-height: 100%;
 }
 
-/* ===== LOGIN CARD ===== */
+/* ===== REFINED LOGIN CARD ===== */
 .login-card {
-    -fx-background-color: #2f3136;
-    -fx-background-radius: 12px;
-    -fx-padding: 45px 40px;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 25, 0.3, 0, 8);
-    -fx-border-color: rgba(255, 255, 255, 0.05);
+    -fx-background-color: linear-gradient(to bottom, #2a2d3e 0%, #25283a 100%);
+    -fx-background-radius: 16px;
+    -fx-padding: 48px 42px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 20, 0.2, 0, 4);
+    -fx-border-color: rgba(88, 101, 242, 0.12);
     -fx-border-width: 1px;
-    -fx-border-radius: 12px;
+    -fx-border-radius: 16px;
     -fx-max-width: 450px;
-    -fx-max-height: 650px;
 }
 
-/* ===== TYPOGRAPHY ===== */
+.login-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.2), 25, 0.25, 0, 6);
+}
+
+/* ===== ELEGANT TITLE ===== */
 .app-title {
-    -fx-font-size: 36px;
-    -fx-font-weight: bold;
-    -fx-fill: linear-gradient(to right, #5865f2, #7289da);
-    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.3), 10, 0.5, 0, 2);
+    -fx-font-size: 40px;
+    -fx-font-weight: 800;
+    -fx-fill: linear-gradient(to right, #5865f2 0%, #7289da 100%);
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.3), 12, 0.4, 0, 3);
+    -fx-letter-spacing: -0.3px;
 }
 
 .welcome-text {
-    -fx-font-size: 18px;
+    -fx-font-size: 16px;
     -fx-fill: #b9bbbe;
     -fx-font-weight: 500;
+    -fx-opacity: 0.9;
 }
 
+/* ===== FORM LABELS ===== */
 .form-label {
-    -fx-text-fill: #b9bbbe;
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
-    -fx-letter-spacing: 0.5px;
+    -fx-text-fill: #c9cace;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-letter-spacing: 1px;
+    -fx-padding: 0 0 6px 2px;
 }
 
 .secondary-text {
-    -fx-fill: #b9bbbe;
+    -fx-fill: #8e9199;
     -fx-font-size: 14px;
+    -fx-font-weight: 500;
 }
 
-/* ===== FORM INPUTS ===== */
+/* ===== REFINED FORM INPUTS ===== */
 .form-input {
-    -fx-background-color: #202225;
-    -fx-text-fill: #dcddde;
-    -fx-prompt-text-fill: #72767d;
+    -fx-background-color: #1e2132;
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #6b6e7a;
     -fx-font-size: 15px;
-    -fx-padding: 14px 12px;
-    -fx-background-radius: 6px;
-    -fx-border-color: transparent;
-    -fx-border-width: 2px;
-    -fx-border-radius: 6px;
-    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.2), 5, 0, 0, 1);
+    -fx-padding: 14px 16px;
+    -fx-background-radius: 8px;
+    -fx-border-color: rgba(88, 101, 242, 0.08);
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
 }
 
-/* Password field in StackPane (with toggle button) */
 .stack-pane .form-input {
-    -fx-background-radius: 6px 0 0 6px;
-    -fx-border-width: 2px 0 2px 2px;
-    -fx-border-radius: 6px 0 0 6px;
+    -fx-background-radius: 8px 0 0 8px;
+    -fx-border-radius: 8px 0 0 8px;
+    -fx-border-width: 1px 0 1px 1px;
 }
 
 .form-input:focused {
     -fx-border-color: #5865f2;
-    -fx-background-color: #1e1f22;
-    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.3), 8, 0.4, 0, 0);
+    -fx-background-color: #1a1d2e;
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.15), 8, 0.3, 0, 0);
 }
 
 .form-input:hover {
-    -fx-background-color: #1a1b1e;
-    -fx-border-color: rgba(88, 101, 242, 0.3);
+    -fx-background-color: #1b1e30;
+    -fx-border-color: rgba(88, 101, 242, 0.15);
 }
 
-/* ===== PRIMARY BUTTON ===== */
+/* ===== REFINED PRIMARY BUTTON ===== */
 .primary-button {
-    -fx-background-color: linear-gradient(to bottom, #5865f2, #4752c4);
+    -fx-background-color: linear-gradient(to bottom, #5865f2 0%, #4e5acf 100%);
     -fx-text-fill: white;
     -fx-font-size: 16px;
-    -fx-font-weight: bold;
-    -fx-padding: 14px 24px;
-    -fx-background-radius: 6px;
+    -fx-font-weight: 700;
+    -fx-padding: 15px 26px;
+    -fx-background-radius: 8px;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.4), 10, 0.3, 0, 4);
+    -fx-letter-spacing: 0.3px;
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.25), 12, 0.3, 0, 4);
 }
 
 .primary-button:hover {
-    -fx-background-color: linear-gradient(to bottom, #4752c4, #3c45a5);
-    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.6), 15, 0.4, 0, 6);
-    -fx-scale-y: 1.02;
-    -fx-scale-x: 1.02;
+    -fx-background-color: linear-gradient(to bottom, #6470ff 0%, #5865f2 100%);
+    -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.35), 16, 0.35, 0, 6);
+    -fx-scale-y: 1.01;
 }
 
 .primary-button:pressed {
-    -fx-background-color: #3c45a5;
-    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.3), 5, 0.3, 0, 2);
-    -fx-scale-y: 0.98;
-    -fx-scale-x: 0.98;
+    -fx-background-color: #4752c4;
+    -fx-scale-y: 0.99;
 }
 
 .primary-button:disabled {
-    -fx-background-color: #4e5058;
-    -fx-text-fill: #72767d;
+    -fx-background-color: #3a3d47;
+    -fx-text-fill: #5a5d68;
     -fx-cursor: default;
     -fx-effect: none;
-    -fx-opacity: 0.6;
+    -fx-opacity: 0.5;
 }
 
-/* ===== HYPERLINKS ===== */
+/* ===== REFINED HYPERLINKS ===== */
 .link-text {
-    -fx-text-fill: #00a8fc;
+    -fx-text-fill: #4fc3f7;
     -fx-font-size: 13px;
     -fx-underline: false;
     -fx-border-color: transparent;
@@ -142,106 +133,129 @@
 }
 
 .link-text:hover {
-    -fx-text-fill: #4fc3f7;
+    -fx-text-fill: #6dd5ff;
     -fx-underline: true;
 }
 
 .link-text:pressed {
-    -fx-text-fill: #0288d1;
+    -fx-text-fill: #29b6f6;
 }
 
 .link-text-bold {
-    -fx-text-fill: #00a8fc;
+    -fx-text-fill: #4fc3f7;
     -fx-font-size: 14px;
-    -fx-font-weight: bold;
+    -fx-font-weight: 700;
     -fx-underline: false;
     -fx-border-color: transparent;
-    -fx-padding: 0;
+    -fx-padding: 2px 4px;
 }
 
 .link-text-bold:hover {
-    -fx-text-fill: #4fc3f7;
+    -fx-text-fill: #6dd5ff;
     -fx-underline: true;
 }
 
-/* ===== ERROR & SUCCESS MESSAGES ===== */
+/* ===== REFINED ERROR & SUCCESS ===== */
 .error-text {
-    -fx-text-fill: #f04747;
-    -fx-font-size: 14px;
+    -fx-text-fill: #ff7b7b;
+    -fx-font-size: 13px;
     -fx-font-weight: 600;
-    -fx-padding: 10px 12px;
-    -fx-background-color: rgba(240, 71, 71, 0.15);
-    -fx-background-radius: 4px;
-    -fx-border-color: rgba(240, 71, 71, 0.3);
+    -fx-padding: 11px 14px;
+    -fx-background-color: rgba(240, 71, 71, 0.12);
+    -fx-background-radius: 6px;
+    -fx-border-color: rgba(255, 107, 107, 0.25);
     -fx-border-width: 1px;
-    -fx-border-radius: 4px;
+    -fx-border-radius: 6px;
 }
 
 .success-text {
-    -fx-text-fill: #43b581;
-    -fx-font-size: 14px;
+    -fx-text-fill: #5dd679;
+    -fx-font-size: 13px;
     -fx-font-weight: 600;
-    -fx-padding: 10px 12px;
-    -fx-background-color: rgba(67, 181, 129, 0.15);
-    -fx-background-radius: 4px;
-    -fx-border-color: rgba(67, 181, 129, 0.3);
+    -fx-padding: 11px 14px;
+    -fx-background-color: rgba(67, 181, 129, 0.12);
+    -fx-background-radius: 6px;
+    -fx-border-color: rgba(81, 207, 102, 0.25);
     -fx-border-width: 1px;
-    -fx-border-radius: 4px;
+    -fx-border-radius: 6px;
 }
 
-/* ===== PROGRESS INDICATOR (Loading Spinner) ===== */
-.progress-indicator {
-    -fx-progress-color: #5865f2;
-}
-
-.progress-indicator .indicator {
-    -fx-background-color: transparent;
-}
-
-.progress-indicator .percentage {
-    -fx-fill: null;
-}
-
+/* ===== PROGRESS INDICATOR ===== */
 .progress-indicator .arc {
     -fx-stroke: #5865f2;
+    -fx-stroke-width: 3;
 }
 
-/* ===== FOOTER ===== */
-.footer {
-    -fx-padding: 35px 0 0 0;
+/* ===== PASSWORD TOGGLE BUTTON ===== */
+.password-toggle-button {
+    -fx-background-color: #1e2132;
+    -fx-background-radius: 0 8px 8px 0;
+    -fx-border-color: rgba(88, 101, 242, 0.08);
+    -fx-border-width: 1px 1px 1px 0;
+    -fx-border-radius: 0 8px 8px 0;
+    -fx-cursor: hand;
+    -fx-padding: 0;
+    -fx-text-fill: #8e9199;
+    -fx-font-size: 16px;
 }
 
-.footer-text {
-    -fx-fill: #72767d;
-    -fx-font-size: 12px;
-    -fx-font-weight: 500;
+.password-toggle-button:hover {
+    -fx-background-color: #1b1e30;
+    -fx-text-fill: #c9cace;
 }
 
-.footer-link {
-    -fx-text-fill: #72767d;
-    -fx-font-size: 12px;
-    -fx-underline: false;
-    -fx-border-color: transparent;
-    -fx-padding: 0 4px;
+.password-toggle-button:focused {
+    -fx-border-color: #5865f2;
 }
 
-.footer-link:hover {
-    -fx-text-fill: #b9bbbe;
-    -fx-underline: true;
+/* ===== FORM CONTAINER ===== */
+.form-container {
+    -fx-padding: 0;
+    -fx-spacing: 18px;
 }
 
-/* ===== SCROLLBAR (for future use) ===== */
+/* ===== SMOOTH RENDERING ===== */
+* {
+    -fx-smooth: true;
+}
+
+/* ===== ALERT DIALOGS ===== */
+.alert {
+    -fx-background-color: #2a2d3e;
+}
+
+.alert .header-panel {
+    -fx-background-color: #1e2132;
+}
+
+.alert .content {
+    -fx-background-color: #2a2d3e;
+    -fx-text-fill: #dcddde;
+}
+
+.alert .button {
+    -fx-background-color: linear-gradient(to bottom, #5865f2 0%, #4e5acf 100%);
+    -fx-text-fill: white;
+    -fx-font-weight: 600;
+    -fx-background-radius: 6px;
+}
+
+.alert .button:hover {
+    -fx-background-color: linear-gradient(to bottom, #6470ff 0%, #5865f2 100%);
+}
+
+/* ===== SCROLLBAR ===== */
 .scroll-bar {
     -fx-background-color: transparent;
 }
 
 .scroll-bar .thumb {
-    -fx-background-color: #202225;
+    -fx-background-color: #3a3d47;
     -fx-background-radius: 6px;
 }
 
 .scroll-bar .thumb:hover {
-    -fx-background-color: #36393f;
+    -fx-background-color: #4a4d57;
 }
 
 .scroll-bar .track {
@@ -252,84 +266,4 @@
 .scroll-bar .decrement-button {
     -fx-background-color: transparent;
     -fx-padding: 0;
-}
-
-/* ===== FORM CONTAINER ===== */
-.form-container {
-    -fx-padding: 0;
-    -fx-spacing: 18px;
-}
-
-/* ===== CUSTOM HOVER EFFECTS ===== */
-.login-card:hover {
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.6), 30, 0.35, 0, 10);
-}
-
-/* ===== SMOOTH TRANSITIONS ===== */
-* {
-    -fx-smooth: true;
-}
-
-/* ===== PASSWORD FIELD SPECIFIC ===== */
-.password-field {
-    -fx-background-color: #202225;
-    -fx-text-fill: #dcddde;
-    -fx-prompt-text-fill: #72767d;
-}
-
-/* ===== PASSWORD TOGGLE BUTTON ===== */
-.password-toggle-button {
-    -fx-background-color: #202225;
-    -fx-background-radius: 0 6px 6px 0;
-    -fx-border-color: transparent;
-    -fx-border-width: 2px 2px 2px 0;
-    -fx-border-radius: 0 6px 6px 0;
-    -fx-cursor: hand;
-    -fx-padding: 0;
-    -fx-text-fill: #b9bbbe;
-    -fx-font-size: 16px;
-}
-
-.password-toggle-button:hover {
-    -fx-background-color: #1a1b1e;
-    -fx-text-fill: #dcddde;
-}
-
-.password-toggle-button:focused {
-    -fx-border-color: #5865f2;
-}
-
-/* Password field with toggle button */
-.password-field.form-input:not(:only-child) {
-    -fx-background-radius: 6px 0 0 6px;
-    -fx-border-width: 2px 0 2px 2px;
-    -fx-border-radius: 6px 0 0 6px;
-}
-
-/* ===== LABEL SPACING ===== */
-.form-label {
-    -fx-padding: 0 0 4px 0;
-}
-
-/* ===== ALERT DIALOGS (for forgot password popup) ===== */
-.alert {
-    -fx-background-color: #2f3136;
-}
-
-.alert .header-panel {
-    -fx-background-color: #202225;
-}
-
-.alert .content {
-    -fx-background-color: #2f3136;
-    -fx-text-fill: #dcddde;
-}
-
-.alert .button {
-    -fx-background-color: #5865f2;
-    -fx-text-fill: white;
-}
-
-.alert .button:hover {
-    -fx-background-color: #4752c4;
 }
