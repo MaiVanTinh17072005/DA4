@@ -1,5 +1,6 @@
 package controller;
 
+import dto.CallHistoryDTO;
 import dto.P2PInfoRequest;
 import dto.P2PInfoResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,10 +8,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import service.P2PService;
+import util.JwtUtil;
+
+import java.util.List;
 
 /**
  * P2P Controller
- * REST API endpoints for P2P connection management
+ * REST API endpoints for P2P connection management and call history
  */
 @RestController
 @RequestMapping("/api/v1/p2p")
@@ -82,21 +86,28 @@ public class P2PController {
      * @return P2PInfoRequest with peer's connection info
      */
     @GetMapping("/peer/{userId}")
-    public ResponseEntity<P2PInfoRequest> getPeerInfo(@PathVariable Long userId) {
+    public ResponseEntity<P2PInfoRequest> getPeerInfo(@PathVariable("userId") Long userId) {
         System.out.println("=== P2P GET PEER INFO REQUEST ===");
         System.out.println("Requested User ID: " + userId);
         
-        // Get P2P info from Redis
-        P2PInfoRequest p2pInfo = p2pService.getP2PInfo(userId);
-        
-        if (p2pInfo != null) {
-            System.out.println("✅ Peer info found");
+        try {
+            // Get P2P info from Redis
+            P2PInfoRequest p2pInfo = p2pService.getP2PInfo(userId);
+            
+            if (p2pInfo != null) {
+                System.out.println("✅ Peer info found");
+                System.out.println("=================================");
+                return ResponseEntity.ok(p2pInfo);
+            } else {
+                System.out.println("❌ Peer not found or offline");
+                System.out.println("=================================");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error getting peer info: " + e.getMessage());
+            e.printStackTrace();
             System.out.println("=================================");
-            return ResponseEntity.ok(p2pInfo);
-        } else {
-            System.out.println("❌ Peer not found or offline");
-            System.out.println("=================================");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
     
@@ -125,6 +136,86 @@ public class P2PController {
             System.out.println("⚠ P2P info not found");
             System.out.println("==========================");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+    
+    /**
+     * Get call history for current user
+     * GET /api/v1/p2p/calls/history
+     * 
+     * @param authorization JWT token from Authorization header
+     * @return List of call history
+     */
+    @GetMapping("/calls/history")
+    public ResponseEntity<List<CallHistoryDTO>> getCallHistory(
+            @RequestHeader("Authorization") String authorization) {
+        
+        System.out.println("=== GET CALL HISTORY ===");
+        
+        try {
+            // Extract user ID from JWT token
+            String token = authorization.replace("Bearer ", "");
+            Long userId = JwtUtil.extractUserId(token);
+            
+            System.out.println("User ID: " + userId);
+            
+            // Get call history
+            List<CallHistoryDTO> callHistory = p2pService.getCallHistory(userId);
+            
+            System.out.println("✅ Returning " + callHistory.size() + " call records");
+            System.out.println("========================");
+            return ResponseEntity.ok(callHistory);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("========================");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+    
+    /**
+     * Save call history record
+     * POST /api/v1/p2p/calls/save
+     * Body: CallHistoryDTO
+     * 
+     * @param callDTO Call history data
+     * @param authorization JWT token from Authorization header
+     * @return Saved call history
+     */
+    @PostMapping("/calls/save")
+    public ResponseEntity<CallHistoryDTO> saveCallHistory(
+            @RequestBody CallHistoryDTO callDTO,
+            @RequestHeader("Authorization") String authorization) {
+        
+        System.out.println("=== SAVE CALL HISTORY ===");
+        
+        try {
+            // Extract user ID from JWT token (for authentication)
+            String token = authorization.replace("Bearer ", "");
+            Long userId = JwtUtil.extractUserId(token);
+            
+            System.out.println("User ID: " + userId);
+            System.out.println("Call Type: " + callDTO.getType());
+            
+            // Save call history
+            CallHistoryDTO savedCall = p2pService.saveCallHistory(callDTO);
+            
+            if (savedCall != null) {
+                System.out.println("✅ Call history saved successfully");
+                System.out.println("=========================");
+                return ResponseEntity.ok(savedCall);
+            } else {
+                System.err.println("❌ Failed to save call history");
+                System.out.println("=========================");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("=========================");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
     

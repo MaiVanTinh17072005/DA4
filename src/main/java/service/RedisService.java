@@ -206,6 +206,137 @@ public class RedisService {
     }
     
     /**
+     * Cache any object with custom TTL
+     * Generic method for caching any type of object
+     * 
+     * @param key Redis key
+     * @param object Object to cache
+     * @param ttl Time to live in seconds
+     */
+    public void cacheObject(String key, Object object, int ttl) {
+        if (key == null || key.trim().isEmpty() || object == null) {
+            System.out.println("[RedisService] ❌ Cannot cache null key or object");
+            return;
+        }
+        
+        try (Jedis jedis = jedisPool.getResource()) {
+            // Convert object to JSON
+            String objectJson = objectMapper.writeValueAsString(object);
+            
+            // Store in Redis with TTL
+            jedis.setex(key, ttl, objectJson);
+            
+            System.out.println("[RedisService] ✓ Object cached successfully:");
+            System.out.println("  - Redis Key: " + key);
+            System.out.println("  - TTL: " + ttl + " seconds");
+            
+        } catch (Exception e) {
+            System.out.println("[RedisService] ❌ Failed to cache object: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Get cached object
+     * Generic method for retrieving any type of cached object
+     * 
+     * @param key Redis key
+     * @param type Class type of the object
+     * @return Cached object if found, null otherwise
+     */
+    public <T> T getCachedObject(String key, Class<T> type) {
+        if (key == null || key.trim().isEmpty()) {
+            System.out.println("[RedisService] ❌ Cannot get cached object with null key");
+            return null;
+        }
+        
+        try (Jedis jedis = jedisPool.getResource()) {
+            String objectJson = jedis.get(key);
+            
+            if (objectJson == null) {
+                System.out.println("[RedisService] ⚠ Object not found in cache: " + key);
+                return null;
+            }
+            
+            // Convert JSON to object
+            T object = objectMapper.readValue(objectJson, type);
+            
+            System.out.println("[RedisService] ✓ Object retrieved from cache: " + key);
+            return object;
+            
+        } catch (Exception e) {
+            System.out.println("[RedisService] ❌ Failed to get cached object: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Get cached list of objects
+     * Generic method for retrieving a list of any type of cached objects
+     * 
+     * @param key Redis key
+     * @param type Class type of the list elements
+     * @return Cached list if found, null otherwise
+     */
+    public <T> java.util.List<T> getCachedList(String key, Class<T> type) {
+        if (key == null || key.trim().isEmpty()) {
+            System.out.println("[RedisService] ❌ Cannot get cached list with null key");
+            return null;
+        }
+        
+        try (Jedis jedis = jedisPool.getResource()) {
+            String listJson = jedis.get(key);
+            
+            if (listJson == null) {
+                System.out.println("[RedisService] ⚠ List not found in cache: " + key);
+                return null;
+            }
+            
+            // Convert JSON to list
+            java.util.List<T> list = objectMapper.readValue(
+                listJson,
+                objectMapper.getTypeFactory().constructCollectionType(java.util.List.class, type)
+            );
+            
+            System.out.println("[RedisService] ✓ List retrieved from cache: " + key + " (" + list.size() + " items)");
+            return list;
+            
+        } catch (Exception e) {
+            System.out.println("[RedisService] ❌ Failed to get cached list: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    /**
+     * Remove cached object
+     * Generic method for removing any cached object
+     * 
+     * @param key Redis key
+     */
+    public void removeCachedObject(String key) {
+        if (key == null || key.trim().isEmpty()) {
+            System.out.println("[RedisService] ❌ Cannot remove cached object with null key");
+            return;
+        }
+        
+        try (Jedis jedis = jedisPool.getResource()) {
+            Long deleted = jedis.del(key);
+            
+            if (deleted > 0) {
+                System.out.println("[RedisService] ✓ Object removed from cache: " + key);
+            } else {
+                System.out.println("[RedisService] ⚠ Object not found in cache for removal: " + key);
+            }
+            
+        } catch (Exception e) {
+            System.out.println("[RedisService] ❌ Failed to remove cached object: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
      * Close Jedis pool (call on application shutdown)
      */
     public void close() {
