@@ -9,11 +9,11 @@
 <HBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.example.ui.ChatScene"
-      spacing="0" 
-      HBox.hgrow="ALWAYS" 
+      spacing="0"
+      HBox.hgrow="ALWAYS"
       VBox.vgrow="ALWAYS"
       stylesheets="@../../css/chat.css">
-    
+
     <!-- ========== MIDDLE PANEL: Conversations List ========== -->
     <VBox styleClass="conversation-sidebar" prefWidth="320">
         <!-- Search Bar -->
@@ -26,13 +26,13 @@
 
         <!-- Filter Tabs -->
         <HBox styleClass="filter-tabs" spacing="8">
-            <ToggleButton fx:id="filterDMButton" 
-                          text="Bạn bè" 
-                          selected="true" 
+            <ToggleButton fx:id="filterDMButton"
+                          text="Bạn bè"
+                          selected="true"
                           onAction="#handleFilterDM"
                           styleClass="filter-tab"/>
-            <ToggleButton fx:id="filterGroupButton" 
-                          text="Nhóm" 
+            <ToggleButton fx:id="filterGroupButton"
+                          text="Nhóm"
                           onAction="#handleFilterGroup"
                           styleClass="filter-tab"/>
         </HBox>
@@ -56,18 +56,18 @@
 
     <!-- ========== RIGHT PANEL: Chat Area ========== -->
     <VBox styleClass="chat-area" HBox.hgrow="ALWAYS">
-        
+
         <!-- Chat Header -->
         <HBox styleClass="chat-header" alignment="CENTER_LEFT" spacing="12">
             <VBox spacing="2" HBox.hgrow="ALWAYS">
-                <Label fx:id="activeConversationLabel" 
-                       text="# Chọn một cuộc trò chuyện" 
+                <Label fx:id="activeConversationLabel"
+                       text="# Chọn một cuộc trò chuyện"
                        styleClass="chat-header-title"/>
-                <Label fx:id="activeStatusLabel" 
-                       text="Chọn bạn bè hoặc nhóm để bắt đầu chat" 
+                <Label fx:id="activeStatusLabel"
+                       text="Chọn bạn bè hoặc nhóm để bắt đầu chat"
                        styleClass="chat-header-subtitle"/>
             </VBox>
-            
+
             <!-- Action Buttons -->
             <HBox spacing="8" alignment="CENTER_RIGHT">
                 <Button styleClass="header-icon-btn" text="📞" onAction="#handleStartCall">
@@ -89,19 +89,19 @@
         <!-- Message Input Area -->
         <VBox styleClass="message-input-container">
             <!-- Typing Indicator -->
-            <Label fx:id="typingStatusLabel" 
-                   text="" 
+            <Label fx:id="typingStatusLabel"
+                   text=""
                    styleClass="typing-indicator"
                    managed="false"
                    visible="false"/>
-            
+
             <!-- Input Box -->
             <HBox styleClass="message-input-box" alignment="CENTER" spacing="8">
                 <!-- Attachment Button -->
                 <Button styleClass="input-icon-btn" text="➕" onAction="#handleAttachment">
                     <tooltip><Tooltip text="Đính kèm file"/></tooltip>
                 </Button>
-                
+
                 <!-- Text Input -->
                 <TextArea fx:id="messageInput"
                           promptText="Nhắn tin tới..."
@@ -109,33 +109,33 @@
                           prefRowCount="1"
                           styleClass="message-textarea"
                           HBox.hgrow="ALWAYS"/>
-                
+
                 <!-- Emoji Button -->
                 <Button styleClass="input-icon-btn" text="😀" onAction="#handleInsertEmoji">
                     <tooltip><Tooltip text="Emoji"/></tooltip>
                 </Button>
-                
+
                 <!-- Send Button -->
-                <Button fx:id="sendButton" 
-                        styleClass="send-button" 
-                        text="Gửi" 
+                <Button fx:id="sendButton"
+                        styleClass="send-button"
+                        text="Gửi"
                         onAction="#handleSendMessage">
                     <tooltip><Tooltip text="Gửi tin nhắn (Enter)"/></tooltip>
                 </Button>
             </HBox>
-            
+
             <!-- Connection Status -->
             <HBox styleClass="connection-status-bar" alignment="CENTER_LEFT" spacing="8">
-                <Label fx:id="connectionStatusLabel" 
-                       text="🟢 Đã kết nối với máy chủ" 
+                <Label fx:id="connectionStatusLabel"
+                       text="🟢 Đã kết nối với máy chủ"
                        styleClass="status-text"/>
                 <Label text="•" styleClass="status-separator"/>
-                <Label fx:id="encryptionStatusLabel" 
-                       text="🔒 E2EE đang hoạt động" 
+                <Label fx:id="encryptionStatusLabel"
+                       text="🔒 E2EE đang hoạt động"
                        styleClass="status-text"/>
                 <Label text="•" styleClass="status-separator"/>
-                <Label fx:id="lanModeLabel" 
-                       text="🌐 Hybrid P2P Mode" 
+                <Label fx:id="lanModeLabel"
+                       text="🌐 Hybrid P2P Mode"
                        styleClass="status-text"/>
             </HBox>
         </VBox>
@@ -144,17 +144,17 @@
     <!-- ========== FAR RIGHT PANEL: Member List / Info (Optional) ========== -->
     <VBox styleClass="info-sidebar" prefWidth="240" managed="false" visible="false">
         <Label text="Thành viên" styleClass="info-sidebar-title"/>
-        
+
         <VBox spacing="12" styleClass="members-section">
             <Label text="ONLINE — 3" styleClass="member-category"/>
             <ListView fx:id="onlineListView" styleClass="member-list" prefHeight="200"/>
-            
+
             <Label text="OFFLINE — 2" styleClass="member-category"/>
             <ListView fx:id="offlineListView" styleClass="member-list" prefHeight="150"/>
         </VBox>
-        
+
         <Separator styleClass="info-separator"/>
-        
+
         <VBox spacing="12" styleClass="groups-section">
             <Label text="NHÓM CỦA BẠN" styleClass="member-category"/>
             <ListView fx:id="groupOverviewListView" styleClass="member-list"/>

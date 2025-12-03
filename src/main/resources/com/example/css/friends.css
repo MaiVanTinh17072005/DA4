@@ -10,7 +10,7 @@
 
 /* ===== FRIENDS SIDEBAR (Left) ===== */
 .friends-sidebar {
-    -fx-background-color: linear-gradient(to bottom, #25283a 0%, #22253 5 100%);
+    -fx-background-color: linear-gradient(to bottom, #25283a 0%, #222535 100%);
     -fx-spacing: 0;
 }
 

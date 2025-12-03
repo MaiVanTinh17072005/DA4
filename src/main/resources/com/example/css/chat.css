@@ -122,6 +122,7 @@
     -fx-effect: dropshadow(gaussian, rgba(88, 101, 242, 0.2), 6, 0.3, 0, 2);
 }
 
+/* Hide conversation scrollbar but keep scroll */
 .conversation-scroll {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
@@ -129,6 +130,11 @@
 
 .conversation-scroll .viewport {
     -fx-background-color: transparent;
+}
+
+.conversation-scroll .scroll-bar:vertical {
+    -fx-opacity: 0;
+    -fx-pref-width: 0;
 }
 
 .conversation-list {
@@ -276,6 +282,7 @@
     -fx-text-fill: #dcddde;
 }
 
+/* Hide message scrollbar but keep scroll */
 .messages-scroll {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
@@ -283,6 +290,16 @@
 
 .messages-scroll .viewport {
     -fx-background-color: transparent;
+}
+
+.messages-scroll .scroll-bar:vertical {
+    -fx-opacity: 0;
+    -fx-pref-width: 0;
+}
+
+.messages-scroll .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
 }
 
 .messages-container {
@@ -501,7 +518,7 @@
     -fx-background-color: rgba(255, 255, 255, 0.04);
 }
 
-/* ===== SCROLLBARS ===== */
+/* ===== SCROLLBARS (Global) ===== */
 .scroll-bar {
     -fx-background-color: transparent;
 }

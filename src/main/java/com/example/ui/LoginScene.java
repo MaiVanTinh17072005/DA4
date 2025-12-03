@@ -358,7 +358,7 @@ public class LoginScene {
             }
             
             // Start P2P
-            PeerManager.getInstance().startP2P(tcpPort, udpPort);
+            // PeerManager.getInstance().startP2P(tcpPort, udpPort); // DISABLED: Port conflict with P2PConnectionManager
             
             // Save to session
             SessionManager.setP2PPorts(tcpPort, udpPort);

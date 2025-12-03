@@ -1,8 +1,16 @@
 package com.example.ui;
 
+import com.example.api.dto.MessageDTO;
 import com.example.api.dto.UserDTO;
+import com.example.network.P2PManager;
+import com.example.network.P2PMessageListener;
+import com.example.network.PeerManager;
+import com.example.network.model.P2PMessage;
+import com.example.service.FriendService;
+import com.example.service.MessageService;
 import com.example.util.SceneManager;
 import com.example.util.SessionManager;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -16,12 +24,16 @@ import javafx.scene.shape.Circle;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Modern Discord-inspired chat interface controller
  * Handles conversation list, messaging, and user interactions
  */
-public class ChatScene {
+public class ChatScene implements P2PMessageListener {
 
     // ===== FXML Components =====
     @FXML private ListView<ConversationItem> conversationListView;
@@ -47,10 +59,19 @@ public class ChatScene {
     private ConversationItem activeConversation;
 
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+    
+    // Services
+    private final FriendService friendService = new FriendService();
+    private final MessageService messageService = new MessageService();
+    
+    // P2P Manager
+    private P2PManager p2pManager;
+    private boolean p2pEnabled = false;
 
     @FXML
     public void initialize() {
         initProfile();
+        initP2P();
         initConversations();
         initConversationList();
         initMessageView();
@@ -128,14 +149,89 @@ public class ChatScene {
     }
 
     private void initConversations() {
-        allConversations.addAll(
-            new ConversationItem("Huy Pham", "Direct", true, "Có tối đi call không bro?"),
-            new ConversationItem("UI Design Squad", "Group", false, "Figma file update 1.2"),
-            new ConversationItem("An Nguyen", "Direct", true, "Share giúp mình log socket nha!"),
-            new ConversationItem("Livestream Crew", "Group", true, "Next stream cuối tuần nhé!"),
-            new ConversationItem("AI Research", "Group", false, "Adaptive bitrate báo cáo mới")
-        );
+        // Load real friends from API
+        System.out.println("[ChatScene] Loading friends from API...");
+        
+        try {
+            List<UserDTO> friends = friendService.getFriendsList();
+            
+            if (friends != null && !friends.isEmpty()) {
+                System.out.println("[ChatScene] ✅ Loaded " + friends.size() + " friend(s)");
+                
+                for (UserDTO friend : friends) {
+                    // Determine online status
+                    boolean isOnline = "online".equalsIgnoreCase(friend.getStatus());
+                    
+                    // Create conversation item
+                    ConversationItem item = new ConversationItem(
+                        friend.getUsername(),
+                        "Direct",
+                        isOnline,
+                        "Bắt đầu trò chuyện...",
+                        friend.getId()
+                    );
+                    allConversations.add(item);
+                }
+            } else {
+                System.out.println("[ChatScene] ⚠️ No friends found");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("[ChatScene] ❌ Error loading friends: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
         filteredConversations.setAll(allConversations);
+        
+        // Auto-connect to all friends for real-time status updates (UDP heartbeat)
+        if (p2pEnabled && p2pManager != null && !allConversations.isEmpty()) {
+            System.out.println("[ChatScene] 🔄 Auto-connecting to friends for status updates...");
+            autoConnectToFriends();
+        }
+    }
+    
+    /**
+     * Auto-connect to all friends to receive real-time online/offline status via UDP heartbeat
+     */
+    private void autoConnectToFriends() {
+        CompletableFuture.runAsync(() -> {
+            com.example.service.P2PService p2pService = com.example.service.P2PService.getInstance();
+            
+            for (ConversationItem conversation : allConversations) {
+                try {
+                    Long friendId = conversation.getUserId();
+                    
+                    // Try to get friend's P2P info
+                    com.example.api.dto.P2PInfoRequest friendP2PInfo = p2pService.getPeerInfo(friendId);
+                    
+                    if (friendP2PInfo != null) {
+                        // Get friend data
+                        List<UserDTO> friends = friendService.getFriendsList();
+                        UserDTO friend = friends.stream()
+                            .filter(f -> f.getId().equals(friendId))
+                            .findFirst()
+                            .orElse(null);
+                        
+                        if (friend != null) {
+                            // Connect to friend (will start UDP heartbeat)
+                            boolean connected = p2pManager.connectToFriend(
+                                friend,
+                                friendP2PInfo.getIpAddress(),
+                                friendP2PInfo.getTcpPort(),
+                                friendP2PInfo.getUdpPort()
+                            );
+                            
+                            if (connected) {
+                                System.out.println("[ChatScene] ✅ Auto-connected to " + friend.getUsername() + " for status updates");
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // Friend offline or not available - skip
+                    System.out.println("[ChatScene] ⚠️ " + conversation.getName() + " offline");
+                }
+            }
+        });
     }
 
     private void initConversationList() {
@@ -146,6 +242,12 @@ public class ChatScene {
                 if (newVal != null) {
                     activeConversation = newVal;
                     loadMessagesFor(newVal);
+                    
+                    // Connect to peer for real-time P2P chat
+                    if (p2pEnabled && "Direct".equals(newVal.getType())) {
+                        System.out.println("[ChatScene] 🔗 Attempting P2P connection to: " + newVal.getName());
+                        connectToActivePeer();
+                    }
                 }
             });
         searchField.textProperty().addListener((obs, old, text) -> applyFilters());
@@ -157,12 +259,28 @@ public class ChatScene {
     }
 
     private void initOnlineList() {
-        onlineListView.setItems(FXCollections.observableArrayList(
-            "Huy Pham • Online",
-            "An Nguyen • Online",
-            "Livestream Crew • 3 online",
-            "UI Design Squad • 2 online"
-        ));
+        // Load online friends from API
+        try {
+            List<UserDTO> friends = friendService.getFriendsList();
+            List<String> onlineFriends = new ArrayList<>();
+            
+            if (friends != null) {
+                for (UserDTO friend : friends) {
+                    if ("online".equalsIgnoreCase(friend.getStatus())) {
+                        onlineFriends.add(friend.getUsername() + " • Online");
+                    }
+                }
+            }
+            
+            if (onlineFriends.isEmpty()) {
+                onlineFriends.add("Không có bạn bè online");
+            }
+            
+            onlineListView.setItems(FXCollections.observableArrayList(onlineFriends));
+        } catch (Exception e) {
+            System.err.println("[ChatScene] Error loading online list: " + e.getMessage());
+            onlineListView.setItems(FXCollections.observableArrayList("Không thể tải danh sách"));
+        }
     }
 
     private void initGroupOverview() {
@@ -194,13 +312,49 @@ public class ChatScene {
             ? "🟢 Đang hoạt động • P2P sẵn sàng"
             : "⚫ Ngoại tuyến • Tin nhắn sẽ được lưu hàng đợi");
 
-        ObservableList<MessageItem> messages = FXCollections.observableArrayList(
-            new MessageItem(conversation.getName(), "Chào bạn! Dự án hôm nay thế nào?", LocalDateTime.now().minusMinutes(12), false),
-            new MessageItem("You", "Đang hoàn thiện UI chat mới giống Discord.", LocalDateTime.now().minusMinutes(8), true),
-            new MessageItem(conversation.getName(), "Nice! Nhớ test fallback LAN nhé.", LocalDateTime.now().minusMinutes(4), false)
-        );
-        messageListView.setItems(messages);
-        messageListView.scrollTo(messages.size() - 1);
+        // Load real messages from API
+        System.out.println("[ChatScene] Loading messages for: " + conversation.getName());
+        
+        try {
+            Long friendId = conversation.getUserId();
+            List<MessageDTO> apiMessages = messageService.getConversation(friendId);
+            
+            ObservableList<MessageItem> messages = FXCollections.observableArrayList();
+            
+            if (apiMessages != null && !apiMessages.isEmpty()) {
+                System.out.println("[ChatScene] ✅ Loaded " + apiMessages.size() + " message(s)");
+                
+                Long currentUserId = SessionManager.getCurrentUser().getId();
+                
+                for (MessageDTO msg : apiMessages) {
+                    boolean isOwn = msg.getSenderId().equals(currentUserId);
+                    String author = isOwn ? "You" : msg.getSenderUsername();
+                    
+                    // Parse timestamp
+                    LocalDateTime timestamp;
+                    try {
+                        timestamp = LocalDateTime.parse(msg.getTimestamp());
+                    } catch (Exception e) {
+                        timestamp = LocalDateTime.now();
+                    }
+                    
+                    messages.add(new MessageItem(author, msg.getContent(), timestamp, isOwn));
+                }
+            } else {
+                System.out.println("[ChatScene] ℹ️ No messages found - new conversation");
+                // Empty conversation - no messages to show
+            }
+            
+            messageListView.setItems(messages);
+            if (!messages.isEmpty()) {
+                messageListView.scrollTo(messages.size() - 1);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("[ChatScene] ❌ Error loading messages: " + e.getMessage());
+            e.printStackTrace();
+            messageListView.setItems(FXCollections.observableArrayList());
+        }
     }
 
     private void applyFilters() {
@@ -227,6 +381,243 @@ public class ChatScene {
 
 
 
+
+    
+    // ===== P2P Methods =====
+    
+    private void initP2P() {
+        try {
+            UserDTO currentUser = SessionManager.getCurrentUser();
+            if (currentUser == null) {
+                System.err.println("[ChatScene] ❌ No user session, P2P disabled");
+                return;
+            }
+            
+            // Get P2P ports from SessionManager (set during login)
+            int tcpPort = SessionManager.getTcpPort();
+            int udpPort = SessionManager.getUdpPort();
+            
+            if (tcpPort == 0 || udpPort == 0) {
+                System.err.println("[ChatScene] ❌ P2P ports not allocated");
+                p2pEnabled = false;
+                updateConnectionStatus("🔴 P2P không khả dụng");
+                return;
+            }
+            
+            System.out.println("[ChatScene] Initializing P2P with TCP:" + tcpPort + " UDP:" + udpPort);
+            
+            // Get singleton P2P Manager instance
+            p2pManager = P2PManager.getInstance();
+            p2pManager.setMessageListener(this);
+            
+            // Initialize (will only happen once)
+            p2pManager.initializeForUser(currentUser.getId(), tcpPort, udpPort);
+            
+            p2pEnabled = true;
+            
+            System.out.println("[ChatScene] ✅ P2P initialized");
+            updateConnectionStatus("🟢 P2P sẵn sàng");
+            
+        } catch (Exception e) {
+            System.err.println("[ChatScene] ❌ Failed to initialize P2P: " + e.getMessage());
+            e.printStackTrace();
+            p2pEnabled = false;
+            updateConnectionStatus("🔴 P2P không khả dụng");
+        }
+    }
+    
+    private void connectToActivePeer() {
+        if (!p2pEnabled || activeConversation == null) {
+            return;
+        }
+        
+        // Run in background thread to avoid blocking UI
+        CompletableFuture.runAsync(() -> {
+            try {
+                Long friendId = activeConversation.getUserId();
+                
+                // Check if already connected
+                if (p2pManager.isConnectedToFriend(friendId)) {
+                    System.out.println("[ChatScene] ✅ Already connected to peer: " + friendId);
+                    Platform.runLater(() -> updateConnectionStatus("🟢 P2P kết nối - E2EE hoạt động"));
+                    return;
+                }
+                
+                System.out.println("[ChatScene] 🔍 Fetching P2P info for friend: " + friendId);
+                
+                // Get friend's P2P info from server
+                com.example.service.P2PService p2pService = com.example.service.P2PService.getInstance();
+                com.example.api.dto.P2PInfoRequest friendP2PInfo = p2pService.getPeerInfo(friendId);
+                
+                if (friendP2PInfo != null) {
+                    // Get friend data
+                    List<UserDTO> friends = friendService.getFriendsList();
+                    UserDTO friend = friends.stream()
+                        .filter(f -> f.getId().equals(friendId))
+                        .findFirst()
+                        .orElse(null);
+                    
+                    if (friend != null) {
+                        System.out.println("[ChatScene] 🔗 Connecting to peer " + friend.getUsername() + 
+                            " at " + friendP2PInfo.getIpAddress() + ":" + friendP2PInfo.getTcpPort());
+                        
+                        boolean connected = p2pManager.connectToFriend(
+                            friend,
+                            friendP2PInfo.getIpAddress(),
+                            friendP2PInfo.getTcpPort(),
+                            friendP2PInfo.getUdpPort()
+                        );
+                        
+                        if (connected) {
+                            Platform.runLater(() -> {
+                                updateConnectionStatus("🟢 P2P kết nối - E2EE hoạt động");
+                                encryptionStatusLabel.setText("🔒 E2EE đang hoạt động");
+                            });
+                            System.out.println("[ChatScene] ✅ P2P connected - real-time chat enabled!");
+                        } else {
+                            Platform.runLater(() -> updateConnectionStatus("🟡 Đang kết nối P2P..."));
+                        }
+                    }
+                } else {
+                    System.out.println("[ChatScene] ⚠️ Friend P2P info not available, using server mode");
+                    Platform.runLater(() -> updateConnectionStatus("🌐 Server mode"));
+                }
+                
+            } catch (Exception e) {
+                System.err.println("[ChatScene] ❌ Error connecting to peer: " + e.getMessage());
+                e.printStackTrace();
+                Platform.runLater(() -> updateConnectionStatus("🔴 Lỗi kết nối P2P"));
+            }
+        });
+    }
+    
+    private void updateConnectionStatus(String status) {
+        Platform.runLater(() -> {
+            connectionStatusLabel.setText(status);
+        });
+    }
+    
+    // ===== P2PMessageListener Implementation =====
+    
+    @Override
+    public void onMessageReceived(P2PMessage message) {
+        System.out.println("[ChatScene] 📨 P2P message received: " + message.getContent());
+        
+        Platform.runLater(() -> {
+            // Check if message is from active conversation
+            if (activeConversation != null && message.getSenderId().equals(activeConversation.getUserId())) {
+                // Add message to UI
+                LocalDateTime timestamp = LocalDateTime.ofEpochSecond(
+                    message.getTimestamp() / 1000, 
+                    0, 
+                    java.time.ZoneOffset.UTC
+                );
+                
+                MessageItem item = new MessageItem(
+                    message.getSenderUsername() != null ? message.getSenderUsername() : "Friend",
+                    message.getContent(),
+                    timestamp,
+                    false
+                );
+                
+                messageListView.getItems().add(item);
+                messageListView.scrollTo(messageListView.getItems().size() - 1);
+                
+                typingStatusLabel.setText("Tin nhắn mới từ " + message.getSenderUsername());
+            } else {
+                // Message from other conversation, show notification
+                typingStatusLabel.setText("Tin nhắn mới từ " + message.getSenderUsername());
+            }
+        });
+    }
+    
+    @Override
+    public void onPeerConnected(Long peerId, String peerUsername) {
+        System.out.println("[ChatScene] ✅ Peer connected: " + peerId);
+        
+        Platform.runLater(() -> {
+            // Update active conversation status
+            if (activeConversation != null && peerId.equals(activeConversation.getUserId())) {
+                updateConnectionStatus("🟢 P2P kết nối - E2EE hoạt động");
+                activeStatusLabel.setText("🟢 Đang hoạt động • P2P sẵn sàng");
+            }
+            
+            // Update conversation list - mark as online
+            updateConversationStatus(peerId, true);
+        });
+    }
+    
+    @Override
+    public void onPeerDisconnected(Long peerId) {
+        System.out.println("[ChatScene] 🔌 Peer disconnected: " + peerId);
+        
+        Platform.runLater(() -> {
+            // Update active conversation status
+            if (activeConversation != null && peerId.equals(activeConversation.getUserId())) {
+                updateConnectionStatus("🔴 Peer offline");
+                activeStatusLabel.setText("⚫ Ngoại tuyến • Tin nhắn sẽ được lưu hàng đợi");
+            }
+            
+            // Update conversation list - mark as offline
+            updateConversationStatus(peerId, false);
+        });
+    }
+    
+    /**
+     * Update online/offline status in conversation list (real-time via UDP heartbeat)
+     */
+    private void updateConversationStatus(Long userId, boolean online) {
+        // Find conversation in list and update status
+        for (int i = 0; i < conversationListView.getItems().size(); i++) {
+            ConversationItem item = conversationListView.getItems().get(i);
+            if (item.getUserId().equals(userId)) {
+                // Create updated item with new status
+                ConversationItem updated = new ConversationItem(
+                    item.getName(),
+                    item.getType(),
+                    online,  // Update online status
+                    item.lastMessagePreview(),
+                    item.getUserId()
+                );
+                conversationListView.getItems().set(i, updated);
+                System.out.println("[ChatScene] 🔄 Updated status for " + item.getName() + ": " + (online ? "ONLINE" : "OFFLINE"));
+                break;
+            }
+        }
+    }
+    
+    
+    @Override
+    public void onConnectionError(Long peerId, Exception e) {
+        System.err.println("[ChatScene] ❌ Connection error: " + e.getMessage());
+        
+        Platform.runLater(() -> {
+            updateConnectionStatus("🔴 Lỗi kết nối");
+            typingStatusLabel.setText("Lỗi kết nối P2P, chuyển sang server mode");
+        });
+    }
+    
+    @Override
+    public void onTypingIndicator(Long peerId, boolean isTyping) {
+        Platform.runLater(() -> {
+            if (activeConversation != null && peerId.equals(activeConversation.getUserId())) {
+                if (isTyping) {
+                    typingStatusLabel.setText(activeConversation.getName() + " đang nhập...");
+                } else {
+                    typingStatusLabel.setText("");
+                }
+            }
+        });
+    }
+    
+    @Override
+    public void onMessageAcknowledged(String messageId) {
+        System.out.println("[ChatScene] ✅ Message delivered: " + messageId);
+        
+        Platform.runLater(() -> {
+            typingStatusLabel.setText("✓ Đã gửi");
+        });
+    }
 
     @FXML
     private void handleOpenProfile() {
@@ -273,11 +664,83 @@ public class ChatScene {
             typingStatusLabel.setText("Vui lòng chọn cuộc trò chuyện trước.");
             return;
         }
-        MessageItem newMessage = new MessageItem("You", text.trim(), LocalDateTime.now(), true);
+        
+        UserDTO currentUser = SessionManager.getCurrentUser();
+        if (currentUser == null) {
+            return;
+        }
+        
+        Long friendId = activeConversation.getUserId();
+        String content = text.trim();
+        
+        // Add message to UI immediately
+        MessageItem newMessage = new MessageItem(
+            currentUser.getUsername(),
+            content,
+            LocalDateTime.now(),
+            true
+        );
         messageListView.getItems().add(newMessage);
         messageInput.clear();
-        typingStatusLabel.setText("Đã gửi lúc " + timeFormatter.format(newMessage.timestamp()) + ". Nếu server tắt sẽ tự động gửi lại.");
-        messageListView.scrollTo(messageListView.getItems().size() - 1);
+        scrollToBottom();
+        
+        // Try P2P first
+        if (p2pEnabled && p2pManager != null && p2pManager.isConnectedToFriend(friendId)) {
+            System.out.println("[ChatScene] 📤 Sending via P2P");
+            
+            p2pManager.sendTextMessage(friendId, content).thenAccept(success -> {
+                if (success) {
+                    System.out.println("[ChatScene] ✅ P2P message sent");
+                    
+                    // Persist to database (async)
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            MessageDTO messageDTO = new MessageDTO();
+                            messageDTO.setReceiverId(friendId);
+                            messageDTO.setContent(content);
+                            messageDTO.setMsgType("text");
+                            messageService.sendMessage(messageDTO);
+                            System.out.println("[ChatScene] ✅ Message persisted to database");
+                            Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi qua P2P (E2EE)"));
+                        } catch (Exception e) {
+                            System.err.println("[ChatScene] ⚠️ Failed to persist: " + e.getMessage());
+                            Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi (chưa lưu DB)"));
+                        }
+                    });
+                } else {
+                    Platform.runLater(() -> {
+                        typingStatusLabel.setText("⚠️ P2P failed, trying server...");
+                        sendViaServer(friendId, content);
+                    });
+                }
+            });
+        } else {
+            // Fallback to server
+            System.out.println("[ChatScene] 📤 Sending via Server");
+            sendViaServer(friendId, content);
+        }
+    }
+    
+    private void sendViaServer(Long friendId, String content) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                MessageDTO messageDTO = new MessageDTO();
+                messageDTO.setReceiverId(friendId);
+                messageDTO.setContent(content);
+                messageDTO.setMsgType("text");
+                messageService.sendMessage(messageDTO);
+                Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi qua Server"));
+            } catch (Exception e) {
+                System.err.println("[ChatScene] ❌ Failed to send: " + e.getMessage());
+                Platform.runLater(() -> typingStatusLabel.setText("❌ Gửi thất bại"));
+            }
+        });
+    }
+    
+    private void scrollToBottom() {
+        if (!messageListView.getItems().isEmpty()) {
+            messageListView.scrollTo(messageListView.getItems().size() - 1);
+        }
     }
 
     @FXML
@@ -289,13 +752,14 @@ public class ChatScene {
     // ===== Filter Buttons =====
     @FXML private void handleFilterDM() { applyFilters(); }
     @FXML private void handleFilterGroup() { applyFilters(); }
-
+    
     // ===== Helper Classes =====
-    private record ConversationItem(String name, String type, boolean online, String lastMessage) {
+    private record ConversationItem(String name, String type, boolean online, String lastMessage, Long userId) {
         String getName() { return name; }
         String getType() { return type; }
         boolean isOnline() { return online; }
         String lastMessagePreview() { return lastMessage; }
+        Long getUserId() { return userId; }
     }
 
     private record MessageItem(String author, String content, LocalDateTime timestamp, boolean own) { }
