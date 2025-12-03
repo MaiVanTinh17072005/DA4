@@ -286,6 +286,7 @@
 .messages-scroll {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
+    -fx-min-height: 0;
 }
 
 .messages-scroll .viewport {
@@ -305,12 +306,14 @@
 .messages-container {
     -fx-background-color: transparent;
     -fx-padding: 16px;
+    -fx-min-height: 0;
+    -fx-pref-height: -1;
 }
 
 .message-list {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
-    -fx-padding: 0;
+    -fx-padding: 16px;
 }
 
 .message-list .list-cell {
@@ -379,6 +382,8 @@
     -fx-background-color: transparent;
     -fx-padding: 16px;
     -fx-spacing: 8px;
+    -fx-max-height: 150px;
+    -fx-pref-height: -1;
 }
 
 .message-input-box {

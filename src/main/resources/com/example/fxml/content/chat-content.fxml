@@ -80,10 +80,8 @@
         </HBox>
 
         <!-- Messages Area -->
-        <ScrollPane styleClass="messages-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
-            <VBox styleClass="messages-container">
-                <ListView fx:id="messageListView" styleClass="message-list"/>
-            </VBox>
+        <ScrollPane styleClass="messages-scroll" VBox.vgrow="ALWAYS" fitToWidth="true" fitToHeight="true">
+            <ListView fx:id="messageListView" styleClass="message-list"/>
         </ScrollPane>
 
         <!-- Message Input Area -->
