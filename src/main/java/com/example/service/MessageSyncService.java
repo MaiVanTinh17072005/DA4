@@ -12,7 +12,7 @@ import java.util.concurrent.*;
 public class MessageSyncService implements ServerHealthMonitor.ServerStatusListener {
     
     private final ServerHealthMonitor healthMonitor;
-    private final LocalMessageQueue messageQueue;
+    private final LocalRedisService localRedis;
     private final MessageService messageService;
     
     private final ScheduledExecutorService syncScheduler;
@@ -28,10 +28,10 @@ public class MessageSyncService implements ServerHealthMonitor.ServerStatusListe
     private SyncStatusListener syncStatusListener;
     
     public MessageSyncService(ServerHealthMonitor healthMonitor, 
-                             LocalMessageQueue messageQueue,
+                             LocalRedisService localRedis,
                              MessageService messageService) {
         this.healthMonitor = healthMonitor;
-        this.messageQueue = messageQueue;
+        this.localRedis = localRedis;
         this.messageService = messageService;
         
         this.syncScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -108,7 +108,15 @@ public class MessageSyncService implements ServerHealthMonitor.ServerStatusListe
             return;
         }
         
-        List<LocalMessageQueue.PendingMessage> pendingMessages = messageQueue.getPendingMessageWrappers();
+        // Get current user ID
+        Long userId = com.example.util.SessionManager.getCurrentUserId();
+        if (userId == null) {
+            System.err.println("[MessageSyncService] ❌ No user logged in");
+            return;
+        }
+        
+        // Get pending messages from local Redis
+        List<MessageDTO> pendingMessages = localRedis.getAllPendingMessages(userId);
         
         if (pendingMessages.isEmpty()) {
             System.out.println("[MessageSyncService] ✅ No pending messages to sync");
@@ -118,7 +126,7 @@ public class MessageSyncService implements ServerHealthMonitor.ServerStatusListe
         isSyncing = true;
         int totalMessages = pendingMessages.size();
         
-        System.out.println("[MessageSyncService] 🔄 Starting sync of " + totalMessages + " messages...");
+        System.out.println("[MessageSyncService] 🔄 Starting sync of " + totalMessages + " messages from local Redis...");
         
         // Notify UI
         notifySyncStarted(totalMessages);
@@ -134,54 +142,95 @@ public class MessageSyncService implements ServerHealthMonitor.ServerStatusListe
                     break;
                 }
                 
-                LocalMessageQueue.PendingMessage pm = pendingMessages.get(i);
-                MessageDTO message = pm.getMessage();
+                MessageDTO message = pendingMessages.get(i);
+                
+                // Ensure senderId is set
+                if (message.getSenderId() == null) {
+                    message.setSenderId(userId);
+                    System.out.println("[MessageSyncService] ⚠️ Fixed null senderId: " + userId);
+                }
                 
                 try {
-                    // Mark as syncing (use msgId as String key)
-                    String messageKey = String.valueOf(message.getMsgId());
-                    messageQueue.markAsSyncing(messageKey);
+                    // Send to Redis queue via backend API
+                    boolean queuedToRedis = queueMessageToRedis(message);
                     
-                    // Send to server
-                    MessageDTO result = messageService.sendMessage(message);
-                    
-                    if (result != null) {
-                        // Success
-                        messageQueue.markAsSent(messageKey);
+                    if (queuedToRedis) {
+                        // Success - remove from local Redis
+                        localRedis.removeMessage(userId, String.valueOf(message.getMsgId()));
                         successful++;
-                        System.out.println("[MessageSyncService] ✅ Synced message " + (i + 1) + "/" + totalMessages);
+                        System.out.println("[MessageSyncService] ✅ Synced to server Redis: " + (i + 1) + "/" + totalMessages);
                     } else {
-                        // Failed
-                        messageQueue.markAsFailed(messageKey);
+                        // Failed - keep in local Redis for retry
                         failed++;
-                        System.err.println("[MessageSyncService] ❌ Failed to sync message " + (i + 1) + "/" + totalMessages);
+                        System.err.println("[MessageSyncService] ❌ Failed to sync: " + (i + 1) + "/" + totalMessages);
                     }
                     
                     // Notify progress
-                    final int currentIndex = i + 1;
-                    notifySyncProgress(currentIndex, totalMessages);
+                    notifySyncProgress(i + 1, totalMessages);
                     
-                    // Small delay between messages to avoid overwhelming server
+                    // Small delay between messages
                     Thread.sleep(100);
                     
                 } catch (Exception e) {
-                    String messageKey = String.valueOf(message.getMsgId());
-                    messageQueue.markAsFailed(messageKey);
                     failed++;
                     System.err.println("[MessageSyncService] ❌ Error syncing message: " + e.getMessage());
+                    e.printStackTrace();
                 }
             }
-            
             isSyncing = false;
             
             final int finalSuccessful = successful;
             final int finalFailed = failed;
             
-            System.out.println("[MessageSyncService] ✅ Sync completed: " + finalSuccessful + " successful, " + finalFailed + " failed");
+            System.out.println("[MessageSyncService] ℹ️ Backend will sync from Redis to PostgreSQL every 5 seconds");
             
             // Notify completion
             notifySyncCompleted(finalSuccessful, finalFailed);
         });
+    }
+    
+    /**
+     * Queue a message to Redis via backend API
+     */
+    private boolean queueMessageToRedis(MessageDTO message) {
+        try {
+            String url = com.example.config.ApiConfig.BASE_URL + "/api/v1/messages/queue";
+            
+            System.out.println("[MessageSyncService] 📤 Queueing message to Redis: " + message.getMsgId());
+            
+            // Create HTTP connection
+            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setDoOutput(true);
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+            
+            // Convert message to JSON
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            String jsonPayload = mapper.writeValueAsString(message);
+            
+            // Send request
+            try (java.io.OutputStream os = connection.getOutputStream()) {
+                byte[] input = jsonPayload.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+            
+            // Check response
+            int responseCode = connection.getResponseCode();
+            
+            if (responseCode == java.net.HttpURLConnection.HTTP_OK) {
+                System.out.println("[MessageSyncService] ✅ Message queued to Redis successfully");
+                return true;
+            } else {
+                System.err.println("[MessageSyncService] ❌ Failed to queue. Response code: " + responseCode);
+                return false;
+            }
+            
+        } catch (Exception e) {
+            System.err.println("[MessageSyncService] ❌ Error queueing to Redis: " + e.getMessage());
+            return false;
+        }
     }
     
     /**

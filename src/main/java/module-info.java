@@ -16,6 +16,7 @@ module com.example.fe_app {
     requires org.apache.httpcomponents.client5.httpclient5;
     requires org.apache.httpcomponents.core5.httpcore5;
     requires com.google.gson;
+    requires java.net.http;
 
     // Opens & Exports
     opens com.example.app to javafx.fxml, javafx.graphics;

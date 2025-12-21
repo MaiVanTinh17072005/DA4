@@ -20,8 +20,14 @@ public class P2PMessage implements Serializable {
     
     // Message content
     private String msgType;          // "text", "file", "signal", "ack", "typing"
-    private String content;           // Plain text content (before encryption)
-    private byte[] encryptedData;     // AES encrypted content
+    private String content;           // Plain text content OR encrypted content (Base64)
+    private byte[] encryptedData;     // AES encrypted content (binary)
+    
+    // E2EE fields (for True E2EE)
+    private String iv;                // Initialization Vector (Base64)
+    private String authTag;           // Authentication Tag (Base64)
+    private String algorithm;         // Encryption algorithm (e.g., "AES-256-GCM")
+    private boolean isEncrypted;      // Whether content is encrypted
     
     // Security
     private byte[] signature;         // Message integrity signature
@@ -165,6 +171,39 @@ public class P2PMessage implements Serializable {
     
     public void setAckForMessageId(String ackForMessageId) {
         this.ackForMessageId = ackForMessageId;
+    }
+    
+    // E2EE Getters and Setters
+    public String getIv() {
+        return iv;
+    }
+    
+    public void setIv(String iv) {
+        this.iv = iv;
+    }
+    
+    public String getAuthTag() {
+        return authTag;
+    }
+    
+    public void setAuthTag(String authTag) {
+        this.authTag = authTag;
+    }
+    
+    public String getAlgorithm() {
+        return algorithm;
+    }
+    
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+    
+    public boolean isEncrypted() {
+        return isEncrypted;
+    }
+    
+    public void setEncrypted(boolean encrypted) {
+        isEncrypted = encrypted;
     }
     
     @Override

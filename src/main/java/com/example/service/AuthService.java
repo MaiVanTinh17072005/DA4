@@ -11,6 +11,7 @@ import com.example.api.dto.ResetPasswordResponse;
 import com.example.api.dto.VerifyOtpRequest;
 import com.example.api.dto.VerifyOtpResponse;
 import com.example.config.ApiConfig;
+import com.example.util.SessionManager;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -67,9 +68,13 @@ public class AuthService {
         );
         System.out.println("Registration response: " + response);
         
-        // Store token if successful
-        if (response.isSuccess() && response.getToken() != null) {
+        // Store token, user, salt and password if successful
+        if (response != null && response.isSuccess()) {
             apiClient.setAuthToken(response.getToken());
+            SessionManager.setAuthToken(response.getToken());
+            SessionManager.setCurrentUser(response.getUser());
+            SessionManager.setUserSalt(response.getSalt());
+            SessionManager.setUserPassword(password); // Capture plain password for E2EE
         }
         
         return response;
@@ -97,9 +102,13 @@ public class AuthService {
                 AuthResponse.class
         );
         
-        // Store token if successful
-        if (response.isSuccess() && response.getToken() != null) {
+        // Store token, user, salt and password if successful
+        if (response != null && response.isSuccess()) {
             apiClient.setAuthToken(response.getToken());
+            SessionManager.setAuthToken(response.getToken());
+            SessionManager.setCurrentUser(response.getUser());
+            SessionManager.setUserSalt(response.getSalt());
+            SessionManager.setUserPassword(password); // Capture plain password for E2EE
         }
         
         return response;

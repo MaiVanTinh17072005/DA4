@@ -1,14 +1,32 @@
 package com.example.api.dto;
 
+import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * DTO for authentication response
  * Received from server after login/register
  */
 public class AuthResponse {
+    @JsonProperty("success")
+    @SerializedName("success")
     private boolean success;
+    
+    @JsonProperty("message")
+    @SerializedName("message")
     private String message;
+    
+    @JsonProperty("token")
+    @SerializedName("token")
     private String token;
+    
+    @JsonProperty("user")
+    @SerializedName("user")
     private UserDTO user;
+    
+    @JsonProperty("salt")
+    @SerializedName("salt")
+    private String salt;
 
     // Constructors
     public AuthResponse() {
@@ -52,6 +70,14 @@ public class AuthResponse {
 
     public void setUser(UserDTO user) {
         this.user = user;
+    }
+
+    public String getSalt() {
+        return salt;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
     }
 
     @Override

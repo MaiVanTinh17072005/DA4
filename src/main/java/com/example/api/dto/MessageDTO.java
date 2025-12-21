@@ -1,6 +1,7 @@
 package com.example.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Message Data Transfer Object (Frontend)
@@ -9,37 +10,60 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class MessageDTO {
     
     @JsonProperty("msgId")
+    @SerializedName("msgId")
     private Long msgId;
     
     @JsonProperty("senderId")
+    @SerializedName("senderId")
     private Long senderId;
     
     @JsonProperty("senderUsername")
+    @SerializedName("senderUsername")
     private String senderUsername;
     
     @JsonProperty("receiverId")
+    @SerializedName("receiverId")
     private Long receiverId;
     
     @JsonProperty("groupId")
+    @SerializedName("groupId")
     private Long groupId;
     
     @JsonProperty("content")
+    @SerializedName("content")
     private String content;
     
     @JsonProperty("msgType")
+    @SerializedName("msgType")
     private String msgType;
     
     @JsonProperty("filePath")
+    @SerializedName("filePath")
     private String filePath;
     
     @JsonProperty("timestamp")
+    @SerializedName("timestamp")
     private String timestamp;
     
     @JsonProperty("isRead")
+    @SerializedName("isRead")
     private Boolean isRead;
     
     @JsonProperty("aesEncrypted")
+    @SerializedName("aesEncrypted")
     private Boolean aesEncrypted;
+    
+    @JsonProperty("iv")
+    @SerializedName("iv")
+    private String iv;
+    
+    @JsonProperty("authTag")
+    @SerializedName("authTag")
+    private String authTag;
+    
+    @JsonProperty("algorithm")
+    @SerializedName("algorithm")
+    private String algorithm;
     
     // Constructors
     public MessageDTO() {
@@ -132,5 +156,29 @@ public class MessageDTO {
     
     public void setAesEncrypted(Boolean aesEncrypted) {
         this.aesEncrypted = aesEncrypted;
+    }
+
+    public String getIv() {
+        return iv;
+    }
+
+    public void setIv(String iv) {
+        this.iv = iv;
+    }
+
+    public String getAuthTag() {
+        return authTag;
+    }
+
+    public void setAuthTag(String authTag) {
+        this.authTag = authTag;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
     }
 }

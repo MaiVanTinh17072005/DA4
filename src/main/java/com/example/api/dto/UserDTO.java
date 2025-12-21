@@ -1,15 +1,35 @@
 package com.example.api.dto;
 
+import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * DTO for user information
  * Received from server
  */
 public class UserDTO {
+    @JsonProperty("id")
+    @SerializedName("id")
     private Long id;
+    
+    @JsonProperty("email")
+    @SerializedName("email")
     private String email;
+    
+    @JsonProperty("username")
+    @SerializedName("username")
     private String username;
+    
+    @JsonProperty("avatarUrl")
+    @SerializedName("avatarUrl")
     private String avatarUrl;
+    
+    @JsonProperty("status")
+    @SerializedName("status")
     private String status;
+    
+    @JsonProperty("createdAt")
+    @SerializedName("createdAt")
     private String createdAt;
 
     // Constructors

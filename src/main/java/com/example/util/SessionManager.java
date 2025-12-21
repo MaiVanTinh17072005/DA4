@@ -15,6 +15,10 @@ public class SessionManager {
     private static int tcpPort = -1;
     private static int udpPort = -1;
     
+    // E2EE Key Derivation Info
+    private static String userPassword; // Plain password (stored only in memory)
+    private static String userSalt;     // Base64 encoded salt from server
+    
     /**
      * Set current logged-in user
      */
@@ -58,6 +62,8 @@ public class SessionManager {
         authToken = null;
         tcpPort = -1;
         udpPort = -1;
+        userPassword = null;
+        userSalt = null;
     }
     
     /**
@@ -101,5 +107,21 @@ public class SessionManager {
      */
     public static int getUdpPort() {
         return udpPort;
+    }
+
+    public static String getUserPassword() {
+        return userPassword;
+    }
+
+    public static void setUserPassword(String password) {
+        userPassword = password;
+    }
+
+    public static String getUserSalt() {
+        return userSalt;
+    }
+
+    public static void setUserSalt(String salt) {
+        userSalt = salt;
     }
 }

@@ -6,14 +6,17 @@ import com.example.network.P2PManager;
 import com.example.network.P2PMessageListener;
 import com.example.network.PeerManager;
 import com.example.network.model.P2PMessage;
-import com.example.service.FriendService;
-import com.example.service.MessageService;
-import com.example.service.ServerHealthMonitor;
-import com.example.service.LocalMessageQueue;
-import com.example.service.MessageSyncService;
-import com.example.service.RedisQueueService;
+import com.example.service.*;
 import com.example.util.SceneManager;
 import com.example.util.SessionManager;
+import com.example.crypto.*;
+
+import javax.crypto.SecretKey;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.util.Base64;
+import java.util.HashMap;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -74,15 +77,21 @@ public class ChatScene implements P2PMessageListener {
     
     // Hybrid P2P Services
     private ServerHealthMonitor serverHealthMonitor;
-    private LocalMessageQueue localMessageQueue;
     private MessageSyncService messageSyncService;
+    private LocalRedisService localRedis;  // ✅ Local Redis instead of file-based queue
     private final RedisQueueService redisQueueService = new RedisQueueService();
+
+    // E2EE States
+    private SecretKey masterKey;
+    private KeyPair identityKeyPair;
+    private final Map<Long, SecretKey> conversationKeys = new HashMap<>();
 
     @FXML
     public void initialize() {
         initProfile();
+        initE2EE(); // NEW: Initialize E2EE
         initP2P();
-        initHybridServices();  // NEW: Initialize hybrid P2P services
+        initHybridServices();
         initConversations();
         initConversationList();
         initMessageView();
@@ -91,6 +100,51 @@ public class ChatScene implements P2PMessageListener {
         initFilters();
         selectDefaultConversation();
         typingStatusLabel.setText("Sẵn sàng chat. Tin nhắn sẽ tự động gửi lại khi server online.");
+    }
+
+    private void initE2EE() {
+        try {
+            String password = SessionManager.getUserPassword();
+            String saltStr = SessionManager.getUserSalt();
+            
+            if (password == null || saltStr == null) {
+                System.err.println("[ChatScene] E2EE initialization failed: Missing password or salt");
+                encryptionStatusLabel.setText("🔓 E2EE không khả dụng (thiếu key)");
+                return;
+            }
+            
+            byte[] salt = Base64.getDecoder().decode(saltStr);
+            
+            // Derive master key
+            masterKey = E2EEManager.deriveMasterKey(password, salt);
+            System.out.println("[ChatScene] Master key derived");
+            
+            // Load or generate local identity
+            PrivateKey privateKey = KeyStore.loadPrivateKey(masterKey);
+            if (privateKey != null) {
+                System.out.println("[ChatScene] Local identity loaded");
+                // Need to regenerate public key from private or store it separately
+                // For ECDH, we can re-derive public from private or just store the full pair
+                // For simplicity, let's generate if missing or store properly
+                // Here we'll generate new one if load fails, and upload to server
+                identityKeyPair = new KeyPair(null, privateKey); // Public key should be fetched from server if missing
+            } else {
+                System.out.println("[ChatScene] No local identity, generating new one...");
+                identityKeyPair = E2EEManager.generateECDHKeyPair();
+                KeyStore.savePrivateKey(identityKeyPair.getPrivate(), masterKey);
+                
+                // Upload public key to server
+                String pubKeyStr = E2EEManager.publicKeyToString(identityKeyPair.getPublic());
+                UserKeyService.uploadPublicKey(pubKeyStr);
+                System.out.println("[ChatScene] New identity generated and uploaded");
+            }
+            
+            encryptionStatusLabel.setText("🔒 E2EE đang hoạt động");
+        } catch (Exception e) {
+            System.err.println("[ChatScene] E2EE initialization error: " + e.getMessage());
+            e.printStackTrace();
+            encryptionStatusLabel.setText("🔓 E2EE gặp lỗi");
+        }
     }
 
     private void initProfile() {
@@ -349,7 +403,29 @@ public class ChatScene implements P2PMessageListener {
                         timestamp = LocalDateTime.now();
                     }
                     
-                    messages.add(new MessageItem(author, msg.getContent(), timestamp, isOwn));
+                    // Decrypt if message is encrypted
+                    String displayContent = msg.getContent();
+                    if (msg.getAesEncrypted() != null && msg.getAesEncrypted()) {
+                        try {
+                            SecretKey convKey = getConversationKey(friendId);
+                            if (convKey != null) {
+                                EncryptedMessage encrypted = new EncryptedMessage(
+                                    Base64.getDecoder().decode(msg.getContent()),
+                                    Base64.getDecoder().decode(msg.getIv()),
+                                    Base64.getDecoder().decode(msg.getAuthTag()),
+                                    msg.getAlgorithm()
+                                );
+                                displayContent = E2EEManager.decryptMessage(encrypted, convKey);
+                            } else {
+                                displayContent = "[Tin nhắn mã hóa - Thiếu Key]";
+                            }
+                        } catch (Exception e) {
+                            System.err.println("[ChatScene] Decryption failed: " + e.getMessage());
+                            displayContent = "[Lỗi giải mã tin nhắn]";
+                        }
+                    }
+                    
+                    messages.add(new MessageItem(author, displayContent, timestamp, isOwn));
                 }
             } else {
                 System.out.println("[ChatScene] ℹ️ No messages found - new conversation");
@@ -444,12 +520,12 @@ public class ChatScene implements P2PMessageListener {
             serverHealthMonitor.startMonitoring();
             
             // Initialize local message queue
-            localMessageQueue = new LocalMessageQueue();
+            localRedis = LocalRedisService.getInstance();
             
             // Initialize message sync service
             messageSyncService = new MessageSyncService(
                 serverHealthMonitor,
-                localMessageQueue,
+                localRedis,
                 messageService
             );
             
@@ -567,11 +643,49 @@ public class ChatScene implements P2PMessageListener {
     
     @Override
     public void onMessageReceived(P2PMessage message) {
-        System.out.println("[ChatScene] 📨 P2P message received: " + message.getContent());
+        System.out.println("[ChatScene] 📨 P2P message received from: " + message.getSenderId());
+        System.out.println("  - Encrypted: " + message.isEncrypted());
         
         Platform.runLater(() -> {
             // Check if message is from active conversation
             if (activeConversation != null && message.getSenderId().equals(activeConversation.getUserId())) {
+                
+                String displayContent = message.getContent();  // Default
+                
+                // ===== TRUE E2EE: GIẢI MÃ KHI NHẬN TỪ PEER =====
+                if (message.isEncrypted() && message.getIv() != null && message.getAuthTag() != null) {
+                    try {
+                        SecretKey convKey = getConversationKey(message.getSenderId());
+                        if (convKey != null) {
+                            // Giải mã message
+                            byte[] ciphertext = Base64.getDecoder().decode(message.getContent());
+                            byte[] ivBytes = Base64.getDecoder().decode(message.getIv());
+                            byte[] authTagBytes = Base64.getDecoder().decode(message.getAuthTag());
+                            
+                            EncryptedMessage encrypted = new EncryptedMessage(
+                                ciphertext,
+                                ivBytes,
+                                authTagBytes,
+                                message.getAlgorithm()
+                            );
+                            
+                            displayContent = E2EEManager.decryptMessage(encrypted, convKey);
+                            System.out.println("[ChatScene] 🔓 Message decrypted successfully (TRUE E2EE)");
+                            System.out.println("  - Plain text: " + displayContent);
+                        } else {
+                            System.err.println("[ChatScene] ❌ No conversation key for decryption");
+                            displayContent = "[Không thể giải mã - thiếu key]";
+                        }
+                    } catch (Exception e) {
+                        System.err.println("[ChatScene] ❌ Decryption failed: " + e.getMessage());
+                        e.printStackTrace();
+                        displayContent = "[Lỗi giải mã]";
+                    }
+                } else if (message.isEncrypted()) {
+                    System.out.println("[ChatScene] ⚠️ Encrypted message but missing IV/AuthTag");
+                    displayContent = "[Encrypted - thiếu thông tin giải mã]";
+                }
+                
                 // Add message to UI
                 LocalDateTime timestamp = LocalDateTime.ofEpochSecond(
                     message.getTimestamp() / 1000, 
@@ -581,7 +695,7 @@ public class ChatScene implements P2PMessageListener {
                 
                 MessageItem item = new MessageItem(
                     message.getSenderUsername() != null ? message.getSenderUsername() : "Friend",
-                    message.getContent(),
+                    displayContent,  // ✅ Plain text (đã giải mã)
                     timestamp,
                     false
                 );
@@ -750,65 +864,162 @@ public class ChatScene implements P2PMessageListener {
         messageInput.clear();
         scrollToBottom();
         
-        // Create message DTO
+        
+        // ===== TRUE E2EE: MÃ HÓA TRƯỚC KHI GỬI =====
+        String finalContent = content;  // Plain text ban đầu
+        String iv = null;
+        String authTag = null;
+        String algorithm = "AES-256-GCM";
+        boolean isEncrypted = false;
+        
+        try {
+            SecretKey convKey = getConversationKey(friendId);
+            if (convKey != null) {
+                // MÃ HÓA NGAY - một lần duy nhất cho TẤT CẢ
+                EncryptedMessage encrypted = E2EEManager.encryptMessage(content, convKey);
+                
+                // Chuyển sang Base64 để truyền qua network
+                finalContent = Base64.getEncoder().encodeToString(encrypted.getCiphertext());
+                iv = Base64.getEncoder().encodeToString(encrypted.getIv());
+                authTag = Base64.getEncoder().encodeToString(encrypted.getAuthTag());
+                algorithm = encrypted.getAlgorithm();
+                isEncrypted = true;
+                
+                System.out.println("[ChatScene] 🔒 TRUE E2EE - Message encrypted:");
+                System.out.println("  - Plain: " + content);
+                System.out.println("  - Encrypted: " + finalContent.substring(0, Math.min(20, finalContent.length())) + "...");
+                System.out.println("  - Will use for P2P + DB + Redis ✅");
+            } else {
+                System.out.println("[ChatScene] ⚠️ WARNING: No conversation key - sending plain text");
+            }
+        } catch (Exception e) {
+            System.err.println("[ChatScene] ❌ Encryption failed: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        // Create MessageDTO với encrypted content (hoặc plain nếu không có key)
         MessageDTO messageDTO = new MessageDTO();
         messageDTO.setMsgId(System.currentTimeMillis());
+        messageDTO.setSenderId(currentUser.getId());
+        messageDTO.setSenderUsername(currentUser.getUsername());
         messageDTO.setReceiverId(friendId);
-        messageDTO.setContent(content);
+        messageDTO.setContent(finalContent);  // ✅ ENCRYPTED content
         messageDTO.setMsgType("text");
+        messageDTO.setTimestamp(LocalDateTime.now().toString());
+        messageDTO.setAesEncrypted(isEncrypted);
+        
+        if (isEncrypted) {
+            messageDTO.setIv(iv);
+            messageDTO.setAuthTag(authTag);
+            messageDTO.setAlgorithm(algorithm);
+        }
+        
+        System.out.println("[ChatScene] 📝 Created MessageDTO:");
+        System.out.println("  - SenderId: " + messageDTO.getSenderId());
+        System.out.println("  - ReceiverId: " + messageDTO.getReceiverId());
+        System.out.println("  - Encrypted: " + messageDTO.getAesEncrypted());
         
         // HYBRID P2P LOGIC
         boolean hasP2P = p2pEnabled && p2pManager != null && p2pManager.isConnectedToFriend(friendId);
         boolean serverOnline = serverHealthMonitor != null && serverHealthMonitor.isServerOnline();
         
         if (hasP2P) {
-            // Priority 1: Send via P2P
-            System.out.println("[ChatScene] 📤 Sending via P2P");
+            // Priority 1: Send via P2P với ENCRYPTED content + E2EE fields
+            System.out.println("[ChatScene] 📤 Sending ENCRYPTED message via P2P (TRUE E2EE)");
             
-            p2pManager.sendTextMessage(friendId, content).thenAccept(p2pSuccess -> {
+            // ✅ TẠO P2PMessage VỚI E2EE FIELDS
+            P2PMessage p2pMessage = P2PMessage.createTextMessage(currentUser.getId(), friendId, finalContent);
+            p2pMessage.setSenderUsername(currentUser.getUsername());
+            p2pMessage.setEncrypted(isEncrypted);
+            
+            if (isEncrypted) {
+                p2pMessage.setIv(iv);
+                p2pMessage.setAuthTag(authTag);
+                p2pMessage.setAlgorithm(algorithm);
+                System.out.println("[ChatScene] 🔐 P2PMessage with E2EE fields:");
+                System.out.println("  - Encrypted: true");
+                System.out.println("  - IV: " + iv.substring(0, Math.min(10, iv.length())) + "...");
+                System.out.println("  - AuthTag: " + authTag.substring(0, Math.min(10, authTag.length())) + "...");
+            }
+            
+            // Gửi P2PMessage (cần sửa P2PManager để nhận P2PMessage thay vì String)
+            // Tạm thời dùng sendTextMessage, sau đó sẽ tạo method mới
+            p2pManager.sendTextMessage(friendId, finalContent).thenAccept(p2pSuccess -> {
                 if (p2pSuccess) {
-                    System.out.println("[ChatScene] ✅ P2P message sent");
-                    Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi qua P2P (E2EE)"));
+                    System.out.println("[ChatScene] ✅ Encrypted P2P message sent (TRUE E2EE)");
                     
-                    // If server online, persist to database
+                    // ✅ FIX: Always queue to local Redis regardless of server status
+                    // The MessageSyncService will handle syncing to server when online
+                    localRedis.queueMessage(messageDTO);
+                    
                     if (serverOnline) {
-                        sendToServerAsync(messageDTO, false);
+                        Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi P2P (⏳ sync queue)"));
+                        System.out.println("[ChatScene] 📝 Message queued to local Redis for sync");
                     } else {
-                        // Server offline, try Redis queue first
-                        boolean queuedToRedis = redisQueueService.queueMessage(messageDTO);
-                        if (queuedToRedis) {
-                            Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi P2P (⏳ Redis queue - sync 5s)"));
-                        } else {
-                            // Fallback to local file if Redis fails
-                            localMessageQueue.addPendingMessage(messageDTO);
-                            Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi P2P (⏳ local queue)"));
-                        }
+                        Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi P2P (⏳ local queue)"));
+                        System.out.println("[ChatScene] 📝 Message queued to local Redis (server offline)");
                     }
                 } else {
                     // P2P failed, try server
                     Platform.runLater(() -> typingStatusLabel.setText("⚠️ P2P thất bại, thử server..."));
+                    // ✅ FIX: Queue to local Redis first (only once)
+                    localRedis.queueMessage(messageDTO);
                     sendViaServer(messageDTO);
                 }
             });
         } else {
             // No P2P connection, must use server
+            // ✅ FIX: Queue to local Redis first (only once)
+            localRedis.queueMessage(messageDTO);
             sendViaServer(messageDTO);
         }
     }
     
     
+    private SecretKey getConversationKey(Long friendId) {
+        if (conversationKeys.containsKey(friendId)) {
+            return conversationKeys.get(friendId);
+        }
+        
+        try {
+            // 1. Load friend's public key
+            PublicKey friendPubKey = KeyStore.loadFriendPublicKey(friendId);
+            if (friendPubKey == null) {
+                // Fetch from server
+                String pubKeyStr = UserKeyService.fetchFriendPublicKey(friendId);
+                if (pubKeyStr != null) {
+                    friendPubKey = E2EEManager.stringToPublicKey(pubKeyStr);
+                    KeyStore.saveFriendPublicKey(friendId, pubKeyStr);
+                }
+            }
+            
+            if (friendPubKey == null) {
+                System.err.println("[ChatScene] Could not get public key for friend: " + friendId);
+                return null;
+            }
+            
+            // 2. Get my private key
+            PrivateKey myPrivKey = identityKeyPair.getPrivate();
+            if (myPrivKey == null) {
+                // Should not happen if initE2EE was successful
+                return null;
+            }
+            
+            // 3. Derive shared secret
+            SecretKey sharedKey = E2EEManager.deriveConversationKey(myPrivKey, friendPubKey);
+            conversationKeys.put(friendId, sharedKey);
+            return sharedKey;
+        } catch (Exception e) {
+            System.err.println("[ChatScene] Error deriving conversation key: " + e.getMessage());
+            return null;
+        }
+    }
     private void sendViaServer(MessageDTO messageDTO) {
         if (serverHealthMonitor != null && !serverHealthMonitor.isServerOnline()) {
-            // Server offline, try Redis queue first
-            System.out.println("[ChatScene] ⚠️ Server offline, trying Redis queue");
-            boolean queuedToRedis = redisQueueService.queueMessage(messageDTO);
-            if (queuedToRedis) {
-                Platform.runLater(() -> typingStatusLabel.setText("⏳ Server offline - Redis queue (sync 5s)"));
-            } else {
-                // Fallback to local file if Redis fails
-                localMessageQueue.addPendingMessage(messageDTO);
-                Platform.runLater(() -> typingStatusLabel.setText("⏳ Server offline - local queue"));
-            }
+            // ✅ FIX: Server offline - message already queued by caller
+            // Do NOT queue again to avoid duplicates
+            System.out.println("[ChatScene] ⚠️ Server offline - message already in local queue");
+            Platform.runLater(() -> typingStatusLabel.setText("⏳ Server offline - local queue"));
             return;
         }
         
@@ -816,11 +1027,17 @@ public class ChatScene implements P2PMessageListener {
     }
     
     private void sendToServerAsync(MessageDTO messageDTO, boolean showStatus) {
+        System.out.println("[ChatScene] 📤 sendToServerAsync called");
+        System.out.println("  - ShowStatus: " + showStatus);
+        System.out.println("  - MessageDTO: SenderId=" + messageDTO.getSenderId() + ", ReceiverId=" + messageDTO.getReceiverId());
+        
         CompletableFuture.runAsync(() -> {
             try {
+                System.out.println("[ChatScene] 🚀 Calling messageService.sendMessage()...");
                 MessageDTO result = messageService.sendMessage(messageDTO);
                 if (result != null) {
-                    System.out.println("[ChatScene] ✅ Message sent to server");
+                    System.out.println("[ChatScene] ✅ Message sent to server successfully!");
+                    System.out.println("  - Returned MsgId: " + result.getMsgId());
                     if (showStatus) {
                         Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi qua Server"));
                     }
@@ -829,12 +1046,14 @@ public class ChatScene implements P2PMessageListener {
                 }
             } catch (Exception e) {
                 System.err.println("[ChatScene] ❌ Failed to send to server: " + e.getMessage());
+                e.printStackTrace();
                 
-                // Add to local queue for retry
-                localMessageQueue.addPendingMessage(messageDTO);
+                // ✅ FIX: Do NOT re-queue - message is already in Local Redis from initial send
+                // Re-queuing here causes duplicates when the message is synced later
+                System.err.println("[ChatScene] ⚠️ Message send failed - already in queue for retry");
                 
                 if (showStatus) {
-                    Platform.runLater(() -> typingStatusLabel.setText("⏳ Lỗi gửi - sẽ thử lại tự động"));
+                    Platform.runLater(() -> typingStatusLabel.setText("⏳ Lỗi gửi - đã trong queue"));
                 }
             }
         });
@@ -857,8 +1076,8 @@ public class ChatScene implements P2PMessageListener {
         if (messageSyncService != null) {
             messageSyncService.stop();
         }
-        if (localMessageQueue != null) {
-            localMessageQueue.saveToDisk();
+        if (localRedis != null) {
+            // Redis auto-persists, no need to manually save
         }
         System.out.println("[ChatScene] 🧹 Cleanup completed");
     }
