@@ -11,7 +11,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * Entry point for Discord Mini Server
  */
 @SpringBootApplication
-@ComponentScan(basePackages = {"app", "controller", "service", "repository", "util", "dto", "model"})
+@ComponentScan(basePackages = {"app", "controller", "service", "repository", "util", "dto", "model", "config", "scheduler"})
 @EntityScan(basePackages = "model")
 @EnableJpaRepositories(basePackages = "repository")
 public class ServerMain {

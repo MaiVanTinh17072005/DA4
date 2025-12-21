@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import service.MessageService;
+import service.RedisMessageQueueService;
 import util.JwtUtil;
 
 import java.util.List;
@@ -21,6 +22,9 @@ public class MessageController {
     
     @Autowired
     private MessageService messageService;
+    
+    @Autowired
+    private RedisMessageQueueService redisMessageQueueService;
     
     /**
      * Get all messages for current user
@@ -178,6 +182,40 @@ public class MessageController {
             e.printStackTrace();
             System.out.println("====================");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+    
+    /**
+     * Queue a message to Redis (used when server is "offline")
+     * POST /api/v1/messages/queue
+     * Body: MessageDTO
+     * 
+     * @param messageDTO Message data
+     * @return Success response
+     */
+    @PostMapping("/queue")
+    public ResponseEntity<String> queueMessage(@RequestBody MessageDTO messageDTO) {
+        
+        System.out.println("=== QUEUE MESSAGE TO REDIS ===");
+        
+        try {
+            System.out.println("Sender ID: " + messageDTO.getSenderId());
+            System.out.println("Receiver ID: " + messageDTO.getReceiverId());
+            System.out.println("Content: " + messageDTO.getContent());
+            
+            // Queue message to Redis
+            redisMessageQueueService.queueMessage(messageDTO);
+            
+            System.out.println("✅ Message queued to Redis successfully");
+            System.out.println("==============================");
+            return ResponseEntity.ok("Message queued successfully");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error queuing message: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("==============================");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Failed to queue message: " + e.getMessage());
         }
     }
     
