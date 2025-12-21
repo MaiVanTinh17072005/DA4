@@ -8,6 +8,10 @@ import com.example.network.PeerManager;
 import com.example.network.model.P2PMessage;
 import com.example.service.FriendService;
 import com.example.service.MessageService;
+import com.example.service.ServerHealthMonitor;
+import com.example.service.LocalMessageQueue;
+import com.example.service.MessageSyncService;
+import com.example.service.RedisQueueService;
 import com.example.util.SceneManager;
 import com.example.util.SessionManager;
 import javafx.application.Platform;
@@ -67,11 +71,18 @@ public class ChatScene implements P2PMessageListener {
     // P2P Manager
     private P2PManager p2pManager;
     private boolean p2pEnabled = false;
+    
+    // Hybrid P2P Services
+    private ServerHealthMonitor serverHealthMonitor;
+    private LocalMessageQueue localMessageQueue;
+    private MessageSyncService messageSyncService;
+    private final RedisQueueService redisQueueService = new RedisQueueService();
 
     @FXML
     public void initialize() {
         initProfile();
         initP2P();
+        initHybridServices();  // NEW: Initialize hybrid P2P services
         initConversations();
         initConversationList();
         initMessageView();
@@ -79,7 +90,7 @@ public class ChatScene implements P2PMessageListener {
         initGroupOverview();
         initFilters();
         selectDefaultConversation();
-        typingStatusLabel.setText("Sẵn sàng chat. Tin nhắn sẽ tự động gửi lại nếu chuyển sang LAN mode.");
+        typingStatusLabel.setText("Sẵn sàng chat. Tin nhắn sẽ tự động gửi lại khi server online.");
     }
 
     private void initProfile() {
@@ -426,6 +437,61 @@ public class ChatScene implements P2PMessageListener {
         }
     }
     
+    private void initHybridServices() {
+        try {
+            // Initialize server health monitor
+            serverHealthMonitor = new ServerHealthMonitor();
+            serverHealthMonitor.startMonitoring();
+            
+            // Initialize local message queue
+            localMessageQueue = new LocalMessageQueue();
+            
+            // Initialize message sync service
+            messageSyncService = new MessageSyncService(
+                serverHealthMonitor,
+                localMessageQueue,
+                messageService
+            );
+            
+            // Set sync status listener for UI updates
+            messageSyncService.setSyncStatusListener(new MessageSyncService.SyncStatusListener() {
+                @Override
+                public void onSyncStarted(int messageCount) {
+                    Platform.runLater(() -> {
+                        typingStatusLabel.setText("🔄 Đang đồng bộ " + messageCount + " tin nhắn...");
+                    });
+                }
+                
+                @Override
+                public void onSyncProgress(int sent, int total) {
+                    Platform.runLater(() -> {
+                        typingStatusLabel.setText("🔄 Đã đồng bộ " + sent + "/" + total);
+                    });
+                }
+                
+                @Override
+                public void onSyncCompleted(int successful, int failed) {
+                    Platform.runLater(() -> {
+                        if (failed == 0) {
+                            typingStatusLabel.setText("✅ Đồng bộ hoàn tất: " + successful + " tin nhắn");
+                        } else {
+                            typingStatusLabel.setText("⚠️ Đồng bộ: " + successful + " thành công, " + failed + " thất bại");
+                        }
+                    });
+                }
+            });
+            
+            messageSyncService.start();
+            
+            System.out.println("[ChatScene] ✅ Hybrid P2P services initialized");
+            
+        } catch (Exception e) {
+            System.err.println("[ChatScene] ❌ Failed to initialize hybrid services: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    
     private void connectToActivePeer() {
         if (!p2pEnabled || activeConversation == null) {
             return;
@@ -684,63 +750,117 @@ public class ChatScene implements P2PMessageListener {
         messageInput.clear();
         scrollToBottom();
         
-        // Try P2P first
-        if (p2pEnabled && p2pManager != null && p2pManager.isConnectedToFriend(friendId)) {
+        // Create message DTO
+        MessageDTO messageDTO = new MessageDTO();
+        messageDTO.setMsgId(System.currentTimeMillis());
+        messageDTO.setReceiverId(friendId);
+        messageDTO.setContent(content);
+        messageDTO.setMsgType("text");
+        
+        // HYBRID P2P LOGIC
+        boolean hasP2P = p2pEnabled && p2pManager != null && p2pManager.isConnectedToFriend(friendId);
+        boolean serverOnline = serverHealthMonitor != null && serverHealthMonitor.isServerOnline();
+        
+        if (hasP2P) {
+            // Priority 1: Send via P2P
             System.out.println("[ChatScene] 📤 Sending via P2P");
             
-            p2pManager.sendTextMessage(friendId, content).thenAccept(success -> {
-                if (success) {
+            p2pManager.sendTextMessage(friendId, content).thenAccept(p2pSuccess -> {
+                if (p2pSuccess) {
                     System.out.println("[ChatScene] ✅ P2P message sent");
+                    Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi qua P2P (E2EE)"));
                     
-                    // Persist to database (async)
-                    CompletableFuture.runAsync(() -> {
-                        try {
-                            MessageDTO messageDTO = new MessageDTO();
-                            messageDTO.setReceiverId(friendId);
-                            messageDTO.setContent(content);
-                            messageDTO.setMsgType("text");
-                            messageService.sendMessage(messageDTO);
-                            System.out.println("[ChatScene] ✅ Message persisted to database");
-                            Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi qua P2P (E2EE)"));
-                        } catch (Exception e) {
-                            System.err.println("[ChatScene] ⚠️ Failed to persist: " + e.getMessage());
-                            Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi (chưa lưu DB)"));
+                    // If server online, persist to database
+                    if (serverOnline) {
+                        sendToServerAsync(messageDTO, false);
+                    } else {
+                        // Server offline, try Redis queue first
+                        boolean queuedToRedis = redisQueueService.queueMessage(messageDTO);
+                        if (queuedToRedis) {
+                            Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi P2P (⏳ Redis queue - sync 5s)"));
+                        } else {
+                            // Fallback to local file if Redis fails
+                            localMessageQueue.addPendingMessage(messageDTO);
+                            Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi P2P (⏳ local queue)"));
                         }
-                    });
+                    }
                 } else {
-                    Platform.runLater(() -> {
-                        typingStatusLabel.setText("⚠️ P2P failed, trying server...");
-                        sendViaServer(friendId, content);
-                    });
+                    // P2P failed, try server
+                    Platform.runLater(() -> typingStatusLabel.setText("⚠️ P2P thất bại, thử server..."));
+                    sendViaServer(messageDTO);
                 }
             });
         } else {
-            // Fallback to server
-            System.out.println("[ChatScene] 📤 Sending via Server");
-            sendViaServer(friendId, content);
+            // No P2P connection, must use server
+            sendViaServer(messageDTO);
         }
     }
     
-    private void sendViaServer(Long friendId, String content) {
+    
+    private void sendViaServer(MessageDTO messageDTO) {
+        if (serverHealthMonitor != null && !serverHealthMonitor.isServerOnline()) {
+            // Server offline, try Redis queue first
+            System.out.println("[ChatScene] ⚠️ Server offline, trying Redis queue");
+            boolean queuedToRedis = redisQueueService.queueMessage(messageDTO);
+            if (queuedToRedis) {
+                Platform.runLater(() -> typingStatusLabel.setText("⏳ Server offline - Redis queue (sync 5s)"));
+            } else {
+                // Fallback to local file if Redis fails
+                localMessageQueue.addPendingMessage(messageDTO);
+                Platform.runLater(() -> typingStatusLabel.setText("⏳ Server offline - local queue"));
+            }
+            return;
+        }
+        
+        sendToServerAsync(messageDTO, true);
+    }
+    
+    private void sendToServerAsync(MessageDTO messageDTO, boolean showStatus) {
         CompletableFuture.runAsync(() -> {
             try {
-                MessageDTO messageDTO = new MessageDTO();
-                messageDTO.setReceiverId(friendId);
-                messageDTO.setContent(content);
-                messageDTO.setMsgType("text");
-                messageService.sendMessage(messageDTO);
-                Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi qua Server"));
+                MessageDTO result = messageService.sendMessage(messageDTO);
+                if (result != null) {
+                    System.out.println("[ChatScene] ✅ Message sent to server");
+                    if (showStatus) {
+                        Platform.runLater(() -> typingStatusLabel.setText("✓ Đã gửi qua Server"));
+                    }
+                } else {
+                    throw new Exception("Server returned null");
+                }
             } catch (Exception e) {
-                System.err.println("[ChatScene] ❌ Failed to send: " + e.getMessage());
-                Platform.runLater(() -> typingStatusLabel.setText("❌ Gửi thất bại"));
+                System.err.println("[ChatScene] ❌ Failed to send to server: " + e.getMessage());
+                
+                // Add to local queue for retry
+                localMessageQueue.addPendingMessage(messageDTO);
+                
+                if (showStatus) {
+                    Platform.runLater(() -> typingStatusLabel.setText("⏳ Lỗi gửi - sẽ thử lại tự động"));
+                }
             }
         });
     }
+    
     
     private void scrollToBottom() {
         if (!messageListView.getItems().isEmpty()) {
             messageListView.scrollTo(messageListView.getItems().size() - 1);
         }
+    }
+    
+    /**
+     * Cleanup when scene is closed
+     */
+    public void cleanup() {
+        if (serverHealthMonitor != null) {
+            serverHealthMonitor.stopMonitoring();
+        }
+        if (messageSyncService != null) {
+            messageSyncService.stop();
+        }
+        if (localMessageQueue != null) {
+            localMessageQueue.saveToDisk();
+        }
+        System.out.println("[ChatScene] 🧹 Cleanup completed");
     }
 
     @FXML
