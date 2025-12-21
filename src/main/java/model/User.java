@@ -30,6 +30,9 @@ public class User {
     @Column(length = 20)
     private String status = "offline"; // online, offline, away, busy
     
+    @Column(length = 100)
+    private String salt; // Base64 encoded salt for E2EE key derivation
+    
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
@@ -107,6 +110,14 @@ public class User {
     
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getSalt() {
+        return salt;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
     }
     
     public LocalDateTime getCreatedAt() {

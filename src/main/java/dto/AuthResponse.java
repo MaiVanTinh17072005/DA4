@@ -9,6 +9,7 @@ public class AuthResponse {
     private String message;
     private String token;
     private UserDTO user;
+    private String salt;
     
     // Constructors
     public AuthResponse() {
@@ -24,6 +25,14 @@ public class AuthResponse {
         this.message = message;
         this.token = token;
         this.user = user;
+    }
+    
+    public AuthResponse(boolean success, String message, String token, UserDTO user, String salt) {
+        this.success = success;
+        this.message = message;
+        this.token = token;
+        this.user = user;
+        this.salt = salt;
     }
     
     // Static factory methods for common responses
@@ -66,6 +75,14 @@ public class AuthResponse {
     
     public void setUser(UserDTO user) {
         this.user = user;
+    }
+
+    public String getSalt() {
+        return salt;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
     }
     
     @Override

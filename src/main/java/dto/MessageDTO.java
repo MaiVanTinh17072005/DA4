@@ -41,13 +41,23 @@ public class MessageDTO {
     @JsonProperty("aesEncrypted")
     private Boolean aesEncrypted;
     
+    @JsonProperty("iv")
+    private String iv;
+    
+    @JsonProperty("authTag")
+    private String authTag;
+    
+    @JsonProperty("algorithm")
+    private String algorithm = "AES-256-GCM";
+    
     // Constructors
     public MessageDTO() {
     }
     
     public MessageDTO(Long msgId, Long senderId, String senderUsername, Long receiverId, 
                      Long groupId, String content, String msgType, String filePath, 
-                     String timestamp, Boolean isRead, Boolean aesEncrypted) {
+                     String timestamp, Boolean isRead, Boolean aesEncrypted, 
+                     String iv, String authTag, String algorithm) {
         this.msgId = msgId;
         this.senderId = senderId;
         this.senderUsername = senderUsername;
@@ -59,6 +69,9 @@ public class MessageDTO {
         this.timestamp = timestamp;
         this.isRead = isRead;
         this.aesEncrypted = aesEncrypted;
+        this.iv = iv;
+        this.authTag = authTag;
+        this.algorithm = algorithm;
     }
     
     // Getters and Setters
@@ -148,6 +161,30 @@ public class MessageDTO {
     
     public void setAesEncrypted(Boolean aesEncrypted) {
         this.aesEncrypted = aesEncrypted;
+    }
+
+    public String getIv() {
+        return iv;
+    }
+
+    public void setIv(String iv) {
+        this.iv = iv;
+    }
+
+    public String getAuthTag() {
+        return authTag;
+    }
+
+    public void setAuthTag(String authTag) {
+        this.authTag = authTag;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
     }
     
     @Override

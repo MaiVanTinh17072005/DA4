@@ -43,6 +43,15 @@ public class Message {
     @Column(name = "aes_encrypted", nullable = false)
     private Boolean aesEncrypted = false;
     
+    @Column(name = "iv", length = 100)
+    private String iv;
+    
+    @Column(name = "auth_tag", length = 100)
+    private String authTag;
+    
+    @Column(name = "algorithm", length = 50)
+    private String algorithm = "AES-256-GCM";
+    
     // Constructors
     public Message() {
     }
@@ -149,6 +158,30 @@ public class Message {
     
     public void setAesEncrypted(Boolean aesEncrypted) {
         this.aesEncrypted = aesEncrypted;
+    }
+
+    public String getIv() {
+        return iv;
+    }
+
+    public void setIv(String iv) {
+        this.iv = iv;
+    }
+
+    public String getAuthTag() {
+        return authTag;
+    }
+
+    public void setAuthTag(String authTag) {
+        this.authTag = authTag;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
     }
     
     @Override

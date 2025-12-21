@@ -202,6 +202,16 @@ public class MessageController {
             System.out.println("Sender ID: " + messageDTO.getSenderId());
             System.out.println("Receiver ID: " + messageDTO.getReceiverId());
             System.out.println("Content: " + messageDTO.getContent());
+            System.out.println("MsgId: " + messageDTO.getMsgId());
+            System.out.println("Encrypted: " + messageDTO.getAesEncrypted());
+            
+            // CRITICAL: Validate senderId is not null
+            if (messageDTO.getSenderId() == null) {
+                System.err.println("❌ ERROR: SenderId is NULL! Cannot queue message.");
+                System.err.println("Full MessageDTO: " + messageDTO);
+                return ResponseEntity.badRequest()
+                    .body("Failed to queue message: senderId is required");
+            }
             
             // Queue message to Redis
             redisMessageQueueService.queueMessage(messageDTO);

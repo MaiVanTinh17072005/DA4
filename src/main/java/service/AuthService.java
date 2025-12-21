@@ -19,6 +19,9 @@ import repository.UserRepository;
 import util.JwtUtil;
 import util.PasswordUtil;
 
+import java.security.SecureRandom;
+import java.util.Base64;
+
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
@@ -92,6 +95,13 @@ public class AuthService {
             String hashedPassword = PasswordUtil.hashPassword(request.getPassword());
             System.out.println("[AuthService] ✓ Password hashed successfully");
             
+            // Generate secure random salt for E2EE
+            System.out.println("[AuthService] Step 4.5: Generating salt for E2EE...");
+            byte[] saltBytes = new byte[16];
+            new SecureRandom().nextBytes(saltBytes);
+            String salt = Base64.getEncoder().encodeToString(saltBytes);
+            System.out.println("[AuthService] ✓ Salt generated");
+
             // Create new user
             System.out.println("[AuthService] Step 5: Creating new user object...");
             User user = new User(
@@ -99,7 +109,8 @@ public class AuthService {
                     request.getUsername(),
                     hashedPassword
             );
-            System.out.println("[AuthService] ✓ User object created");
+            user.setSalt(salt);
+            System.out.println("[AuthService] ✓ User object created with salt");
             
             // Save user to database
             System.out.println("[AuthService] Step 6: Saving user to database...");
@@ -119,7 +130,9 @@ public class AuthService {
             // Return success response
             System.out.println("[AuthService] ✅ Registration successful for user: " + user.getUsername());
             System.out.println("[AuthService] ===== REGISTER PROCESS END =====");
-            return AuthResponse.success("Registration successful", token, userDTO);
+            AuthResponse response = AuthResponse.success("Registration successful", token, userDTO);
+            response.setSalt(user.getSalt());
+            return response;
             
         } catch (Exception e) {
             System.out.println("[AuthService] ❌❌❌ EXCEPTION OCCURRED ❌❌❌");
@@ -206,7 +219,9 @@ public class AuthService {
             // Return success response
             System.out.println("[AuthService] ✅ Login successful for user: " + user.getUsername() + " (ID: " + user.getId() + ")");
             System.out.println("[AuthService] ===== LOGIN PROCESS END =====");
-            return AuthResponse.success("Login successful", token, userDTO);
+            AuthResponse response = AuthResponse.success("Login successful", token, userDTO);
+            response.setSalt(user.getSalt());
+            return response;
             
         } catch (Exception e) {
             System.out.println("[AuthService] ❌❌❌ EXCEPTION OCCURRED ❌❌❌");

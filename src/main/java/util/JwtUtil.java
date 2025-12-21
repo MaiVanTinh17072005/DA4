@@ -97,6 +97,21 @@ public class JwtUtil {
     }
     
     /**
+     * Extract user ID from Authorization header
+     * Removes "Bearer " prefix and extracts user ID from token
+     * 
+     * @param authorizationHeader Authorization header value (e.g., "Bearer token...")
+     * @return User ID
+     */
+    public static Long extractUserIdFromHeader(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new IllegalArgumentException("Invalid Authorization header");
+        }
+        String token = authorizationHeader.substring(7); // Remove "Bearer " prefix
+        return extractUserId(token);
+    }
+    
+    /**
      * Extract all claims from token
      * 
      * @param token JWT token

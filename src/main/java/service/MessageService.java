@@ -175,6 +175,7 @@ public class MessageService {
      */
     public MessageDTO sendMessage(MessageDTO messageDTO) {
         System.out.println("[MessageService] Sending message from " + messageDTO.getSenderId());
+        System.out.println("[MessageService] Encrypted: " + messageDTO.getAesEncrypted());
         
         try {
             // Create Message entity
@@ -188,6 +189,17 @@ public class MessageService {
             message.setTimestamp(LocalDateTime.now());
             message.setIsRead(false);
             message.setAesEncrypted(messageDTO.getAesEncrypted() != null ? messageDTO.getAesEncrypted() : false);
+            
+            // IMPORTANT: Save E2EE fields if message is encrypted
+            if (messageDTO.getAesEncrypted() != null && messageDTO.getAesEncrypted()) {
+                message.setIv(messageDTO.getIv());
+                message.setAuthTag(messageDTO.getAuthTag());
+                message.setAlgorithm(messageDTO.getAlgorithm());
+                System.out.println("[MessageService] 🔒 Saving E2EE fields:");
+                System.out.println("  - IV: " + (messageDTO.getIv() != null ? messageDTO.getIv().substring(0, Math.min(20, messageDTO.getIv().length())) + "..." : "null"));
+                System.out.println("  - AuthTag: " + (messageDTO.getAuthTag() != null ? messageDTO.getAuthTag().substring(0, Math.min(20, messageDTO.getAuthTag().length())) + "..." : "null"));
+                System.out.println("  - Algorithm: " + messageDTO.getAlgorithm());
+            }
             
             // Save to DB
             Message savedMessage = messageRepository.save(message);
@@ -288,6 +300,13 @@ public class MessageService {
         dto.setTimestamp(message.getTimestamp().format(DATE_FORMATTER));
         dto.setIsRead(message.getIsRead());
         dto.setAesEncrypted(message.getAesEncrypted());
+        
+        // IMPORTANT: Include E2EE fields if message is encrypted
+        if (message.getAesEncrypted() != null && message.getAesEncrypted()) {
+            dto.setIv(message.getIv());
+            dto.setAuthTag(message.getAuthTag());
+            dto.setAlgorithm(message.getAlgorithm());
+        }
         
         // Get sender username
         Optional<User> senderOpt = userRepository.findById(message.getSenderId());
