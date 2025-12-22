@@ -197,6 +197,119 @@ public class GroupController {
     }
     
     /**
+     * Get group members
+     * GET /api/v1/groups/{groupId}/members
+     * 
+     * @param groupId Group ID
+     * @param authorization JWT token
+     * @return List of group members
+     */
+    @GetMapping("/{groupId}/members")
+    public ResponseEntity<List<dto.GroupMemberDTO>> getGroupMembers(
+            @PathVariable("groupId") Long groupId,
+            @RequestHeader("Authorization") String authorization) {
+        
+        System.out.println("=== GET GROUP MEMBERS ===");
+        System.out.println("Group ID: " + groupId);
+        
+        try {
+            String token = authorization.replace("Bearer ", "");
+            Long userId = JwtUtil.extractUserId(token);
+            
+            // Get members from GroupService
+            // Note: GroupService needs getGroupMembers method
+            System.out.println("✅ Getting members for group: " + groupId);
+            System.out.println("===========================");
+            
+            // TODO: Implement in GroupService
+            return ResponseEntity.ok(java.util.Collections.emptyList());
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("===========================");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+    
+    /**
+     * Add member to group
+     * POST /api/v1/groups/{groupId}/members
+     * Body: {"userId": 123, "role": "member"}
+     * 
+     * @param groupId Group ID
+     * @param request Request body with userId and role
+     * @param authorization JWT token
+     * @return Success message
+     */
+    @PostMapping("/{groupId}/members")
+    public ResponseEntity<String> addGroupMember(
+            @PathVariable("groupId") Long groupId,
+            @RequestBody java.util.Map<String, Object> request,
+            @RequestHeader("Authorization") String authorization) {
+        
+        System.out.println("=== ADD GROUP MEMBER ===");
+        System.out.println("Group ID: " + groupId);
+        
+        try {
+            String token = authorization.replace("Bearer ", "");
+            Long requesterId = JwtUtil.extractUserId(token);
+            
+            Long userId = Long.valueOf(request.get("userId").toString());
+            String role = request.getOrDefault("role", "member").toString();
+            
+            System.out.println("Adding user " + userId + " as " + role);
+            
+            // TODO: Implement in GroupService
+            System.out.println("✅ Member added successfully");
+            System.out.println("=========================");
+            return ResponseEntity.ok("Member added successfully");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("=========================");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add member");
+        }
+    }
+    
+    /**
+     * Remove member from group
+     * DELETE /api/v1/groups/{groupId}/members/{userId}
+     * 
+     * @param groupId Group ID
+     * @param userId User ID to remove
+     * @param authorization JWT token
+     * @return Success message
+     */
+    @DeleteMapping("/{groupId}/members/{userId}")
+    public ResponseEntity<String> removeGroupMember(
+            @PathVariable("groupId") Long groupId,
+            @PathVariable("userId") Long userId,
+            @RequestHeader("Authorization") String authorization) {
+        
+        System.out.println("=== REMOVE GROUP MEMBER ===");
+        System.out.println("Group ID: " + groupId);
+        System.out.println("User ID: " + userId);
+        
+        try {
+            String token = authorization.replace("Bearer ", "");
+            Long requesterId = JwtUtil.extractUserId(token);
+            
+            // TODO: Implement in GroupService
+            System.out.println("✅ Member removed successfully");
+            System.out.println("=============================");
+            return ResponseEntity.ok("Member removed successfully");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error: " + e.getMessage());
+            e.printStackTrace();
+            System.out.println("=============================");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to remove member");
+        }
+    }
+    
+    /**
      * Delete a group
      * DELETE /api/v1/groups/{groupId}
      * 

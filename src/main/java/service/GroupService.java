@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dto.GroupDTO;
 import model.Group;
+import model.GroupMember;
 import model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,9 @@ public class GroupService {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private repository.GroupMemberRepository groupMemberRepository;
     
     @Autowired
     private RedisService redisService;
@@ -125,6 +129,11 @@ public class GroupService {
     
     /**
      * Create a new group
+     * Properly handles database schema:
+     * 1. Creates group in 'groups' table
+     * 2. Adds owner to 'group_member' with role ADMIN
+     * 3. Adds initial members to 'group_member' with role MEMBER
+     * 4. Updates member_count
      * Invalidates user's groups cache
      */
     public GroupDTO createGroup(GroupDTO groupDTO) {
@@ -136,16 +145,58 @@ public class GroupService {
             group.setName(groupDTO.getName());
             group.setOwnerId(groupDTO.getOwnerId());
             group.setDescription(groupDTO.getDescription());
-            group.setMemberCount(1); // Owner is the first member
             group.setCreatedAt(LocalDateTime.now());
             
-            // Save to DB
+            // Calculate member count (owner + initial members)
+            int initialMemberCount = 1; // Owner
+            if (groupDTO.getMemberIds() != null) {
+                initialMemberCount += groupDTO.getMemberIds().size();
+            }
+            group.setMemberCount(initialMemberCount);
+            
+            // Save group to DB
             Group savedGroup = groupRepository.save(group);
+            System.out.println("[GroupService] ✅ Group created: ID=" + savedGroup.getGroupId());
+            
+            // Add owner as ADMIN to group_member table
+            GroupMember ownerMember = new GroupMember();
+            ownerMember.setGroupId(savedGroup.getGroupId());
+            ownerMember.setUserId(groupDTO.getOwnerId());
+            ownerMember.setRole("ADMIN");
+            ownerMember.setJoinedAt(LocalDateTime.now());
+            groupMemberRepository.save(ownerMember);
+            System.out.println("[GroupService] ✅ Owner added as ADMIN");
+            
+            // Add initial members to group_member table
+            if (groupDTO.getMemberIds() != null && !groupDTO.getMemberIds().isEmpty()) {
+                for (Long memberId : groupDTO.getMemberIds()) {
+                    // Skip if member is the owner (already added)
+                    if (memberId.equals(groupDTO.getOwnerId())) {
+                        continue;
+                    }
+                    
+                    GroupMember member = new GroupMember();
+                    member.setGroupId(savedGroup.getGroupId());
+                    member.setUserId(memberId);
+                    member.setRole("MEMBER");
+                    member.setJoinedAt(LocalDateTime.now());
+                    groupMemberRepository.save(member);
+                    
+                    System.out.println("[GroupService] ✅ Added member: " + memberId);
+                }
+            }
             
             // Invalidate owner's groups cache
             redisService.removeCachedObject(USER_GROUPS_PREFIX + groupDTO.getOwnerId());
             
-            System.out.println("[GroupService] ✅ Group created successfully: ID=" + savedGroup.getGroupId());
+            // Also invalidate each member's groups cache
+            if (groupDTO.getMemberIds() != null) {
+                for (Long memberId : groupDTO.getMemberIds()) {
+                    redisService.removeCachedObject(USER_GROUPS_PREFIX + memberId);
+                }
+            }
+            
+            System.out.println("[GroupService] ✅ Group created successfully with " + initialMemberCount + " members");
             
             // Return DTO
             return convertToDTO(savedGroup);

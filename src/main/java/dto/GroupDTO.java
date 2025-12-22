@@ -29,6 +29,9 @@ public class GroupDTO {
     @JsonProperty("createdAt")
     private String createdAt; // ISO format string
     
+    @JsonProperty("memberIds")
+    private java.util.List<Long> memberIds; // For group creation - initial members to add
+    
     // Constructors
     public GroupDTO() {
     }
@@ -99,6 +102,14 @@ public class GroupDTO {
     
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public java.util.List<Long> getMemberIds() {
+        return memberIds;
+    }
+    
+    public void setMemberIds(java.util.List<Long> memberIds) {
+        this.memberIds = memberIds;
     }
     
     @Override
