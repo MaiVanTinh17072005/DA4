@@ -236,6 +236,47 @@ public class LocalRedisService {
         return friends;
     }
     
+    // ===== GROUPS LIST =====
+    
+    public void saveGroupsList(Long userId, List<com.example.api.dto.GroupDTO> groups) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String key = "groups:" + userId;
+            
+            // Clear existing
+            jedis.del(key);
+            
+            // Add all groups as JSON
+            for (com.example.api.dto.GroupDTO group : groups) {
+                String groupJson = gson.toJson(group);
+                jedis.sadd(key, groupJson);
+            }
+            
+            System.out.println("[LocalRedis] 💾 Saved " + groups.size() + " groups for user " + userId);
+        } catch (Exception e) {
+            System.err.println("[LocalRedis] ❌ Failed to save groups: " + e.getMessage());
+        }
+    }
+    
+    public List<com.example.api.dto.GroupDTO> getGroupsList(Long userId) {
+        List<com.example.api.dto.GroupDTO> groups = new ArrayList<>();
+        
+        try (Jedis jedis = jedisPool.getResource()) {
+            String key = "groups:" + userId;
+            Set<String> groupJsons = jedis.smembers(key);
+            
+            for (String groupJson : groupJsons) {
+                com.example.api.dto.GroupDTO group = gson.fromJson(groupJson, com.example.api.dto.GroupDTO.class);
+                groups.add(group);
+            }
+            
+            System.out.println("[LocalRedis] 📂 Retrieved " + groups.size() + " groups for user " + userId);
+        } catch (Exception e) {
+            System.err.println("[LocalRedis] ❌ Failed to get groups: " + e.getMessage());
+        }
+        
+        return groups;
+    }
+    
     // ===== UTILITY =====
     
     public boolean isConnected() {

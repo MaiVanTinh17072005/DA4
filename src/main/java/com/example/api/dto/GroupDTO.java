@@ -89,4 +89,15 @@ public class GroupDTO {
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
     }
+    
+    @JsonProperty("memberIds")
+    private java.util.List<Long> memberIds;
+    
+    public java.util.List<Long> getMemberIds() {
+        return memberIds;
+    }
+    
+    public void setMemberIds(java.util.List<Long> memberIds) {
+        this.memberIds = memberIds;
+    }
 }

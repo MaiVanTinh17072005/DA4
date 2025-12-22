@@ -36,6 +36,22 @@
                           onAction="#handleFilterGroup"
                           styleClass="filter-tab"/>
         </HBox>
+        
+        <!-- Create Group Button (visible when Group filter selected) -->
+        <Button fx:id="createGroupButton"
+                text="➕ Tạo nhóm mới" 
+                onAction="#handleCreateGroup"
+                styleClass="create-group-btn"
+                maxWidth="Infinity"
+                visible="false"
+                managed="false"/>
+        
+        <!-- Group Section Header (visible when Group filter selected) -->
+        <Label fx:id="groupSectionHeader"
+               text="NHÓM CỦA BẠN"
+               styleClass="section-header-label"
+               visible="false"
+               managed="false"/>
 
         <!-- Conversations List -->
         <ScrollPane styleClass="conversation-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
@@ -70,6 +86,14 @@
 
             <!-- Action Buttons -->
             <HBox spacing="8" alignment="CENTER_RIGHT">
+                <Button fx:id="addMemberButton"
+                        styleClass="header-icon-btn" 
+                        text="➕" 
+                        onAction="#handleAddMember"
+                        visible="false"
+                        managed="false">
+                    <tooltip><Tooltip text="Thêm thành viên (chỉ nhóm)"/></tooltip>
+                </Button>
                 <Button styleClass="header-icon-btn" text="📞" onAction="#handleStartCall">
                     <tooltip><Tooltip text="Gọi điện"/></tooltip>
                 </Button>

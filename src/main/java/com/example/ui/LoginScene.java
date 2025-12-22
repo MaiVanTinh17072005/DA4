@@ -293,6 +293,9 @@ public class LoginScene {
                     // Initialize P2P for this user
                     initializeP2PForUser();
                     
+                    // Load and cache user's groups
+                    loadAndCacheGroups();
+                    
                     // Show success message
                     System.out.println("Login successful! User: " + response.getUser().getUsername());
                     
@@ -309,6 +312,41 @@ public class LoginScene {
                 showError("Lỗi kết nối: " + e.getMessage());
             });
         }
+    }
+    
+    /**
+     * Load user's groups from API and cache in local Redis
+     */
+    private void loadAndCacheGroups() {
+        CompletableFuture.runAsync(() -> {
+            try {
+                Long userId = SessionManager.getCurrentUserId();
+                if (userId == null) {
+                    System.err.println("[Login] Cannot load groups - user ID is null");
+                    return;
+                }
+                
+                System.out.println("[Login] 📥 Loading groups for user " + userId);
+                
+                // Fetch groups from API
+                com.example.service.GroupService groupService = new com.example.service.GroupService();
+                java.util.List<com.example.api.dto.GroupDTO> groups = groupService.getMyGroups();
+                
+                if (groups != null && !groups.isEmpty()) {
+                    // Cache in local Redis
+                    com.example.service.LocalRedisService redisService = com.example.service.LocalRedisService.getInstance();
+                    redisService.saveGroupsList(userId, groups);
+                    
+                    System.out.println("[Login] ✅ Cached " + groups.size() + " groups in local Redis");
+                } else {
+                    System.out.println("[Login] ℹ️ No groups found for user");
+                }
+                
+            } catch (Exception e) {
+                System.err.println("[Login] ⚠️ Failed to load/cache groups: " + e.getMessage());
+                // Non-critical error - user can still use app
+            }
+        });
     }
 
     /**

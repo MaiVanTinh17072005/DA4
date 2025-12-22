@@ -15,6 +15,7 @@ public class P2PMessage implements Serializable {
     private String messageId;
     private Long senderId;
     private Long receiverId;
+    private Long groupId;  // For group messages
     private String senderUsername;
     private long timestamp;
     
@@ -76,6 +77,19 @@ public class P2PMessage implements Serializable {
         return msg;
     }
     
+    public static P2PMessage createGroupMessage(Long senderId, Long groupId, String content) {
+        P2PMessage msg = new P2PMessage();
+        msg.setSenderId(senderId);
+        msg.setGroupId(groupId);
+        msg.setMsgType("text");
+        msg.setContent(content);
+        return msg;
+    }
+    
+    public boolean isGroupMessage() {
+        return groupId != null;
+    }
+    
     // Getters and Setters
     public String getMessageId() {
         return messageId;
@@ -99,6 +113,14 @@ public class P2PMessage implements Serializable {
     
     public void setReceiverId(Long receiverId) {
         this.receiverId = receiverId;
+    }
+    
+    public Long getGroupId() {
+        return groupId;
+    }
+    
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
     }
     
     public String getSenderUsername() {

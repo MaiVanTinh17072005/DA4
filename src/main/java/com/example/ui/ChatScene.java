@@ -21,6 +21,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.layout.HBox;
@@ -28,6 +29,10 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -60,9 +65,15 @@ public class ChatScene implements P2PMessageListener {
     @FXML private Circle userAvatarCircle;
     @FXML private ToggleButton filterDMButton;
     @FXML private ToggleButton filterGroupButton;
+    
+    // Group-related buttons (only visible in Group filter)
+    @FXML private Button createGroupButton;
+    @FXML private Button addMemberButton;
+    @FXML private Label groupSectionHeader;
 
     private final ObservableList<ConversationItem> allConversations = FXCollections.observableArrayList();
     private final ObservableList<ConversationItem> filteredConversations = FXCollections.observableArrayList();
+    private final ObservableList<com.example.api.dto.GroupDTO> allGroups = FXCollections.observableArrayList();
     private ConversationItem activeConversation;
 
     private final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
@@ -70,6 +81,7 @@ public class ChatScene implements P2PMessageListener {
     // Services
     private final FriendService friendService = new FriendService();
     private final MessageService messageService = new MessageService();
+    private final com.example.service.GroupService groupService = new com.example.service.GroupService();
     
     // P2P Manager
     private P2PManager p2pManager;
@@ -371,13 +383,47 @@ public class ChatScene implements P2PMessageListener {
         }
     }
 
-    private void loadMessagesFor(ConversationItem conversation) {
-        activeConversationLabel.setText("# " + conversation.getName());
+    private void loadMessagesFor(ConversationItem conversation) {        activeConversationLabel.setText("# " + conversation.getName());
         activeStatusLabel.setText(conversation.isOnline()
             ? "🟢 Đang hoạt động • P2P sẵn sàng"
             : "⚫ Ngoại tuyến • Tin nhắn sẽ được lưu hàng đợi");
 
-        // Load real messages from API
+        // Check if this is a group conversation
+        if ("Group".equals(conversation.getType())) {
+            // Update header for group
+            activeConversationLabel.setText("👥 " + conversation.getName());
+            
+            // Get group details to show member count
+            Long groupId = conversation.getUserId();
+            CompletableFuture.runAsync(() -> {
+                try {
+                    com.example.api.dto.GroupDTO groupDetails = groupService.getGroupDetails(groupId);
+                    Platform.runLater(() -> {
+                        activeStatusLabel.setText("👥 " + groupDetails.getMemberCount() + " thành viên");
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        activeStatusLabel.setText("👥 Nhóm");
+                    });
+                }
+            });
+            
+            // Show add member button for groups
+            if (addMemberButton != null) {
+                addMemberButton.setVisible(true);
+                addMemberButton.setManaged(true);
+            }
+            loadGroupMessages(conversation);
+            return;
+        } else {
+            // Hide add member button for DMs
+            if (addMemberButton != null) {
+                addMemberButton.setVisible(false);
+                addMemberButton.setManaged(false);
+            }
+        }
+        
+        // Load real messages from API (Direct messages)
         System.out.println("[ChatScene] Loading messages for: " + conversation.getName());
         
         try {
@@ -844,7 +890,14 @@ public class ChatScene implements P2PMessageListener {
             typingStatusLabel.setText("Vui lòng chọn cuộc trò chuyện trước.");
             return;
         }
+       
+        // Check if this is a group conversation
+        if ("Group".equals(activeConversation.getType())) {
+            handleSendGroupMessage(text.trim());
+            return;
+        }
         
+        // Direct message handling
         UserDTO currentUser = SessionManager.getCurrentUser();
         if (currentUser == null) {
             return;
@@ -1066,6 +1119,338 @@ public class ChatScene implements P2PMessageListener {
         }
     }
     
+    // ===== Group Chat Methods =====
+    
+    /**
+     * Load groups from local Redis cache (loaded on login)
+     * Falls back to API if cache is empty
+     */
+    private void loadGroups() {
+        System.out.println("[ChatScene] Loading groups from local Redis...");
+        
+        CompletableFuture.runAsync(() -> {
+            try {
+                Long userId = SessionManager.getCurrentUserId();
+                if (userId == null) {
+                    System.err.println("[ChatScene] Cannot load groups - user ID is null");
+                    return;
+                }
+                
+                // Try to load from local Redis first
+                List<com.example.api.dto.GroupDTO> groups = localRedis.getGroupsList(userId);
+                
+                // If cache is empty, fetch from API
+                if (groups == null || groups.isEmpty()) {
+                    System.out.println("[ChatScene] Cache empty, fetching from API...");
+                    groups = groupService.getMyGroups();
+                    
+                    // Update cache
+                    if (groups != null && !groups.isEmpty()) {
+                        localRedis.saveGroupsList(userId, groups);
+                        System.out.println("[ChatScene] ✅ Updated cache with " + groups.size() + " groups");
+                    }
+                } else {
+                    System.out.println("[ChatScene] ✅ Loaded " + groups.size() + " groups from cache");
+                }
+                
+                final List<com.example.api.dto.GroupDTO> finalGroups = groups;
+                
+                Platform.runLater(() -> {
+                    if (finalGroups != null) {
+                        allGroups.setAll(finalGroups);
+                        
+                        // Remove old group conversations
+                        allConversations.removeIf(conv -> "Group".equals(conv.getType()));
+                        
+                        // Add groups to conversation list
+                        for (com.example.api.dto.GroupDTO group : finalGroups) {
+                            ConversationItem item = new ConversationItem(
+                                "👥 " + group.getName(),  // Add group icon
+                                "Group",
+                                true, // Groups are always "online"
+                                group.getMemberCount() + " thành viên",  // Show member count
+                                group.getGroupId()
+                            );
+                            allConversations.add(item);
+                        }
+                        
+                        System.out.println("[ChatScene] ✅ Displayed " + finalGroups.size() + " group(s)");
+                        applyFilters();
+                    }
+                });
+            } catch (Exception e) {
+                System.err.println("[ChatScene] ❌ Error loading groups: " + e.getMessage());
+                e.printStackTrace();
+                Platform.runLater(() -> {
+                    typingStatusLabel.setText("⚠ Không thể tải danh sách nhóm");
+                });
+            }
+        });
+    }
+    
+    /**
+     * Create new group dialog
+     */
+    @FXML
+    private void handleCreateGroup() {
+        try {
+            // Load custom dialog
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/fxml/dialog/create-group-dialog.fxml"));
+            Parent dialogRoot = loader.load();
+            
+            // Get controller
+            CreateGroupDialog dialogController = loader.getController();
+            
+            // Load CSS
+            dialogRoot.getStylesheets().add(getClass().getResource("/com/example/css/create-group-dialog.css").toExternalForm());
+            
+            // Create stage
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Tạo nhóm mới");
+            dialogStage.initModality(Modality.APPLICATION_MODAL);
+            dialogStage.initOwner(messageInput.getScene().getWindow());
+            dialogStage.setScene(new Scene(dialogRoot));
+            dialogStage.setResizable(false);
+            
+            // Show and wait
+            dialogStage.showAndWait();
+            
+            // Check if confirmed
+            if (dialogController.isConfirmed()) {
+                String groupName = dialogController.getGroupName();
+                String description = dialogController.getDescription();
+                List<Long> memberIds = dialogController.getMemberIds();
+                
+                System.out.println("[ChatScene] Creating group: " + groupName + " with " + memberIds.size() + " members");
+                
+                // Create group via API
+                createGroupAsync(groupName, description, memberIds);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("[ChatScene] Error showing create group dialog: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Fallback to alert
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Lỗi");
+            alert.setHeaderText("Không thể mở dialog tạo nhóm");
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
+        }
+    }
+    
+    /**
+     * Show dialog to select members from friends list
+     */
+    private List<Long> selectMembersDialog() {
+        List<Long> selectedMembers = new ArrayList<>();
+        
+        try {
+            List<UserDTO> friends = friendService.getFriendsList();
+            
+            if (friends == null || friends.isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Thông báo");
+                alert.setHeaderText(null);
+                alert.setContentText("Bạn chưa có bạn bè nào để thêm vào nhóm.");
+                alert.showAndWait();
+                return selectedMembers;
+            }
+            
+            // Simple selection using ChoiceDialog (for now)
+            // TODO: Create custom multi-select dialog
+            ChoiceDialog<UserDTO> dialog = new ChoiceDialog<>(friends.get(0), friends);
+            dialog.setTitle("Chọn thành viên");
+            dialog.setHeaderText("Chọn bạn bè để thêm vào nhóm");
+            dialog.setContentText("Chọn người dùng:");
+            
+            dialog.showAndWait().ifPresent(friend -> {
+                selectedMembers.add(friend.getId());
+            });
+            
+        } catch (Exception e) {
+            System.err.println("[ChatScene] Error selecting members: " + e.getMessage());
+        }
+        
+        return selectedMembers;
+    }
+    
+    /**
+     * Create group via API asynchronously
+     */
+    private void createGroupAsync(String name, String description, List<Long> memberIds) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                com.example.api.dto.GroupDTO createdGroup = groupService.createGroup(name, description, memberIds);
+                
+                Platform.runLater(() -> {
+                    System.out.println("[ChatScene] ✅ Group created: " + createdGroup.getName());
+                    typingStatusLabel.setText("✅ Nhóm '" + createdGroup.getName() + "' đã được tạo");
+                    
+                    // Reload groups
+                    loadGroups();
+                });
+            } catch (Exception e) {
+                System.err.println("[ChatScene] ❌ Failed to create group: " + e.getMessage());
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Lỗi");
+                    alert.setHeaderText("Không thể tạo nhóm");
+                    alert.setContentText(e.getMessage());
+                    alert.showAndWait();
+                });
+            }
+        });
+    }
+    
+    /**
+     * Handle adding member to active group
+     */
+    @FXML
+    private void handleAddMember() {
+        if (activeConversation == null || !"Group".equals(activeConversation.getType())) {
+            typingStatusLabel.setText("⚠ Vui lòng chọn một nhóm trước");
+            return;
+        }
+        
+        Long groupId = activeConversation.getUserId();
+        List<Long> memberIds = selectMembersDialog();
+        
+        if (!memberIds.isEmpty()) {
+            addMemberAsync(groupId, memberIds.get(0));
+        }
+    }
+    
+    /**
+     * Add member to group via API
+     */
+    private void addMemberAsync(Long groupId, Long userId) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                boolean success = groupService.addMember(groupId, userId);
+                
+                Platform.runLater(() -> {
+                    if (success) {
+                        typingStatusLabel.setText("✅ Đã thêm thành viên vào nhóm");
+                    } else {
+                        typingStatusLabel.setText("⚠ Không thể thêm thành viên");
+                    }
+                });
+            } catch (Exception e) {
+                System.err.println("[ChatScene] ❌ Failed to add member: " + e.getMessage());
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Lỗi");
+                    alert.setHeaderText("Không thể thêm thành viên");
+                    alert.setContentText(e.getMessage());
+                    alert.showAndWait();
+                });
+            }
+        });
+    }
+    
+    /**
+     * Load group messages from API
+     */
+    private void loadGroupMessages(ConversationItem conversation) {
+        System.out.println("[ChatScene] Loading group messages for: " + conversation.getName());
+        
+        try {
+            Long groupId = conversation.getUserId();
+            List<MessageDTO> apiMessages = messageService.getGroupMessages(groupId);
+            
+            ObservableList<MessageItem> messages = FXCollections.observableArrayList();
+            
+            if (apiMessages != null && !apiMessages.isEmpty()) {
+                System.out.println("[ChatScene] ✅ Loaded " + apiMessages.size() + " group message(s)");
+                
+                Long currentUserId = SessionManager.getCurrentUser().getId();
+                
+                for (MessageDTO msg : apiMessages) {
+                    boolean isOwn = msg.getSenderId().equals(currentUserId);
+                    String author = isOwn ? "You" : msg.getSenderUsername();
+                    
+                    // Parse timestamp
+                    LocalDateTime timestamp;
+                    try {
+                        timestamp = LocalDateTime.parse(msg.getTimestamp());
+                    } catch (Exception e) {
+                        timestamp = LocalDateTime.now();
+                    }
+                    
+                    // Group messages are typically not encrypted for now
+                    String displayContent = msg.getContent();
+                    
+                    messages.add(new MessageItem(author, displayContent, timestamp, isOwn));
+                }
+            } else {
+                System.out.println("[ChatScene] ℹ️ No group messages found");
+            }
+            
+            messageListView.setItems(messages);
+            if (!messages.isEmpty()) {
+                messageListView.scrollTo(messages.size() - 1);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("[ChatScene] ❌ Error loading group messages: " + e.getMessage());
+            e.printStackTrace();
+            messageListView.setItems(FXCollections.observableArrayList());
+        }
+    }
+    
+    /**
+     * Handle sending group message
+     */
+    private void handleSendGroupMessage(String content) {
+        UserDTO currentUser = SessionManager.getCurrentUser();
+        if (currentUser == null) {
+            return;
+        }
+        
+        Long groupId = activeConversation.getUserId();
+        
+        // Add message to UI immediately
+        MessageItem newMessage = new MessageItem(
+            currentUser.getUsername(),
+            content,
+            LocalDateTime.now(),
+            true
+        );
+        messageListView.getItems().add(newMessage);
+        messageInput.clear();
+        scrollToBottom();
+        
+        // Create MessageDTO for group message
+        MessageDTO messageDTO = new MessageDTO();
+        messageDTO.setMsgId(System.currentTimeMillis());
+        messageDTO.setSenderId(currentUser.getId());
+        messageDTO.setSenderUsername(currentUser.getUsername());
+        messageDTO.setGroupId(groupId);  // Set groupId for group messages
+        messageDTO.setContent(content);
+        messageDTO.setMsgType("text");
+        messageDTO.setTimestamp(LocalDateTime.now().toString());
+        messageDTO.setAesEncrypted(false); // Group messages not encrypted for now
+        
+        System.out.println("[ChatScene] 📝 Sending group message to groupId: " + groupId);
+        
+        // Try to send via server
+        boolean serverOnline = serverHealthMonitor != null && serverHealthMonitor.isServerOnline();
+        
+        if (serverOnline) {
+            // Send via server
+            sendToServerAsync(messageDTO, true);
+        } else {
+            // Queue locally
+            localRedis.queueMessage(messageDTO);
+            typingStatusLabel.setText("⏳ Server offline - message queued");
+        }
+        
+        // TODO: Implement P2P multicast to all online group members
+        // This requires getting list of group members and sending to each via P2P
+    }
+    
     /**
      * Cleanup when scene is closed
      */
@@ -1089,8 +1474,53 @@ public class ChatScene implements P2PMessageListener {
     }
 
     // ===== Filter Buttons =====
-    @FXML private void handleFilterDM() { applyFilters(); }
-    @FXML private void handleFilterGroup() { applyFilters(); }
+    @FXML 
+    private void handleFilterDM() {
+        // Clear active conversation when switching to DM
+        activeConversation = null;
+        messageListView.setItems(FXCollections.observableArrayList());
+        activeConversationLabel.setText("# Chọn một cuộc trò chuyện");
+        activeStatusLabel.setText("Chọn bạn bè để bắt đầu nhắn tin");
+        
+        // Hide group-related buttons when in DM mode
+        if (createGroupButton != null) {
+            createGroupButton.setVisible(false);
+            createGroupButton.setManaged(false);
+        }
+        if (addMemberButton != null) {
+            addMemberButton.setVisible(false);
+            addMemberButton.setManaged(false);
+        }
+        if (groupSectionHeader != null) {
+            groupSectionHeader.setVisible(false);
+            groupSectionHeader.setManaged(false);
+        }
+        applyFilters(); 
+    }
+    
+    @FXML 
+    private void handleFilterGroup() {
+        // Clear active conversation when switching to Group
+        activeConversation = null;
+        messageListView.setItems(FXCollections.observableArrayList());
+        activeConversationLabel.setText("# Chọn một nhóm");
+        activeStatusLabel.setText("Chọn nhóm để xem tin nhắn");
+        
+        // Show group-related buttons when in Group mode
+        if (createGroupButton != null) {
+            createGroupButton.setVisible(true);
+            createGroupButton.setManaged(true);
+        }
+        if (groupSectionHeader != null) {
+            groupSectionHeader.setVisible(true);
+            groupSectionHeader.setManaged(true);
+        }
+        // Add member button will be shown/hidden based on active conversation
+        
+        // Load groups when filter is selected
+        loadGroups();
+        applyFilters();
+    }
     
     // ===== Helper Classes =====
     private record ConversationItem(String name, String type, boolean online, String lastMessage, Long userId) {

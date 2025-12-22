@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.ui.GroupScene"
+      spacing="0"
+      HBox.hgrow="ALWAYS"
+      VBox.vgrow="ALWAYS"
+      stylesheets="@../../css/group.css">
+
+    <!-- ========== LEFT PANEL: Groups List ========== -->
+    <VBox styleClass="group-sidebar" prefWidth="320">
+        <!-- Header with Create Button -->
+        <HBox styleClass="group-header" alignment="CENTER_LEFT" spacing="12">
+            <Label text="Nhóm của bạn" styleClass="group-header-title" HBox.hgrow="ALWAYS"/>
+            <Button styleClass="create-group-btn" text="+" onAction="#handleCreateGroup">
+                <tooltip><Tooltip text="Tạo nhóm mới"/></tooltip>
+            </Button>
+            <Button styleClass="refresh-btn" text="🔄" onAction="#handleRefresh">
+                <tooltip><Tooltip text="Làm mới"/></tooltip>
+            </Button>
+        </HBox>
+
+        <!-- Search Bar -->
+        <HBox styleClass="search-container" alignment="CENTER_LEFT">
+            <TextField fx:id="searchField"
+                       promptText="🔍 Tìm kiếm nhóm..."
+                       styleClass="search-field"
+                       HBox.hgrow="ALWAYS"/>
+        </HBox>
+
+        <!-- Groups List -->
+        <ScrollPane styleClass="group-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
+            <ListView fx:id="groupListView" styleClass="group-list"/>
+        </ScrollPane>
+
+        <!-- Status Bar -->
+        <HBox styleClass="status-bar" alignment="CENTER_LEFT" spacing="8">
+            <Label fx:id="statusLabel"
+                   text="✅ Sẵn sàng"
+                   styleClass="status-text"
+                   HBox.hgrow="ALWAYS"/>
+        </HBox>
+    </VBox>
+
+    <!-- ========== RIGHT PANEL: Group Chat Area ========== -->
+    <VBox styleClass="chat-area" HBox.hgrow="ALWAYS">
+
+        <!-- Chat Header -->
+        <HBox styleClass="chat-header" alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label fx:id="groupNameLabel"
+                       text="# Chọn một nhóm"
+                       styleClass="chat-header-title"/>
+                <Label fx:id="memberCountLabel"
+                       text="Chọn nhóm để bắt đầu chat"
+                       styleClass="chat-header-subtitle"/>
+            </VBox>
+
+            <!-- Action Buttons -->
+            <HBox spacing="8" alignment="CENTER_RIGHT">
+                <Button styleClass="header-icon-btn" text="📞">
+                    <tooltip><Tooltip text="Gọi nhóm"/></tooltip>
+                </Button>
+                <Button styleClass="header-icon-btn" text="👥">
+                    <tooltip><Tooltip text="Xem thành viên"/></tooltip>
+                </Button>
+                <Button styleClass="header-icon-btn" text="⋮">
+                    <tooltip><Tooltip text="Cài đặt nhóm"/></tooltip>
+                </Button>
+            </HBox>
+        </HBox>
+
+        <!-- Messages Area -->
+        <ScrollPane styleClass="messages-scroll" VBox.vgrow="ALWAYS" fitToWidth="true" fitToHeight="true">
+            <ListView fx:id="messageListView" styleClass="message-list"/>
+        </ScrollPane>
+
+        <!-- Message Input Area -->
+        <VBox styleClass="message-input-container">
+            <!-- Input Box -->
+            <HBox styleClass="message-input-box" alignment="CENTER" spacing="8">
+                <!-- Attachment Button -->
+                <Button styleClass="input-icon-btn" text="➕">
+                    <tooltip><Tooltip text="Đính kèm file"/></tooltip>
+                </Button>
+
+                <!-- Text Input -->
+                <TextArea fx:id="messageInput"
+                          promptText="Nhắn tin tới nhóm..."
+                          wrapText="true"
+                          prefRowCount="1"
+                          styleClass="message-textarea"
+                          HBox.hgrow="ALWAYS"/>
+
+                <!-- Emoji Button -->
+                <Button styleClass="input-icon-btn" text="😀">
+                    <tooltip><Tooltip text="Emoji"/></tooltip>
+                </Button>
+
+                <!-- Send Button -->
+                <Button fx:id="sendButton"
+                        styleClass="send-button"
+                        text="Gửi"
+                        onAction="#handleSendMessage">
+                    <tooltip><Tooltip text="Gửi tin nhắn (Enter)"/></tooltip>
+                </Button>
+            </HBox>
+
+            <!-- Connection Status -->
+            <HBox styleClass="connection-status-bar" alignment="CENTER_LEFT" spacing="8">
+                <Label text="🟢 Đã kết nối"
+                       styleClass="status-text"/>
+                <Label text="•" styleClass="status-separator"/>
+                <Label text="🔒 E2EE Group Chat"
+                       styleClass="status-text"/>
+                <Label text="•" styleClass="status-separator"/>
+                <Label text="💾 Auto-sync enabled"
+                       styleClass="status-text"/>
+            </HBox>
+        </VBox>
+    </VBox>
+    
+</HBox>

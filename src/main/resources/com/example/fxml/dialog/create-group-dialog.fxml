@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.ui.CreateGroupDialog"
+      styleClass="create-group-dialog"
+      prefWidth="600"
+      prefHeight="650">
+
+    <!-- Header -->
+    <HBox styleClass="dialog-header" alignment="CENTER_LEFT" spacing="12">
+        <VBox HBox.hgrow="ALWAYS">
+            <Label text="Tạo Nhóm Mới" styleClass="dialog-title"/>
+            <Label text="Tạo nhóm để trò chuyện với nhiều bạn bè cùng lúc" styleClass="dialog-subtitle"/>
+        </VBox>
+        <Button text="✕" styleClass="close-button" onAction="#handleClose"/>
+    </HBox>
+
+    <!-- Content -->
+    <ScrollPane styleClass="dialog-content-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
+        <VBox styleClass="dialog-content" spacing="20">
+            
+            <!-- Group Name Section -->
+            <VBox spacing="8">
+                <Label text="TÊN NHÓM" styleClass="section-label"/>
+                <TextField fx:id="groupNameField" 
+                          promptText="Nhập tên nhóm..."
+                          styleClass="input-field"/>
+            </VBox>
+
+            <!-- Description Section -->
+            <VBox spacing="8">
+                <Label text="MÔ TẢ (Tùy chọn)" styleClass="section-label"/>
+                <TextArea fx:id="descriptionField"
+                         promptText="Nhập mô tả nhóm..."
+                         styleClass="input-field, description-area"
+                         wrapText="true"
+                         prefRowCount="3"/>
+            </VBox>
+
+            <!-- Members Section -->
+            <VBox spacing="12" VBox.vgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <Label text="THÊM THÀNH VIÊN" styleClass="section-label" HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="selectedCountLabel" text="0 được chọn" styleClass="count-label"/>
+                </HBox>
+
+                <!-- Search Box -->
+                <HBox styleClass="search-box" spacing="8" alignment="CENTER_LEFT">
+                    <Label text="🔍" styleClass="search-icon"/>
+                    <TextField fx:id="searchField"
+                              promptText="Tìm kiếm bạn bè..."
+                              styleClass="search-input"
+                              HBox.hgrow="ALWAYS"/>
+                </HBox>
+
+                <!-- Friends List -->
+                <VBox spacing="8" styleClass="friends-list-container" VBox.vgrow="ALWAYS">
+                    <Label text="GỢI Ý KẾT BẠN" styleClass="list-header"/>
+                    <ListView fx:id="friendsListView" 
+                             styleClass="friends-list"
+                             VBox.vgrow="ALWAYS"/>
+                </VBox>
+            </VBox>
+
+        </VBox>
+    </ScrollPane>
+
+    <!-- Footer -->
+    <HBox styleClass="dialog-footer" spacing="12" alignment="CENTER_RIGHT">
+        <Button text="Hủy" styleClass="cancel-button" onAction="#handleClose"/>
+        <Button fx:id="createButton" 
+                text="Tạo nhóm" 
+                styleClass="create-button" 
+                onAction="#handleCreate"
+                defaultButton="true"/>
+    </HBox>
+
+</VBox>
