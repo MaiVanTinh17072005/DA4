@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Text?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.example.ui.LivestreamScene"
+      spacing="0"
+      HBox.hgrow="ALWAYS"
+      VBox.vgrow="ALWAYS"
+      stylesheets="@../../css/livestream.css"
+      styleClass="livestream-root">
+
+    <!-- ========== LEFT PANEL: Livestream List ========== -->
+    <VBox styleClass="livestream-sidebar" prefWidth="320" VBox.vgrow="ALWAYS">
+        <!-- Search Bar -->
+        <HBox styleClass="livestream-search-container" alignment="CENTER_LEFT">
+            <TextField fx:id="searchField"
+                       promptText="🔍 Tìm kiếm livestream..."
+                       styleClass="livestream-search-field"
+                       HBox.hgrow="ALWAYS"/>
+        </HBox>
+
+        <!-- Live Streams Label -->
+        <HBox styleClass="livestream-section-header" alignment="CENTER_LEFT">
+            <Label text="ĐANG PHÁT" styleClass="section-title"/>
+        </HBox>
+
+        <!-- Livestream List - Expands to fill available space -->
+        <ScrollPane styleClass="livestream-scroll" VBox.vgrow="ALWAYS" fitToWidth="true" fitToHeight="true">
+            <ListView fx:id="livestreamListView" styleClass="livestream-list" VBox.vgrow="ALWAYS"/>
+        </ScrollPane>
+
+        <!-- User Profile at Bottom -->
+        <HBox styleClass="user-profile-bar" alignment="CENTER_LEFT" spacing="10"
+              onMouseClicked="#handleOpenProfile"
+              style="-fx-cursor: hand;">
+            <Circle fx:id="userAvatarCircle" radius="20" styleClass="user-avatar"/>
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label fx:id="currentUserNameLabel" text="User" styleClass="user-name"/>
+                <Label fx:id="currentUserStatusLabel" text="🟢 Online" styleClass="user-status"/>
+            </VBox>
+        </HBox>
+    </VBox>
+
+    <!-- ========== MIDDLE PANEL: Stream Preview ========== -->
+    <VBox styleClass="livestream-main-area" HBox.hgrow="ALWAYS">
+
+        <!-- Stream Header -->
+        <HBox styleClass="livestream-header" alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="2" HBox.hgrow="ALWAYS">
+                <Label fx:id="streamTitleLabel"
+                       text="Chọn một livestream"
+                       styleClass="livestream-header-title"/>
+                <Label fx:id="streamSubtitleLabel"
+                       text="Khám phá các livestream đang phát hoặc tạo livestream của bạn"
+                       styleClass="livestream-header-subtitle"/>
+            </VBox>
+
+            <!-- Action Buttons -->
+            <HBox spacing="8" alignment="CENTER_RIGHT">
+                <Button fx:id="createStreamButton"
+                        styleClass="create-stream-btn"
+                        text="📡 Tạo Livestream"
+                        onAction="#handleCreateStream">
+                    <tooltip><Tooltip text="Bắt đầu livestream của bạn"/></tooltip>
+                </Button>
+            </HBox>
+        </HBox>
+
+        <!-- Stream Preview Area -->
+        <ScrollPane styleClass="stream-preview-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
+            <VBox fx:id="streamPreviewContainer" styleClass="stream-preview-container" spacing="20">
+                
+                <!-- Video Preview Placeholder -->
+                <VBox fx:id="videoPreviewSection" styleClass="video-preview-section" alignment="CENTER" spacing="16" managed="false" visible="false">
+                    <StackPane styleClass="video-preview-placeholder">
+                        <Label text="📹" styleClass="video-preview-icon"/>
+<!--                        <Label fx:id="liveIndicator" text="🔴 LIVE" styleClass="live-indicator"/>-->
+                    </StackPane>
+                    
+                    <!-- Stream Info -->
+                    <VBox styleClass="stream-info-card" spacing="12">
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <Circle fx:id="streamerAvatar" radius="28" styleClass="streamer-avatar"/>
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                <Label fx:id="streamerNameLabel" text="Streamer Name" styleClass="streamer-name"/>
+                                <HBox spacing="12">
+                                    <Label fx:id="viewerCountLabel" text="👥 0 viewers" styleClass="stream-stat"/>
+                                    <Label text="•" styleClass="stat-separator"/>
+                                    <Label fx:id="streamDurationLabel" text="⏱ 00:00:00" styleClass="stream-stat"/>
+                                </HBox>
+                            </VBox>
+                        </HBox>
+                        
+                        <Label fx:id="streamDescriptionLabel" 
+                               text="Mô tả livestream sẽ hiển thị ở đây..." 
+                               styleClass="stream-description"
+                               wrapText="true"/>
+                        
+                        <!-- Action Buttons -->
+                        <HBox spacing="12" alignment="CENTER_LEFT">
+                            <Button text="▶ Tham gia" 
+                                    styleClass="stream-action-btn, join" 
+                                    onAction="#handleJoinStream">
+                                <tooltip><Tooltip text="Tham gia livestream"/></tooltip>
+                            </Button>
+                            <Button text="🔗 Chia sẻ" 
+                                    styleClass="stream-action-btn, share" 
+                                    onAction="#handleShareStream">
+                                <tooltip><Tooltip text="Chia sẻ livestream"/></tooltip>
+                            </Button>
+                        </HBox>
+                    </VBox>
+                </VBox>
+
+                <!-- Empty State -->
+                <VBox fx:id="emptyStateSection" styleClass="empty-state" spacing="16" alignment="CENTER">
+                    <Label text="📡" styleClass="empty-state-icon"/>
+                    <Label fx:id="emptyStateTitle" text="Chọn một livestream" styleClass="empty-state-title"/>
+                    <Label fx:id="emptyStateSubtitle"
+                           text="Chọn một livestream từ danh sách bên trái để xem chi tiết hoặc tạo livestream mới của bạn"
+                           styleClass="empty-state-subtitle"
+                           maxWidth="400"
+                           wrapText="true"
+                           alignment="CENTER"/>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
+
+    </VBox>
+
+    <!-- ========== RIGHT PANEL: Live Chat ========== -->
+    <VBox styleClass="livestream-chat-panel" prefWidth="300" managed="false" visible="false">
+        <!-- Chat Header -->
+        <HBox styleClass="chat-panel-header" alignment="CENTER_LEFT" spacing="8">
+            <Label text="💬 Live Chat" styleClass="chat-panel-title" HBox.hgrow="ALWAYS"/>
+            <Button styleClass="chat-close-btn" text="✕" onAction="#handleCloseChat">
+                <tooltip><Tooltip text="Ẩn chat"/></tooltip>
+            </Button>
+        </HBox>
+
+        <!-- Chat Messages -->
+        <ScrollPane styleClass="chat-messages-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
+            <ListView fx:id="chatMessagesListView" styleClass="chat-messages-list"/>
+        </ScrollPane>
+
+        <!-- Chat Input -->
+        <VBox styleClass="chat-input-container">
+            <HBox styleClass="chat-input-box" alignment="CENTER" spacing="8">
+                <TextArea fx:id="chatInput"
+                          promptText="Gửi tin nhắn..."
+                          wrapText="true"
+                          prefRowCount="1"
+                          styleClass="chat-textarea"
+                          HBox.hgrow="ALWAYS"/>
+                <Button styleClass="chat-send-btn"
+                        text="Gửi"
+                        onAction="#handleSendChatMessage">
+                    <tooltip><Tooltip text="Gửi"/></tooltip>
+                </Button>
+            </HBox>
+        </VBox>
+
+        <!-- Viewer List -->
+        <VBox styleClass="viewer-list-section" spacing="8">
+            <Label text="ĐANG XEM" styleClass="viewer-list-header"/>
+            <ScrollPane styleClass="viewer-list-scroll" prefHeight="120" fitToWidth="true">
+                <ListView fx:id="viewerListView" styleClass="viewer-list"/>
+            </ScrollPane>
+        </VBox>
+    </VBox>
+
+</HBox>

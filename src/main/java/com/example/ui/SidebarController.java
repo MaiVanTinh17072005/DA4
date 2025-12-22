@@ -29,8 +29,8 @@ public class SidebarController {
 
     @FXML
     private void handleLivestreamClick() {
-        // Placeholder for now
-        System.out.println("Livestream clicked - Feature in development");
+        SceneManager.setTitle("Discord Mini - Livestream");
+        SceneManager.loadContent("content/livestream-content.fxml");
     }
 
     @FXML
