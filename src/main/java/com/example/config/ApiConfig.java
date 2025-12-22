@@ -46,6 +46,15 @@ public class ApiConfig {
     public static final String MARK_NOTIFICATION_READ = FRIEND_BASE + "/notifications/"; // DELETE request - mark as read + notificationId
     public static final String GET_FRIENDS_LIST = FRIEND_BASE; // GET request - get friends list
 
+    // Livestream Endpoints
+    public static final String LIVESTREAM_BASE = API_VERSION + "/livestreams";
+    public static final String LIVESTREAM_CREATE_ENDPOINT = LIVESTREAM_BASE; // POST request
+    public static final String LIVESTREAM_ACTIVE_ENDPOINT = LIVESTREAM_BASE + "/active"; // GET request
+    public static final String LIVESTREAM_GET_ENDPOINT = LIVESTREAM_BASE + "/"; // GET request + {streamId}
+    public static final String LIVESTREAM_JOIN_ENDPOINT = LIVESTREAM_BASE + "/"; // POST request + {streamId}/join
+    public static final String LIVESTREAM_LEAVE_ENDPOINT = LIVESTREAM_BASE + "/"; // POST request + {streamId}/leave
+    public static final String LIVESTREAM_END_ENDPOINT = LIVESTREAM_BASE + "/"; // POST request + {streamId}/end
+
     // Timeout settings (milliseconds)
     public static final int CONNECTION_TIMEOUT = 30000; // 30 seconds (increased for email sending)
     public static final int READ_TIMEOUT = 30000; // 30 seconds (increased for email sending)

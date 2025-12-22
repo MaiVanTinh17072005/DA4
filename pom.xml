@@ -40,6 +40,11 @@
             <artifactId>javafx-graphics</artifactId>
             <version>21-ea+24</version>
         </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
 
         <!-- HTTP + JSON -->
         <dependency>
@@ -94,6 +99,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Webcam Capture for livestream camera access -->
+        <dependency>
+            <groupId>com.github.sarxos</groupId>
+            <artifactId>webcam-capture</artifactId>
+            <version>0.3.12</version>
+        </dependency>
+
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -112,6 +124,10 @@
                 <configuration>
                     <source>21</source>
                     <target>21</target>
+                    <compilerArgs>
+                        <arg>--add-reads</arg>
+                        <arg>com.example.fe_app=ALL-UNNAMED</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
 
@@ -123,6 +139,10 @@
                 <configuration>
                     <!-- ĐÚNG 100%: package hiện tại là com.example.app.Main -->
                     <mainClass>com.example.app.Main</mainClass>
+                    <options>
+                        <option>--add-reads</option>
+                        <option>com.example.fe_app=ALL-UNNAMED</option>
+                    </options>
                 </configuration>
             </plugin>
         </plugins>

@@ -3,6 +3,7 @@ module com.example.fe_app {
     requires javafx.controls;
     requires javafx.fxml;
     requires javafx.media;
+    requires javafx.swing;
 
     // JSON
     requires com.fasterxml.jackson.databind;
@@ -17,6 +18,8 @@ module com.example.fe_app {
     requires org.apache.httpcomponents.core5.httpcore5;
     requires com.google.gson;
     requires java.net.http;
+    requires java.desktop; // For BufferedImage and SwingFXUtils
+
 
     // Opens & Exports
     opens com.example.app to javafx.fxml, javafx.graphics;

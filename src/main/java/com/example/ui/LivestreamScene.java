@@ -68,8 +68,11 @@ public class LivestreamScene {
         // Setup livestream list
         setupLivestreamList();
 
-        // Load mock livestream data
-        loadMockLivestreams();
+        // Load active livestreams from API
+        loadActiveLivestreams();
+        
+        // Start auto-refresh timer
+        startAutoRefresh();
 
         // Setup search functionality
         setupSearch();
@@ -164,53 +167,66 @@ public class LivestreamScene {
     }
 
     /**
-     * Load mock livestream data for demonstration
+     * Load active livestreams from backend API
      */
-    private void loadMockLivestreams() {
-        List<LivestreamItem> mockStreams = new ArrayList<>();
+    private void loadActiveLivestreams() {
+        // Load in background thread to avoid blocking UI
+        new Thread(() -> {
+            try {
+                com.example.service.LivestreamService livestreamService = 
+                    com.example.service.LivestreamService.getInstance();
+                
+                List<com.example.api.dto.LivestreamDTO> activeLivestreams = 
+                    livestreamService.getActiveLivestreams();
+                
+                // Convert DTOs to UI items
+                List<LivestreamItem> streamItems = new ArrayList<>();
+                for (com.example.api.dto.LivestreamDTO dto : activeLivestreams) {
+                    streamItems.add(new LivestreamItem(
+                        dto.getTitle(),
+                        dto.getHostName(),
+                        dto.getViewCount(),
+                        dto.getDescription() != null ? dto.getDescription() : "",
+                        "active".equals(dto.getStatus())
+                    ));
+                }
+                
+                // Update UI on JavaFX thread
+                javafx.application.Platform.runLater(() -> {
+                    livestreamListView.getItems().clear();
+                    livestreamListView.getItems().addAll(streamItems);
+                    System.out.println("📺 [LivestreamScene] Loaded " + streamItems.size() + " active livestreams");
+                });
+                
+            } catch (Exception e) {
+                // Graceful error handling - don't freeze UI
+                System.err.println("⚠️ [LivestreamScene] Error loading livestreams: " + e.getMessage());
+                
+                javafx.application.Platform.runLater(() -> {
+                    // Show empty state if API fails
+                    if (livestreamListView.getItems().isEmpty()) {
+                        System.out.println("📺 [LivestreamScene] No livestreams available (server may be offline)");
+                    }
+                });
+            }
+        }).start();
+    }
+    
+    /**
+     * Start auto-refresh timer for livestreams
+     * Refreshes every 5 seconds
+     */
+    private void startAutoRefresh() {
+        javafx.animation.Timeline refreshTimeline = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(
+                javafx.util.Duration.seconds(5),
+                event -> loadActiveLivestreams()
+            )
+        );
+        refreshTimeline.setCycleCount(javafx.animation.Timeline.INDEFINITE);
+        refreshTimeline.play();
         
-        mockStreams.add(new LivestreamItem(
-            "Gaming Session - Minecraft Build Challenge",
-            "Minh Anh",
-            1234,
-            "Đang xây dựng lâu đài khổng lồ trong Minecraft! Tham gia cùng tôi! 🏰",
-            true
-        ));
-        
-        mockStreams.add(new LivestreamItem(
-            "Coding Tutorial - JavaFX UI Design",
-            "Tuấn Kiệt",
-            567,
-            "Học cách tạo giao diện đẹp với JavaFX. Dành cho người mới bắt đầu!",
-            true
-        ));
-        
-        mockStreams.add(new LivestreamItem(
-            "Music Performance - Guitar Live",
-            "Thu Hà",
-            892,
-            "Biểu diễn nhạc guitar live, nhận request! 🎸",
-            true
-        ));
-        
-        mockStreams.add(new LivestreamItem(
-            "Study Session - Preparing for Finals",
-            "Phương Anh",
-            345,
-            "Học cùng nhau cho kỳ thi cuối kỳ. Study together! 📚",
-            true
-        ));
-        
-        mockStreams.add(new LivestreamItem(
-            "Art Stream - Digital Painting",
-            "Hoàng Long",
-            678,
-            "Vẽ tranh kỹ thuật số, học cách blend màu và composition",
-            true
-        ));
-
-        livestreamListView.getItems().addAll(mockStreams);
-        System.out.println("📺 [LivestreamScene] Loaded " + mockStreams.size() + " mock livestreams");
+        System.out.println("🔄 [LivestreamScene] Auto-refresh started (every 5 seconds)");
     }
 
     /**
@@ -266,10 +282,139 @@ public class LivestreamScene {
     private void handleCreateStream() {
         System.out.println("📡 [LivestreamScene] Create Livestream clicked");
         
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Tạo Livestream");
-        alert.setHeaderText("Chức năng đang phát triển");
-        alert.setContentText("Tính năng tạo livestream sẽ được triển khai trong phiên bản tiếp theo.");
+        // Create dialog
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Tạo Livestream");
+        dialog.setHeaderText("Bắt đầu phiên livestream của bạn");
+        
+        // Set dialog icon
+        dialog.setGraphic(new Label("📡"));
+        
+        // Create form
+        VBox content = new VBox(15);
+        content.setPadding(new Insets(20));
+        content.setStyle("-fx-background-color: #2b2d3a;");
+        
+        // Title field
+        Label titleLabel = new Label("Tiêu đề livestream:");
+        titleLabel.setStyle("-fx-text-fill: #dcddde; -fx-font-size: 14px; -fx-font-weight: 600;");
+        
+        TextField titleField = new TextField();
+        titleField.setPromptText("Nhập tiêu đề livestream...");
+        titleField.setStyle(
+            "-fx-background-color: #1e2132; " +
+            "-fx-text-fill: #ffffff; " +
+            "-fx-prompt-text-fill: #6b6e7a; " +
+            "-fx-font-size: 14px; " +
+            "-fx-padding: 10px; " +
+            "-fx-background-radius: 6px; " +
+            "-fx-border-color: rgba(88, 101, 242, 0.3); " +
+            "-fx-border-radius: 6px;"
+        );
+        titleField.setPrefWidth(400);
+        
+        // Description field
+        Label descLabel = new Label("Mô tả (tùy chọn):");
+        descLabel.setStyle("-fx-text-fill: #dcddde; -fx-font-size: 14px; -fx-font-weight: 600;");
+        
+        TextArea descArea = new TextArea();
+        descArea.setPromptText("Nhập mô tả livestream...");
+        descArea.setWrapText(true);
+        descArea.setPrefRowCount(3);
+        descArea.setStyle(
+            "-fx-control-inner-background: #1e2132; " +
+            "-fx-text-fill: #ffffff; " +
+            "-fx-prompt-text-fill: #6b6e7a; " +
+            "-fx-font-size: 14px; " +
+            "-fx-background-radius: 6px; " +
+            "-fx-border-color: rgba(88, 101, 242, 0.3); " +
+            "-fx-border-radius: 6px;"
+        );
+        
+        content.getChildren().addAll(titleLabel, titleField, descLabel, descArea);
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setStyle("-fx-background-color: #2b2d3a;");
+        
+        // Add buttons
+        ButtonType createButtonType = new ButtonType("Bắt đầu phát", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButtonType = new ButtonType("Hủy", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(createButtonType, cancelButtonType);
+        
+        // Style buttons
+        Platform.runLater(() -> {
+            Button createButton = (Button) dialog.getDialogPane().lookupButton(createButtonType);
+            createButton.setStyle(
+                "-fx-background-color: linear-gradient(to bottom, #5dd679 0%, #4bc861 100%); " +
+                "-fx-text-fill: white; " +
+                "-fx-font-weight: bold; " +
+                "-fx-padding: 10px 20px; " +
+                "-fx-background-radius: 6px; " +
+                "-fx-cursor: hand;"
+            );
+            
+            Button cancelButton = (Button) dialog.getDialogPane().lookupButton(cancelButtonType);
+            cancelButton.setStyle(
+                "-fx-background-color: #3a3d4e; " +
+                "-fx-text-fill: white; " +
+                "-fx-padding: 10px 20px; " +
+                "-fx-background-radius: 6px; " +
+                "-fx-cursor: hand;"
+            );
+        });
+        
+        // Handle result
+        dialog.showAndWait().ifPresent(result -> {
+            if (result == createButtonType) {
+                String title = titleField.getText().trim();
+                String description = descArea.getText().trim();
+                
+                if (title.isEmpty()) {
+                    showAlert(Alert.AlertType.WARNING, "Lỗi", "Vui lòng nhập tiêu đề livestream");
+                    return;
+                }
+                
+                // Create livestream in background thread
+                new Thread(() -> {
+                    try {
+                        com.example.service.LivestreamService livestreamService = 
+                            com.example.service.LivestreamService.getInstance();
+                        
+                        com.example.api.dto.LivestreamDTO livestream = 
+                            livestreamService.createLivestream(title, description);
+                        
+                        Platform.runLater(() -> {
+                            System.out.println("✅ [LivestreamScene] Livestream created: " + livestream.getStreamId());
+                            
+                            // Open broadcast window
+                            LivestreamBroadcastWindow broadcastWindow = new LivestreamBroadcastWindow(livestream);
+                            broadcastWindow.show();
+                            
+                            // Reload livestream list from API
+                            loadActiveLivestreams();
+                        });
+                        
+                    } catch (Exception e) {
+                        Platform.runLater(() -> {
+                            System.err.println("❌ [LivestreamScene] Error creating livestream: " + e.getMessage());
+                            e.printStackTrace();
+                            showAlert(Alert.AlertType.ERROR, "Lỗi", 
+                                "Không thể tạo livestream: " + e.getMessage());
+                        });
+                    }
+                }).start();
+            }
+        });
+    }
+    
+    /**
+     * Show alert dialog
+     */
+    private void showAlert(Alert.AlertType type, String title, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
         alert.showAndWait();
     }
 
