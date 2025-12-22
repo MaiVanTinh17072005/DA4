@@ -133,7 +133,8 @@ public class LivestreamService {
     public void joinLivestream(Long streamId) throws Exception {
         System.out.println("👥 [LivestreamService] Joining livestream: " + streamId);
         
-        String endpoint = ApiConfig.LIVESTREAM_JOIN_ENDPOINT + streamId + "/join";
+        // Fix: LIVESTREAM_JOIN_ENDPOINT already has trailing slash
+        String endpoint = ApiConfig.LIVESTREAM_BASE + "/" + streamId + "/join";
         
         // Send to server
         LivestreamResponse response = apiClient.post(
@@ -158,7 +159,8 @@ public class LivestreamService {
     public void leaveLivestream(Long streamId) throws Exception {
         System.out.println("👋 [LivestreamService] Leaving livestream: " + streamId);
         
-        String endpoint = ApiConfig.LIVESTREAM_LEAVE_ENDPOINT + streamId + "/leave";
+        // Fix: LIVESTREAM_LEAVE_ENDPOINT already has trailing slash
+        String endpoint = ApiConfig.LIVESTREAM_BASE + "/" + streamId + "/leave";
         
         // Send to server
         LivestreamResponse response = apiClient.post(

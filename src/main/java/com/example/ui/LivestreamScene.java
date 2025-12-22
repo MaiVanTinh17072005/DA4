@@ -43,10 +43,9 @@ public class LivestreamScene {
     @FXML private VBox streamPreviewContainer;
     @FXML private VBox videoPreviewSection;
     @FXML private VBox emptyStateSection;
-    @FXML private Circle streamerAvatar;
+    @FXML private Circle streamerAvatar;  // Avatar in stream info card
     @FXML private Label streamerNameLabel;
     @FXML private Label viewerCountLabel;
-    @FXML private Label streamDurationLabel;
     @FXML private Label streamDescriptionLabel;
     @FXML private Label liveIndicator;
 
@@ -183,6 +182,7 @@ public class LivestreamScene {
                 List<LivestreamItem> streamItems = new ArrayList<>();
                 for (com.example.api.dto.LivestreamDTO dto : activeLivestreams) {
                     streamItems.add(new LivestreamItem(
+                        dto.getStreamId(),
                         dto.getTitle(),
                         dto.getHostName(),
                         dto.getViewCount(),
@@ -196,6 +196,19 @@ public class LivestreamScene {
                     livestreamListView.getItems().clear();
                     livestreamListView.getItems().addAll(streamItems);
                     System.out.println("📺 [LivestreamScene] Loaded " + streamItems.size() + " active livestreams");
+                    
+                    // If a stream is currently selected, update its preview with fresh data
+                    if (selectedStream != null) {
+                        // Find the updated stream in the new list
+                        for (LivestreamItem item : streamItems) {
+                            if (item.getStreamId().equals(selectedStream.getStreamId())) {
+                                selectedStream = item;  // Update reference
+                                showStreamPreview(item);  // Refresh preview with new data
+                                System.out.println("🔄 [LivestreamScene] Updated preview for: " + item.getTitle() + " (viewers: " + item.getViewerCount() + ")");
+                                break;
+                            }
+                        }
+                    }
                 });
                 
             } catch (Exception e) {
@@ -214,19 +227,19 @@ public class LivestreamScene {
     
     /**
      * Start auto-refresh timer for livestreams
-     * Refreshes every 5 seconds
+     * Refreshes every 1 second for near real-time updates
      */
     private void startAutoRefresh() {
         javafx.animation.Timeline refreshTimeline = new javafx.animation.Timeline(
             new javafx.animation.KeyFrame(
-                javafx.util.Duration.seconds(5),
+                javafx.util.Duration.seconds(1),  // Update every 1 second
                 event -> loadActiveLivestreams()
             )
         );
         refreshTimeline.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         refreshTimeline.play();
         
-        System.out.println("🔄 [LivestreamScene] Auto-refresh started (every 5 seconds)");
+        System.out.println("🔄 [LivestreamScene] Auto-refresh started (every 1 second)");
     }
 
     /**
@@ -254,24 +267,12 @@ public class LivestreamScene {
         streamSubtitleLabel.setText("Đang phát bởi " + stream.getStreamerName());
         streamerNameLabel.setText(stream.getStreamerName());
         viewerCountLabel.setText("👥 " + stream.getViewerCount() + " viewers");
-        streamDurationLabel.setText("⏱ " + getCurrentStreamDuration());
         streamDescriptionLabel.setText(stream.getDescription());
 
-        // Set streamer avatar (default color for now)
+        // Set streamer avatar
         setDefaultAvatar(streamerAvatar);
 
         System.out.println("📺 [LivestreamScene] Showing preview for: " + stream.getTitle());
-    }
-
-    /**
-     * Get current stream duration (mock)
-     */
-    private String getCurrentStreamDuration() {
-        // Mock duration
-        int hours = (int) (Math.random() * 3);
-        int minutes = (int) (Math.random() * 60);
-        int seconds = (int) (Math.random() * 60);
-        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
     // ===== EVENT HANDLERS =====
@@ -423,11 +424,49 @@ public class LivestreamScene {
         if (selectedStream != null) {
             System.out.println("▶ [LivestreamScene] Joining stream: " + selectedStream.getTitle());
             
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Tham gia Livestream");
-            alert.setHeaderText("Đang kết nối...");
-            alert.setContentText("Đang tham gia livestream: " + selectedStream.getTitle());
-            alert.showAndWait();
+            // Fetch full livestream details from API
+            new Thread(() -> {
+                try {
+                    com.example.service.LivestreamService livestreamService = 
+                        com.example.service.LivestreamService.getInstance();
+                    
+                    com.example.api.dto.LivestreamDTO livestream = 
+                        livestreamService.getLivestreamById(selectedStream.getStreamId());
+                    
+                    // Check if current user is the host
+                    Long currentUserId = SessionManager.getCurrentUser().getId();
+                    if (livestream.getHostId().equals(currentUserId)) {
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.WARNING);
+                            alert.setTitle("Không thể tham gia");
+                            alert.setHeaderText("Bạn là host của livestream này");
+                            alert.setContentText("Bạn không thể tham gia livestream của chính mình. Bạn đang phát livestream này.");
+                            alert.showAndWait();
+                        });
+                        return;
+                    }
+                    
+                    Platform.runLater(() -> {
+                        // Open viewer window
+                        LivestreamViewerWindow viewerWindow = new LivestreamViewerWindow(livestream);
+                        viewerWindow.show();
+                        
+                        System.out.println("✅ [LivestreamScene] Opened viewer window for stream: " + livestream.getStreamId());
+                    });
+                    
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        System.err.println("❌ [LivestreamScene] Error joining livestream: " + e.getMessage());
+                        e.printStackTrace();
+                        
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Lỗi");
+                        alert.setHeaderText("Không thể tham gia livestream");
+                        alert.setContentText(e.getMessage());
+                        alert.showAndWait();
+                    });
+                }
+            }).start();
         }
     }
 
@@ -479,13 +518,15 @@ public class LivestreamScene {
      * Data model for livestream item
      */
     public static class LivestreamItem {
+        private final Long streamId;
         private final String title;
         private final String streamerName;
         private final int viewerCount;
         private final String description;
         private final boolean isLive;
 
-        public LivestreamItem(String title, String streamerName, int viewerCount, String description, boolean isLive) {
+        public LivestreamItem(Long streamId, String title, String streamerName, int viewerCount, String description, boolean isLive) {
+            this.streamId = streamId;
             this.title = title;
             this.streamerName = streamerName;
             this.viewerCount = viewerCount;
@@ -493,6 +534,7 @@ public class LivestreamScene {
             this.isLive = isLive;
         }
 
+        public Long getStreamId() { return streamId; }
         public String getTitle() { return title; }
         public String getStreamerName() { return streamerName; }
         public int getViewerCount() { return viewerCount; }

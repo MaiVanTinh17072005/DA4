@@ -76,24 +76,15 @@
         <ScrollPane styleClass="stream-preview-scroll" VBox.vgrow="ALWAYS" fitToWidth="true">
             <VBox fx:id="streamPreviewContainer" styleClass="stream-preview-container" spacing="20">
                 
-                <!-- Video Preview Placeholder -->
+                <!-- Stream Info (No Preview) -->
                 <VBox fx:id="videoPreviewSection" styleClass="video-preview-section" alignment="CENTER" spacing="16" managed="false" visible="false">
-                    <StackPane styleClass="video-preview-placeholder">
-                        <Label text="📹" styleClass="video-preview-icon"/>
-<!--                        <Label fx:id="liveIndicator" text="🔴 LIVE" styleClass="live-indicator"/>-->
-                    </StackPane>
-                    
-                    <!-- Stream Info -->
+                    <!-- Stream Info Card -->
                     <VBox styleClass="stream-info-card" spacing="12">
                         <HBox alignment="CENTER_LEFT" spacing="12">
                             <Circle fx:id="streamerAvatar" radius="28" styleClass="streamer-avatar"/>
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
                                 <Label fx:id="streamerNameLabel" text="Streamer Name" styleClass="streamer-name"/>
-                                <HBox spacing="12">
-                                    <Label fx:id="viewerCountLabel" text="👥 0 viewers" styleClass="stream-stat"/>
-                                    <Label text="•" styleClass="stat-separator"/>
-                                    <Label fx:id="streamDurationLabel" text="⏱ 00:00:00" styleClass="stream-stat"/>
-                                </HBox>
+                                <Label fx:id="viewerCountLabel" text="👥 0 viewers" styleClass="stream-stat"/>
                             </VBox>
                         </HBox>
                         

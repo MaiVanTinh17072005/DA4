@@ -2,6 +2,7 @@ package com.example.ui;
 
 import com.example.api.dto.LivestreamDTO;
 import com.example.service.LivestreamService;
+import com.example.service.LivestreamWebSocketClient;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -10,6 +11,11 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
+import javafx.embed.swing.SwingFXUtils;
+import javax.imageio.ImageIO;
+import java.io.ByteArrayOutputStream;
+import java.util.Base64;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -28,6 +34,7 @@ public class LivestreamBroadcastWindow {
     private Label viewerCountLabel;
     private Label statusLabel;
     private boolean isLive = false;
+    private LivestreamWebSocketClient webSocketClient;
     
     public LivestreamBroadcastWindow(LivestreamDTO livestream) {
         this.livestream = livestream;
@@ -267,13 +274,19 @@ public class LivestreamBroadcastWindow {
                     // Remove loading label
                     ((StackPane)cameraView.getParent()).getChildren().remove(loadingLabel);
                     
-                    // Capture frames at 15 FPS (every 66ms) - reduced for better performance
+                    // Connect to WebSocket for video streaming
+                    connectWebSocket();
+                    
+                    // Capture frames at 10 FPS (every 100ms) for streaming
                     javafx.animation.Timeline captureTimeline = new javafx.animation.Timeline(
-                        new javafx.animation.KeyFrame(javafx.util.Duration.millis(66), e -> {
+                        new javafx.animation.KeyFrame(javafx.util.Duration.millis(100), e -> {
                             try {
                                 javafx.scene.image.Image frame = cameraService.captureFrame();
                                 if (frame != null) {
                                     cameraView.setImage(frame);
+                                    
+                                    // Send frame to viewers via WebSocket
+                                    sendFrameToViewers(frame);
                                 }
                             } catch (Exception ex) {
                                 System.err.println("❌ Error capturing frame: " + ex.getMessage());
@@ -363,6 +376,12 @@ public class LivestreamBroadcastWindow {
     }
     
     private void handleStopStream() {
+        // If already stopped, just close
+        if (!isLive) {
+            stage.close();
+            return;
+        }
+        
         Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
         confirmAlert.setTitle("Xác nhận");
         confirmAlert.setHeaderText("Dừng phát livestream?");
@@ -370,6 +389,9 @@ public class LivestreamBroadcastWindow {
         
         confirmAlert.showAndWait().ifPresent(response -> {
             if (response == javafx.scene.control.ButtonType.OK) {
+                // Set isLive to false immediately to prevent multiple calls
+                isLive = false;
+                
                 // Stop camera first
                 try {
                     javafx.animation.Timeline captureTimeline = 
@@ -388,14 +410,20 @@ public class LivestreamBroadcastWindow {
                     System.err.println("Error stopping camera: " + e.getMessage());
                 }
                 
+                // Disconnect WebSocket
+                if (webSocketClient != null) {
+                    webSocketClient.disconnect();
+                }
+                
                 // End livestream via API
                 new Thread(() -> {
                     try {
                         LivestreamService livestreamService = LivestreamService.getInstance();
                         livestreamService.endLivestream(livestream.getStreamId());
                         
+                        System.out.println("✅ [LivestreamBroadcast] Ended livestream: " + livestream.getStreamId());
+                        
                         Platform.runLater(() -> {
-                            isLive = false;
                             statusLabel.setText("⏹ Đã dừng phát");
                             statusLabel.setTextFill(Color.web("#72767d"));
                             
@@ -409,25 +437,32 @@ public class LivestreamBroadcastWindow {
                         });
                         
                     } catch (Exception e) {
+                        System.err.println("❌ [LivestreamBroadcast] Error ending livestream: " + e.getMessage());
+                        e.printStackTrace();
+                        
                         Platform.runLater(() -> {
-                            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-                            errorAlert.setTitle("Lỗi");
-                            errorAlert.setHeaderText(null);
-                            errorAlert.setContentText("Không thể kết thúc livestream: " + e.getMessage());
+                            // Still close the window even if API call fails
+                            Alert errorAlert = new Alert(Alert.AlertType.WARNING);
+                            errorAlert.setTitle("Cảnh báo");
+                            errorAlert.setHeaderText("Lỗi kết thúc livestream");
+                            errorAlert.setContentText("Không thể kết thúc livestream qua API: " + e.getMessage() + "\n\nCửa sổ sẽ đóng nhưng bạn có thể cần kiểm tra lại.");
                             errorAlert.showAndWait();
+                            
+                            stage.close();
                         });
                     }
                 }).start();
             }
+            // If user clicks Cancel, do nothing - keep window open and livestream running
         });
     }
     
     private void startViewerCountUpdate() {
-        // Mock viewer count update every 5 seconds
+        // Viewer count update every 1 second for near real-time updates
         Thread updateThread = new Thread(() -> {
             while (isLive) {
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(1000);  // Update every 1 second
                     
                     if (!isLive) break;
                     
@@ -450,6 +485,95 @@ public class LivestreamBroadcastWindow {
         updateThread.start();
     }
     
+    /**
+     * Connect to WebSocket for video streaming
+     */
+    private void connectWebSocket() {
+        webSocketClient = new LivestreamWebSocketClient();
+        
+        webSocketClient.connectAsBroadcaster(livestream.getStreamId())
+            .thenRun(() -> {
+                System.out.println("✅ [Broadcaster] Connected to WebSocket for streaming");
+            })
+            .exceptionally(error -> {
+                System.err.println("❌ [Broadcaster] Failed to connect to WebSocket: " + error.getMessage());
+                Platform.runLater(() -> {
+                    statusLabel.setText("⚠️ Lỗi kết nối streaming");
+                    statusLabel.setTextFill(Color.web("#faa61a"));
+                });
+                return null;
+            });
+    }
+    
+    /**
+     * Send video frame to viewers via WebSocket
+     */
+    private void sendFrameToViewers(javafx.scene.image.Image frame) {
+        if (webSocketClient == null) {
+            System.err.println("⚠️ [Broadcaster] WebSocket client is null");
+            return;
+        }
+        
+        if (!webSocketClient.isConnected()) {
+            // Don't spam logs - only log occasionally
+            if (Math.random() < 0.01) {
+                System.err.println("⚠️ [Broadcaster] WebSocket not connected");
+            }
+            return;
+        }
+        
+        try {
+            // Convert JavaFX Image to BufferedImage
+            java.awt.image.BufferedImage bufferedImage = SwingFXUtils.fromFXImage(frame, null);
+            
+            if (bufferedImage == null) {
+                System.err.println("❌ [Broadcaster] Failed to convert frame to BufferedImage");
+                return;
+            }
+            
+            // CRITICAL FIX: Convert to RGB format for JPEG compatibility
+            // JavaFX images may have incompatible colorspace (e.g., ARGB, BGR)
+            java.awt.image.BufferedImage rgbImage = new java.awt.image.BufferedImage(
+                bufferedImage.getWidth(),
+                bufferedImage.getHeight(),
+                java.awt.image.BufferedImage.TYPE_INT_RGB
+            );
+            
+            // Draw the original image onto the RGB image
+            java.awt.Graphics2D graphics = rgbImage.createGraphics();
+            graphics.drawImage(bufferedImage, 0, 0, null);
+            graphics.dispose();
+            
+            // Compress to JPEG with quality setting
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            javax.imageio.ImageWriter writer = ImageIO.getImageWritersByFormatName("jpg").next();
+            javax.imageio.ImageWriteParam param = writer.getDefaultWriteParam();
+            param.setCompressionMode(javax.imageio.ImageWriteParam.MODE_EXPLICIT);
+            param.setCompressionQuality(0.7f); // 70% quality for smaller size
+            
+            writer.setOutput(ImageIO.createImageOutputStream(baos));
+            writer.write(null, new javax.imageio.IIOImage(rgbImage, null, null), param);
+            writer.dispose();
+            
+            byte[] imageBytes = baos.toByteArray();
+            
+            // Encode to Base64
+            String base64Frame = Base64.getEncoder().encodeToString(imageBytes);
+            
+            // Log periodically
+            if (Math.random() < 0.033) {
+                System.out.println("📹 [Broadcaster] Sending frame: " + imageBytes.length + " bytes → " + base64Frame.length() + " chars");
+            }
+            
+            // Send via WebSocket
+            webSocketClient.sendFrame(base64Frame);
+            
+        } catch (Exception e) {
+            System.err.println("❌ [Broadcaster] Error sending frame: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
     public void show() {
         if (stage != null) {
             stage.show();
@@ -457,3 +581,4 @@ public class LivestreamBroadcastWindow {
         }
     }
 }
+
