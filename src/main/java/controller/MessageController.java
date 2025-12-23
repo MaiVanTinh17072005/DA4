@@ -201,9 +201,22 @@ public class MessageController {
         try {
             System.out.println("Sender ID: " + messageDTO.getSenderId());
             System.out.println("Receiver ID: " + messageDTO.getReceiverId());
-            System.out.println("Content: " + messageDTO.getContent());
             System.out.println("MsgId: " + messageDTO.getMsgId());
             System.out.println("Encrypted: " + messageDTO.getAesEncrypted());
+            
+            // ✅ LOG ENCRYPTION STATUS (Accept both encrypted and plain text)
+            boolean isEncrypted = messageDTO.getAesEncrypted() != null && messageDTO.getAesEncrypted();
+            
+            if (!isEncrypted) {
+                System.out.println("⚠️ PLAIN TEXT message received");
+                System.out.println("  - Content (plain): " + (messageDTO.getContent() != null ? messageDTO.getContent().substring(0, Math.min(50, messageDTO.getContent().length())) : "null"));
+                System.out.println("  - Server can read this message");
+            } else {
+                System.out.println("✅ ENCRYPTED message received");
+                System.out.println("  - Content (encrypted): " + messageDTO.getContent().substring(0, Math.min(30, messageDTO.getContent().length())) + "...");
+                System.out.println("  - IV: " + (messageDTO.getIv() != null ? messageDTO.getIv().substring(0, Math.min(10, messageDTO.getIv().length())) + "..." : "null"));
+                System.out.println("  - AuthTag: " + (messageDTO.getAuthTag() != null ? messageDTO.getAuthTag().substring(0, Math.min(10, messageDTO.getAuthTag().length())) + "..." : "null"));
+            }
             
             // CRITICAL: Validate senderId is not null
             if (messageDTO.getSenderId() == null) {
