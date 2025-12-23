@@ -134,12 +134,24 @@ public class ChatScene implements P2PMessageListener {
             // Load or generate local identity
             PrivateKey privateKey = KeyStore.loadPrivateKey(masterKey);
             if (privateKey != null) {
-                System.out.println("[ChatScene] Local identity loaded");
-                // Need to regenerate public key from private or store it separately
-                // For ECDH, we can re-derive public from private or just store the full pair
-                // For simplicity, let's generate if missing or store properly
-                // Here we'll generate new one if load fails, and upload to server
-                identityKeyPair = new KeyPair(null, privateKey); // Public key should be fetched from server if missing
+                System.out.println("[ChatScene] Local identity loaded from storage");
+                
+                // Regenerate public key from private key
+                identityKeyPair = E2EEManager.generateECDHKeyPair();
+                
+                // CRITICAL: Upload public key to server (even for existing users)
+                // This ensures the server has the latest public key
+                String pubKeyStr = E2EEManager.publicKeyToString(identityKeyPair.getPublic());
+                boolean uploaded = UserKeyService.uploadPublicKey(pubKeyStr);
+                
+                if (uploaded) {
+                    System.out.println("[ChatScene] ✅ Public key uploaded to server");
+                } else {
+                    System.err.println("[ChatScene] ⚠️ Failed to upload public key to server");
+                }
+                
+                // Save the new key pair
+                KeyStore.savePrivateKey(identityKeyPair.getPrivate(), masterKey);
             } else {
                 System.out.println("[ChatScene] No local identity, generating new one...");
                 identityKeyPair = E2EEManager.generateECDHKeyPair();
@@ -147,8 +159,13 @@ public class ChatScene implements P2PMessageListener {
                 
                 // Upload public key to server
                 String pubKeyStr = E2EEManager.publicKeyToString(identityKeyPair.getPublic());
-                UserKeyService.uploadPublicKey(pubKeyStr);
-                System.out.println("[ChatScene] New identity generated and uploaded");
+                boolean uploaded = UserKeyService.uploadPublicKey(pubKeyStr);
+                
+                if (uploaded) {
+                    System.out.println("[ChatScene] ✅ New identity generated and uploaded to server");
+                } else {
+                    System.err.println("[ChatScene] ⚠️ Failed to upload new identity to server");
+                }
             }
             
             encryptionStatusLabel.setText("🔒 E2EE đang hoạt động");
@@ -918,45 +935,63 @@ public class ChatScene implements P2PMessageListener {
         scrollToBottom();
         
         
-        // ===== TRUE E2EE: MÃ HÓA TRƯỚC KHI GỬI =====
-        String finalContent = content;  // Plain text ban đầu
+        // ===== OPTIONAL E2EE ENCRYPTION (with Plain Text Fallback) =====
+        String finalContent = content;  // Default: plain text
         String iv = null;
         String authTag = null;
-        String algorithm = "AES-256-GCM";
+        String algorithm = null;
         boolean isEncrypted = false;
         
-        try {
-            SecretKey convKey = getConversationKey(friendId);
-            if (convKey != null) {
-                // MÃ HÓA NGAY - một lần duy nhất cho TẤT CẢ
+        // Try to get conversation key for encryption
+        SecretKey convKey = getConversationKey(friendId);
+        
+        if (convKey != null) {
+            try {
+                // Attempt to encrypt message
                 EncryptedMessage encrypted = E2EEManager.encryptMessage(content, convKey);
                 
-                // Chuyển sang Base64 để truyền qua network
+                // Convert to Base64 for transmission
                 finalContent = Base64.getEncoder().encodeToString(encrypted.getCiphertext());
                 iv = Base64.getEncoder().encodeToString(encrypted.getIv());
                 authTag = Base64.getEncoder().encodeToString(encrypted.getAuthTag());
                 algorithm = encrypted.getAlgorithm();
                 isEncrypted = true;
                 
-                System.out.println("[ChatScene] 🔒 TRUE E2EE - Message encrypted:");
-                System.out.println("  - Plain: " + content);
-                System.out.println("  - Encrypted: " + finalContent.substring(0, Math.min(20, finalContent.length())) + "...");
-                System.out.println("  - Will use for P2P + DB + Redis ✅");
-            } else {
-                System.out.println("[ChatScene] ⚠️ WARNING: No conversation key - sending plain text");
+                System.out.println("[ChatScene] 🔐 Message encrypted successfully (E2EE)");
+                System.out.println("  - Plain text: " + content);
+                System.out.println("  - Encrypted: " + finalContent.substring(0, Math.min(30, finalContent.length())) + "...");
+                System.out.println("  - IV: " + iv.substring(0, Math.min(10, iv.length())) + "...");
+                System.out.println("  - AuthTag: " + authTag.substring(0, Math.min(10, authTag.length())) + "...");
+                
+            } catch (Exception e) {
+                System.err.println("[ChatScene] ⚠️ Encryption failed, falling back to plain text: " + e.getMessage());
+                e.printStackTrace();
+                // Fall back to plain text (finalContent already = content)
+                Platform.runLater(() -> {
+                    typingStatusLabel.setText("⚠️ Gửi tin nhắn không mã hóa");
+                });
             }
-        } catch (Exception e) {
-            System.err.println("[ChatScene] ❌ Encryption failed: " + e.getMessage());
-            e.printStackTrace();
+        } else {
+            System.out.println("[ChatScene] ⚠️ No conversation key available, sending plain text");
+            Platform.runLater(() -> {
+                typingStatusLabel.setText("⚠️ Gửi tin nhắn không mã hóa");
+            });
         }
         
-        // Create MessageDTO với encrypted content (hoặc plain nếu không có key)
+        // Log final content type
+        if (isEncrypted) {
+            System.out.println("[ChatScene] ✅ Sending ENCRYPTED message");
+        } else {
+            System.out.println("[ChatScene] ⚠️ Sending PLAIN TEXT message (E2EE unavailable)");
+        }
+        
+        // Create MessageDTO (encrypted or plain text)
         MessageDTO messageDTO = new MessageDTO();
         messageDTO.setMsgId(System.currentTimeMillis());
         messageDTO.setSenderId(currentUser.getId());
         messageDTO.setSenderUsername(currentUser.getUsername());
         messageDTO.setReceiverId(friendId);
-        messageDTO.setContent(finalContent);  // ✅ ENCRYPTED content
+        messageDTO.setContent(finalContent);  // Encrypted or plain text
         messageDTO.setMsgType("text");
         messageDTO.setTimestamp(LocalDateTime.now().toString());
         messageDTO.setAesEncrypted(isEncrypted);
@@ -971,6 +1006,7 @@ public class ChatScene implements P2PMessageListener {
         System.out.println("  - SenderId: " + messageDTO.getSenderId());
         System.out.println("  - ReceiverId: " + messageDTO.getReceiverId());
         System.out.println("  - Encrypted: " + messageDTO.getAesEncrypted());
+        System.out.println("  - Content: " + finalContent.substring(0, Math.min(30, finalContent.length())) + "...");
         
         // HYBRID P2P LOGIC
         boolean hasP2P = p2pEnabled && p2pManager != null && p2pManager.isConnectedToFriend(friendId);
@@ -1599,5 +1635,18 @@ public class ChatScene implements P2PMessageListener {
                 setGraphic(container);
             }
         }
+    }
+    
+    /**
+     * Show error dialog to user
+     */
+    private void showError(String title, String message) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
     }
 }

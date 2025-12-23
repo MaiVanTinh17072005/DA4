@@ -103,14 +103,30 @@ public class LocalRedisService {
             String messageId = String.valueOf(message.getMsgId());
             String messageJson = gson.toJson(message);
             
+            // ✅ ENCRYPTION STATUS CHECK (Allow both encrypted and plain text)
+            if (message.getAesEncrypted() == null || !message.getAesEncrypted()) {
+                System.out.println("\n========== [LocalRedis] ⚠️ PLAIN TEXT MESSAGE QUEUED ==========");
+                System.out.println("[LocalRedis] Message ID: " + messageId);
+                System.out.println("[LocalRedis] SenderId: " + message.getSenderId());
+                System.out.println("[LocalRedis] ReceiverId: " + message.getReceiverId());
+                System.out.println("[LocalRedis] Encrypted: false");
+                System.out.println("[LocalRedis] Content (plain): " + (message.getContent() != null ? message.getContent().substring(0, Math.min(50, message.getContent().length())) : "null"));
+                System.out.println("[LocalRedis] ⚠️ Message is NOT encrypted - server can read content");
+                System.out.println("================================================================\n");
+            } else {
+                System.out.println("\n========== [LocalRedis] ✅ ENCRYPTED MESSAGE QUEUED ==========");
+                System.out.println("[LocalRedis] Message ID: " + messageId);
+                System.out.println("[LocalRedis] SenderId: " + message.getSenderId());
+                System.out.println("[LocalRedis] ReceiverId: " + message.getReceiverId());
+                System.out.println("[LocalRedis] Encrypted: true");
+                System.out.println("[LocalRedis] Content (encrypted): " + (message.getContent() != null ? message.getContent().substring(0, Math.min(30, message.getContent().length())) + "..." : "null"));
+                System.out.println("[LocalRedis] IV: " + (message.getIv() != null ? message.getIv().substring(0, Math.min(10, message.getIv().length())) + "..." : "null"));
+                System.out.println("[LocalRedis] AuthTag: " + (message.getAuthTag() != null ? message.getAuthTag().substring(0, Math.min(10, message.getAuthTag().length())) + "..." : "null"));
+                System.out.println("===============================================================\n");
+            }
+            
             // ✅ DEBUG: Print stack trace to find who's calling this
-            System.out.println("\n========== [LocalRedis] QUEUE MESSAGE CALLED ==========");
-            System.out.println("[LocalRedis] ➕ Queuing message: " + messageId);
-            System.out.println("  - SenderId: " + message.getSenderId());
-            System.out.println("  - ReceiverId: " + message.getReceiverId());
-            System.out.println("  - Content: " + (message.getContent() != null ? message.getContent().substring(0, Math.min(20, message.getContent().length())) : "null"));
-            System.out.println("  - Encrypted: " + message.getAesEncrypted());
-            System.out.println("  - Called from:");
+            System.out.println("[LocalRedis] Called from:");
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
             for (int i = 2; i < Math.min(8, stackTrace.length); i++) {
                 System.out.println("    " + stackTrace[i]);

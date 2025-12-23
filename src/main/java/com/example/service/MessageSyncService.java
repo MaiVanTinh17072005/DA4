@@ -144,6 +144,19 @@ public class MessageSyncService implements ServerHealthMonitor.ServerStatusListe
                 
                 MessageDTO message = pendingMessages.get(i);
                 
+                // ✅ ENCRYPTION STATUS (Allow both encrypted and plain text)
+                boolean isEncrypted = message.getAesEncrypted() != null && message.getAesEncrypted();
+                
+                if (!isEncrypted) {
+                    System.out.println("[MessageSyncService] ⚠️ Syncing PLAIN TEXT message: " + message.getMsgId());
+                    System.out.println("  - Encrypted: false");
+                    System.out.println("  - Content (plain): " + message.getContent().substring(0, Math.min(30, message.getContent().length())) + "...");
+                } else {
+                    System.out.println("[MessageSyncService] 🔐 Syncing ENCRYPTED message: " + message.getMsgId());
+                    System.out.println("  - Encrypted: true");
+                    System.out.println("  - Content (encrypted): " + message.getContent().substring(0, Math.min(30, message.getContent().length())) + "...");
+                }
+                
                 // Ensure senderId is set
                 if (message.getSenderId() == null) {
                     message.setSenderId(userId);
@@ -151,6 +164,7 @@ public class MessageSyncService implements ServerHealthMonitor.ServerStatusListe
                 }
                 
                 try {
+                    
                     // Send to Redis queue via backend API
                     boolean queuedToRedis = queueMessageToRedis(message);
                     
