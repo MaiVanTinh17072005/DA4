@@ -55,21 +55,8 @@ public class MessageSyncScheduler {
                     System.out.println("[MessageSync] 🔄 Processing message " + message.getMsgId());
                     System.out.println("  - SenderId: " + message.getSenderId());
                     System.out.println("  - ReceiverId: " + message.getReceiverId());
+                    System.out.println("  - Content: " + (message.getContent() != null ? message.getContent().substring(0, Math.min(20, message.getContent().length())) + "..." : "null"));
                     System.out.println("  - Encrypted: " + message.getAesEncrypted());
-                    
-                    // ✅ LOG ENCRYPTION STATUS (Accept both encrypted and plain text)
-                    boolean isEncrypted = message.getAesEncrypted() != null && message.getAesEncrypted();
-                    
-                    if (!isEncrypted) {
-                        System.out.println("[MessageSync] ⚠️ Saving PLAIN TEXT message to PostgreSQL");
-                        System.out.println("  - Message ID: " + message.getMsgId());
-                        System.out.println("  - Content (plain): " + (message.getContent() != null ? message.getContent().substring(0, Math.min(50, message.getContent().length())) : "null"));
-                        System.out.println("  - Server can read this message in database");
-                    } else {
-                        System.out.println("[MessageSync] 🔐 Saving ENCRYPTED message to PostgreSQL");
-                        System.out.println("  - Message ID: " + message.getMsgId());
-                        System.out.println("  - Content (encrypted): " + (message.getContent() != null ? message.getContent().substring(0, Math.min(30, message.getContent().length())) + "..." : "null"));
-                    }
                     
                     // ✅ FIX: Check if message already exists in PostgreSQL
                     // This prevents duplicate storage when syncing from Redis
@@ -82,8 +69,7 @@ public class MessageSyncScheduler {
                         continue;
                     }
                     
-                    // Save ENCRYPTED content to PostgreSQL
-                    System.out.println("[MessageSync] 💾 Saving ENCRYPTED message to PostgreSQL...");
+                    // Save to PostgreSQL
                     MessageDTO savedMessage = messageService.sendMessage(message);
                     
                     if (savedMessage != null) {
@@ -91,7 +77,7 @@ public class MessageSyncScheduler {
                         redisQueue.removeMessage(message.getSenderId(), 
                             String.valueOf(message.getMsgId()));
                         successful++;
-                        System.out.println("[MessageSync] ✅ Synced ENCRYPTED message " + message.getMsgId() + " to PostgreSQL");
+                        System.out.println("[MessageSync] ✅ Synced message " + message.getMsgId());
                     } else {
                         // DO NOT remove from Redis if save failed
                         failed++;

@@ -37,30 +37,13 @@ public class RedisMessageQueueService {
             String messageId = String.valueOf(message.getMsgId());
             String queueKey = QUEUE_KEY_PREFIX + senderId;
             
-            // ✅ LOG ENCRYPTION STATUS (Accept both)
-            boolean isEncrypted = message.getAesEncrypted() != null && message.getAesEncrypted();
-            
-            if (!isEncrypted) {
-                System.out.println("[RedisQueue] ⚠️ Queueing PLAIN TEXT message:");
-                System.out.println("  - Message ID: " + messageId);
-                System.out.println("  - User ID: " + senderId);
-                System.out.println("  - Encrypted: false");
-                System.out.println("  - Content (plain): " + (message.getContent() != null ? message.getContent().substring(0, Math.min(50, message.getContent().length())) : "null"));
-            } else {
-                System.out.println("[RedisQueue] ✅ Queueing ENCRYPTED message:");
-                System.out.println("  - Message ID: " + messageId);
-                System.out.println("  - User ID: " + senderId);
-                System.out.println("  - Encrypted: true");
-                System.out.println("  - Content (encrypted): " + (message.getContent() != null ? message.getContent().substring(0, Math.min(30, message.getContent().length())) + "..." : "null"));
-            }
-            
             // Convert MessageDTO to JSON
             String messageJson = objectMapper.writeValueAsString(message);
             
             // Store in Redis Hash: HSET pending_messages:{userId} {messageId} {json}
             jedis.hset(queueKey, messageId, messageJson);
             
-            System.out.println("[RedisQueue] ➕ Message queued successfully to key: " + queueKey);
+            System.out.println("[RedisQueue] ➕ Queued message " + messageId + " for user " + senderId);
             
         } catch (Exception e) {
             System.err.println("[RedisQueue] ❌ Failed to queue message: " + e.getMessage());
