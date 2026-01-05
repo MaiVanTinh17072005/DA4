@@ -457,8 +457,33 @@ public class ProfileScene {
 
         confirm.showAndWait().ifPresent(response -> {
             if (response == ButtonType.OK) {
+                System.out.println("[ProfileScene] ========== LOGOUT INITIATED ==========");
+                long logoutStart = System.currentTimeMillis();
+                
+                // ✅ Broadcast OFFLINE status before logout
+                // This ensures friends see us offline instantly
+                try {
+                    System.out.println("[ProfileScene] 📢 Starting OFFLINE broadcast...");
+                    com.example.network.P2PManager p2pManager = com.example.network.P2PManager.getInstance();
+                    
+                    long broadcastStart = System.currentTimeMillis();
+                    p2pManager.broadcastOfflineStatus();
+                    long broadcastEnd = System.currentTimeMillis();
+                    
+                    System.out.println("[ProfileScene] ✅ OFFLINE broadcast completed in " + (broadcastEnd - broadcastStart) + "ms");
+                } catch (Exception e) {
+                    System.err.println("[ProfileScene] ❌ Failed to broadcast offline status: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
+                long logoutEnd = System.currentTimeMillis();
+                System.out.println("[ProfileScene] ⏱️ Total logout time: " + (logoutEnd - logoutStart) + "ms");
+                System.out.println("[ProfileScene] 🔄 Switching to login screen...");
+                
                 com.example.util.SceneManager.setTitle("Discord Mini - Login");
                 com.example.util.SceneManager.loadContent("content/login-content.fxml");
+                
+                System.out.println("[ProfileScene] ========== LOGOUT COMPLETE ==========");
             }
         });
     }

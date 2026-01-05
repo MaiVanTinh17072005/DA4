@@ -38,10 +38,28 @@ public class SidebarController {
         // Perform logout in background thread to avoid blocking UI
         new Thread(() -> {
             try {
-                System.out.println("Initiating logout...");
+                System.out.println("========== LOGOUT INITIATED ==========");
+                long logoutStart = System.currentTimeMillis();
                 
-                // Stop P2P before logout
+                // CRITICAL: Broadcast OFFLINE status BEFORE stopping P2P
+                // This ensures friends receive the offline signal
                 try {
+                    System.out.println("[SidebarController] 📢 Broadcasting OFFLINE status to all friends...");
+                    com.example.network.P2PManager p2pManager = com.example.network.P2PManager.getInstance();
+                    
+                    long broadcastStart = System.currentTimeMillis();
+                    p2pManager.broadcastOfflineStatus();
+                    long broadcastEnd = System.currentTimeMillis();
+                    
+                    System.out.println("[SidebarController] ✅ OFFLINE broadcast completed in " + (broadcastEnd - broadcastStart) + "ms");
+                } catch (Exception e) {
+                    System.err.println("[SidebarController] ⚠️ Failed to broadcast offline status: " + e.getMessage());
+                    e.printStackTrace();
+                }
+                
+                // Now stop P2P after broadcast is complete
+                try {
+                    System.out.println("[SidebarController] 🛑 Stopping P2P...");
                     PeerManager.getInstance().stopP2P();
                     System.out.println("✅ [P2P] Stopped successfully");
                 } catch (Exception e) {
@@ -49,12 +67,15 @@ public class SidebarController {
                 }
                 
                 // Call logout API to update status to offline on server
+                System.out.println("[SidebarController] 📡 Calling logout API...");
                 authService.logout();
                 
                 // Clear local session
                 SessionManager.clearSession();
                 
-                System.out.println("Logout completed successfully");
+                long logoutEnd = System.currentTimeMillis();
+                System.out.println("[SidebarController] ⏱️ Total logout time: " + (logoutEnd - logoutStart) + "ms");
+                System.out.println("========== LOGOUT COMPLETED ==========");
                 
                 // Switch to login screen on JavaFX thread
                 Platform.runLater(() -> {

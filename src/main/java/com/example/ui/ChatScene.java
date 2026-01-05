@@ -45,7 +45,7 @@ import java.util.concurrent.CompletableFuture;
  * Modern Discord-inspired chat interface controller
  * Handles conversation list, messaging, and user interactions
  */
-public class ChatScene implements P2PMessageListener {
+public class ChatScene implements P2PMessageListener, P2PManager.StatusChangeListener {
 
     // ===== FXML Components =====
     @FXML private ListView<ConversationItem> conversationListView;
@@ -286,16 +286,19 @@ public class ChatScene implements P2PMessageListener {
     
     /**
      * Auto-connect to all friends to receive real-time online/offline status via UDP heartbeat
+     * CRITICAL: Attempts to monitor ALL friends, even if offline, so we can receive instant ONLINE signals
      */
     private void autoConnectToFriends() {
         CompletableFuture.runAsync(() -> {
             com.example.service.P2PService p2pService = com.example.service.P2PService.getInstance();
             
+            System.out.println("[ChatScene] 🔄 Attempting to monitor " + allConversations.size() + " friends for status updates...");
+            
             for (ConversationItem conversation : allConversations) {
                 try {
                     Long friendId = conversation.getUserId();
                     
-                    // Try to get friend's P2P info
+                    // Try to get friend's P2P info (even if offline, server may have cached info)
                     com.example.api.dto.P2PInfoRequest friendP2PInfo = p2pService.getPeerInfo(friendId);
                     
                     if (friendP2PInfo != null) {
@@ -307,24 +310,38 @@ public class ChatScene implements P2PMessageListener {
                             .orElse(null);
                         
                         if (friend != null) {
-                            // Connect to friend (will start UDP heartbeat)
-                            boolean connected = p2pManager.connectToFriend(
-                                friend,
-                                friendP2PInfo.getIpAddress(),
-                                friendP2PInfo.getTcpPort(),
-                                friendP2PInfo.getUdpPort()
-                            );
-                            
-                            if (connected) {
-                                System.out.println("[ChatScene] ✅ Auto-connected to " + friend.getUsername() + " for status updates");
+                            // IMPORTANT: Start UDP heartbeat monitoring (not full P2P connection)
+                            // This allows us to receive ONLINE signals when friend logs in later
+                            try {
+                                // Check if already monitoring
+                                if (!p2pManager.isConnectedToFriend(friendId)) {
+                                    // Just start UDP monitoring without full TCP connection
+                                    com.example.network.UDPHeartbeatService heartbeat = 
+                                        ((com.example.network.P2PManager) p2pManager).getHeartbeatService();
+                                    
+                                    if (heartbeat != null && !heartbeat.isMonitoring(friendId)) {
+                                        heartbeat.startMonitoring(
+                                            friendId,
+                                            friendP2PInfo.getIpAddress(),
+                                            friendP2PInfo.getUdpPort()
+                                        );
+                                        System.out.println("[ChatScene] 📡 Started monitoring " + friend.getUsername() + " for status updates");
+                                    }
+                                }
+                            } catch (Exception e) {
+                                System.err.println("[ChatScene] ⚠️ Could not start monitoring " + friend.getUsername() + ": " + e.getMessage());
                             }
                         }
+                    } else {
+                        System.out.println("[ChatScene] ⚠️ No P2P info for " + conversation.getName() + " - will monitor when they come online");
                     }
                 } catch (Exception e) {
-                    // Friend offline or not available - skip
-                    System.out.println("[ChatScene] ⚠️ " + conversation.getName() + " offline");
+                    // Friend offline or not available - that's OK, we'll catch them when they broadcast ONLINE
+                    System.out.println("[ChatScene] ℹ️ " + conversation.getName() + " - will monitor when online");
                 }
             }
+            
+            System.out.println("[ChatScene] ✅ Friend monitoring setup complete");
         });
     }
 
@@ -567,6 +584,19 @@ public class ChatScene implements P2PMessageListener {
             
             System.out.println("[ChatScene] ✅ P2P initialized");
             updateConnectionStatus("🟢 P2P sẵn sàng");
+            
+            // ✅ Broadcast ONLINE status to all friends after P2P initialization
+            // This ensures friends see us online instantly instead of waiting for heartbeat
+            CompletableFuture.runAsync(() -> {
+                try {
+                    // Wait a bit for P2P to fully stabilize
+                    Thread.sleep(500);
+                    p2pManager.broadcastOnlineStatus();
+                    System.out.println("[ChatScene] 📢 Broadcasted ONLINE status to all friends");
+                } catch (Exception e) {
+                    System.err.println("[ChatScene] ⚠️ Failed to broadcast online status: " + e.getMessage());
+                }
+            });
             
         } catch (Exception e) {
             System.err.println("[ChatScene] ❌ Failed to initialize P2P: " + e.getMessage());
@@ -1648,5 +1678,55 @@ public class ChatScene implements P2PMessageListener {
             alert.setContentText(message);
             alert.showAndWait();
         });
+    }
+    
+    // ===== StatusChangeListener Implementation (Instant Status Updates) =====
+    
+    @Override
+    public void onUserOnline(Long userId) {
+        System.out.println("[ChatScene] 🟢 User came online instantly: " + userId);
+        
+        Platform.runLater(() -> {
+            // Update conversation status in list
+            updateConversationStatus(userId, true);
+            
+            // Update active conversation if it's the one that came online
+            if (activeConversation != null && userId.equals(activeConversation.getUserId())) {
+                activeStatusLabel.setText("🟢 Đang hoạt động • P2P sẵn sàng");
+            }
+            
+            // Show notification
+            typingStatusLabel.setText("✅ " + getConversationName(userId) + " đã online");
+        });
+    }
+    
+    @Override
+    public void onUserOffline(Long userId) {
+        System.out.println("[ChatScene] 🔴 User went offline instantly: " + userId);
+        
+        Platform.runLater(() -> {
+            // Update conversation status in list
+            updateConversationStatus(userId, false);
+            
+            // Update active conversation if it's the one that went offline
+            if (activeConversation != null && userId.equals(activeConversation.getUserId())) {
+                activeStatusLabel.setText("⚫ Ngoại tuyến • Tin nhắn sẽ được lưu hàng đợi");
+                updateConnectionStatus("🔴 Peer offline");
+            }
+            
+            // Show notification
+            typingStatusLabel.setText("⚠️ " + getConversationName(userId) + " đã offline");
+        });
+    }
+    
+    /**
+     * Helper method to get conversation name by user ID
+     */
+    private String getConversationName(Long userId) {
+        return allConversations.stream()
+            .filter(conv -> userId.equals(conv.getUserId()))
+            .map(ConversationItem::getName)
+            .findFirst()
+            .orElse("User");
     }
 }

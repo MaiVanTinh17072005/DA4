@@ -240,6 +240,138 @@ public class P2PManager implements P2PMessageListener, UDPHeartbeatService.Heart
         return P2PEncryption.publicKeyToString(connectionManager.getMyPublicKey());
     }
     
+    /**
+     * Get heartbeat service for direct access
+     * Used by ChatScene to set up monitoring for all friends
+     */
+    public UDPHeartbeatService getHeartbeatService() {
+        return heartbeatService;
+    }
+    
+    /**
+     * Broadcast ONLINE status to all connected peers
+     * Call this after successful login
+     */
+    public void broadcastOnlineStatus() {
+        if (!initialized) {
+            System.err.println("[P2PManager] ❌ Cannot broadcast - P2P not initialized");
+            return;
+        }
+        
+        System.out.println("[P2PManager] 📢 Broadcasting ONLINE status to ALL friends");
+        
+        // First, broadcast to already monitored peers
+        heartbeatService.broadcastOnlineToAll();
+        
+        // CRITICAL FIX: Also broadcast to ALL friends (not just monitored ones)
+        // This ensures friends who logged in before us receive our ONLINE signal
+        CompletableFuture.runAsync(() -> {
+            try {
+                // Fetch all friends from API
+                com.example.service.FriendService friendService = new com.example.service.FriendService();
+                java.util.List<com.example.api.dto.UserDTO> friends = friendService.getFriendsList();
+                
+                if (friends != null && !friends.isEmpty()) {
+                    System.out.println("[P2PManager] 📡 Broadcasting to " + friends.size() + " friends from API");
+                    
+                    com.example.service.P2PService p2pService = com.example.service.P2PService.getInstance();
+                    
+                    for (com.example.api.dto.UserDTO friend : friends) {
+                        try {
+                            // Get friend's P2P info
+                            com.example.api.dto.P2PInfoRequest peerInfo = p2pService.getPeerInfo(friend.getId());
+                            
+                            if (peerInfo != null) {
+                                // Send ONLINE signal directly
+                                heartbeatService.broadcastOnlineToPeer(
+                                    friend.getId(),
+                                    peerInfo.getIpAddress(),
+                                    peerInfo.getUdpPort()
+                                );
+                            }
+                        } catch (Exception e) {
+                            // Friend offline or unavailable - skip
+                            System.out.println("[P2PManager] ⚠️ Could not broadcast to friend " + friend.getId());
+                        }
+                    }
+                    
+                    System.out.println("[P2PManager] ✅ ONLINE broadcast complete");
+                }
+            } catch (Exception e) {
+                System.err.println("[P2PManager] ❌ Error broadcasting to all friends: " + e.getMessage());
+            }
+        });
+    }
+    
+    /**
+     * Broadcast OFFLINE status to all connected peers
+     * Call this before logout or app shutdown
+     * IMPORTANT: This method is SYNCHRONOUS to ensure broadcast completes before shutdown
+     */
+    public void broadcastOfflineStatus() {
+        if (!initialized) {
+            System.err.println("[P2PManager] ❌ Cannot broadcast - P2P not initialized");
+            return;
+        }
+        
+        long startTime = System.currentTimeMillis();
+        System.out.println("[P2PManager] 📢 Broadcasting OFFLINE status to ALL friends (SYNCHRONOUS)");
+        
+        // First, broadcast to already monitored peers
+        heartbeatService.broadcastOfflineToAll();
+        
+        // CRITICAL FIX: Also broadcast to ALL friends (not just monitored ones)
+        // This ensures friends who are online receive our OFFLINE signal
+        int broadcastCount = 0;
+        try {
+            // Fetch all friends from API
+            com.example.service.FriendService friendService = new com.example.service.FriendService();
+            java.util.List<com.example.api.dto.UserDTO> friends = friendService.getFriendsList();
+            
+            if (friends != null && !friends.isEmpty()) {
+                System.out.println("[P2PManager] 📡 Broadcasting OFFLINE to " + friends.size() + " friends from API");
+                
+                com.example.service.P2PService p2pService = com.example.service.P2PService.getInstance();
+                
+                for (com.example.api.dto.UserDTO friend : friends) {
+                    try {
+                        // Get friend's P2P info
+                        com.example.api.dto.P2PInfoRequest peerInfo = p2pService.getPeerInfo(friend.getId());
+                        
+                        if (peerInfo != null) {
+                            // Send OFFLINE signal directly
+                            heartbeatService.broadcastOfflineToPeer(
+                                friend.getId(),
+                                peerInfo.getIpAddress(),
+                                peerInfo.getUdpPort()
+                            );
+                            broadcastCount++;
+                        }
+                    } catch (Exception e) {
+                        // Friend offline or unavailable - skip
+                        System.out.println("[P2PManager] ⚠️ Could not broadcast OFFLINE to friend " + friend.getId());
+                    }
+                }
+                
+                long elapsed = System.currentTimeMillis() - startTime;
+                System.out.println("[P2PManager] ✅ OFFLINE broadcast complete - sent to " + broadcastCount + " friends in " + elapsed + "ms");
+            }
+        } catch (Exception e) {
+            System.err.println("[P2PManager] ❌ Error broadcasting OFFLINE to all friends: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        // Give UDP packets time to send before shutdown
+        // CRITICAL: Must wait long enough for all packets to be sent
+        try {
+            System.out.println("[P2PManager] ⏳ Waiting 500ms for UDP packets to be sent...");
+            Thread.sleep(500);  // Increased from 200ms to 500ms
+            System.out.println("[P2PManager] ✅ Broadcast complete, safe to shutdown");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+    
     // ===== P2PMessageListener Implementation =====
     
     @Override
@@ -356,6 +488,72 @@ public class P2PManager implements P2PMessageListener, UDPHeartbeatService.Heart
             System.out.println("[P2PManager] 🔄 Attempting to reconnect to peer: " + peerId);
             connectionManager.connectToPeer(peerId, session.getIpAddress(), session.getTcpPort());
         }
+    }
+    
+    @Override
+    public void onPeerOnline(Long peerId) {
+        System.out.println("[P2PManager] 🟢 Peer came online: " + peerId);
+        
+        // CRITICAL FIX: If we're not monitoring this peer yet, start monitoring now!
+        // This handles the case where friend B logs in after friend A
+        if (!heartbeatService.isMonitoring(peerId)) {
+            System.out.println("[P2PManager] 🔄 Not monitoring peer " + peerId + " yet, fetching P2P info to start monitoring...");
+            
+            // Fetch peer's P2P info and start monitoring
+            CompletableFuture.runAsync(() -> {
+                try {
+                    com.example.service.P2PService p2pService = com.example.service.P2PService.getInstance();
+                    com.example.api.dto.P2PInfoRequest peerInfo = p2pService.getPeerInfo(peerId);
+                    
+                    if (peerInfo != null) {
+                        System.out.println("[P2PManager] 📡 Starting heartbeat monitoring for newly online peer: " + peerId);
+                        
+                        // Start UDP heartbeat monitoring (no TCP connection needed for status updates)
+                        heartbeatService.startMonitoring(
+                            peerId,
+                            peerInfo.getIpAddress(),
+                            peerInfo.getUdpPort()
+                        );
+                        
+                        System.out.println("[P2PManager] ✅ Now monitoring peer " + peerId + " for status updates");
+                    } else {
+                        System.err.println("[P2PManager] ⚠️ Could not fetch P2P info for peer: " + peerId);
+                    }
+                } catch (Exception e) {
+                    System.err.println("[P2PManager] ❌ Failed to start monitoring peer " + peerId + ": " + e.getMessage());
+                }
+            });
+        }
+        
+        // Update peer session status if exists
+        PeerSession session = connectionManager.getPeerSession(peerId);
+        if (session != null) {
+            session.updateHeartbeat();
+        }
+        
+        // Forward to external listener (ChatScene/FriendScene)
+        if (externalListener != null && externalListener instanceof StatusChangeListener) {
+            ((StatusChangeListener) externalListener).onUserOnline(peerId);
+        }
+    }
+    
+    @Override
+    public void onPeerOffline(Long peerId) {
+        System.out.println("[P2PManager] 🔴 Peer went offline: " + peerId);
+        
+        // Forward to external listener (ChatScene/FriendScene)
+        if (externalListener != null && externalListener instanceof StatusChangeListener) {
+            ((StatusChangeListener) externalListener).onUserOffline(peerId);
+        }
+    }
+    
+    /**
+     * Status Change Listener Interface
+     * Implement this in UI components (ChatScene, FriendScene) to receive instant status updates
+     */
+    public interface StatusChangeListener {
+        void onUserOnline(Long userId);
+        void onUserOffline(Long userId);
     }
     
     // ===== Private Methods =====

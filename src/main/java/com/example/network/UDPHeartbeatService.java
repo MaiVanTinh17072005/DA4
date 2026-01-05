@@ -33,6 +33,8 @@ public class UDPHeartbeatService {
     private static final int HEARTBEAT_TIMEOUT_MS = 15000;  // 15 seconds
     private static final byte HEARTBEAT_PING = 0x01;
     private static final byte HEARTBEAT_PONG = 0x02;
+    private static final byte STATUS_ONLINE = 0x03;
+    private static final byte STATUS_OFFLINE = 0x04;
     
     // Callbacks
     private HeartbeatListener listener;
@@ -144,6 +146,134 @@ public class UDPHeartbeatService {
     }
     
     /**
+     * Send ONLINE signal to a specific peer (instant status update)
+     */
+    public void sendOnlineSignal(Long peerId) {
+        try {
+            InetSocketAddress address = peerAddresses.get(peerId);
+            if (address == null) {
+                System.err.println("[UDPHeartbeat] ⚠️ Cannot send ONLINE signal - peer address not found: " + peerId);
+                return;
+            }
+            
+            // Create ONLINE packet: [STATUS_ONLINE][userId]
+            ByteBuffer buffer = ByteBuffer.allocate(9);
+            buffer.put(STATUS_ONLINE);
+            buffer.putLong(myUserId);
+            
+            byte[] data = buffer.array();
+            DatagramPacket packet = new DatagramPacket(data, data.length, address);
+            
+            udpSocket.send(packet);
+            
+            System.out.println("[UDPHeartbeat] 🟢 Sent ONLINE signal to peer: " + peerId);
+            
+        } catch (IOException e) {
+            System.err.println("[UDPHeartbeat] ❌ Error sending ONLINE signal to peer " + peerId + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Send OFFLINE signal to a specific peer (instant status update)
+     */
+    public void sendOfflineSignal(Long peerId) {
+        try {
+            InetSocketAddress address = peerAddresses.get(peerId);
+            if (address == null) {
+                System.err.println("[UDPHeartbeat] ⚠️ Cannot send OFFLINE signal - peer address not found: " + peerId);
+                return;
+            }
+            
+            // Create OFFLINE packet: [STATUS_OFFLINE][userId]
+            ByteBuffer buffer = ByteBuffer.allocate(9);
+            buffer.put(STATUS_OFFLINE);
+            buffer.putLong(myUserId);
+            
+            byte[] data = buffer.array();
+            DatagramPacket packet = new DatagramPacket(data, data.length, address);
+            
+            udpSocket.send(packet);
+            
+            System.out.println("[UDPHeartbeat] 🔴 Sent OFFLINE signal to peer: " + peerId);
+            
+        } catch (IOException e) {
+            System.err.println("[UDPHeartbeat] ❌ Error sending OFFLINE signal to peer " + peerId + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Broadcast ONLINE signal to all monitored peers
+     * Call this when user logs in
+     */
+    public void broadcastOnlineToAll() {
+        System.out.println("[UDPHeartbeat] 📢 Broadcasting ONLINE to all monitored peers (" + peerAddresses.size() + " peers)");
+        
+        for (Long peerId : peerAddresses.keySet()) {
+            sendOnlineSignal(peerId);
+        }
+    }
+    
+    /**
+     * Broadcast ONLINE signal to specific peer by ID
+     * Fetches P2P info if not already monitoring
+     */
+    public void broadcastOnlineToPeer(Long peerId, String ipAddress, int udpPort) {
+        try {
+            // Create ONLINE packet: [STATUS_ONLINE][userId]
+            ByteBuffer buffer = ByteBuffer.allocate(9);
+            buffer.put(STATUS_ONLINE);
+            buffer.putLong(myUserId);
+            
+            byte[] data = buffer.array();
+            InetSocketAddress address = new InetSocketAddress(ipAddress, udpPort);
+            DatagramPacket packet = new DatagramPacket(data, data.length, address);
+            
+            udpSocket.send(packet);
+            
+            System.out.println("[UDPHeartbeat] 🟢 Sent ONLINE signal to peer: " + peerId + " at " + ipAddress + ":" + udpPort);
+            
+        } catch (IOException e) {
+            System.err.println("[UDPHeartbeat] ❌ Error broadcasting ONLINE to peer " + peerId + ": " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Broadcast OFFLINE signal to all monitored peers
+     * Call this when user logs out
+     */
+    public void broadcastOfflineToAll() {
+        System.out.println("[UDPHeartbeat] 📢 Broadcasting OFFLINE to all monitored peers (" + peerAddresses.size() + " peers)");
+        
+        for (Long peerId : peerAddresses.keySet()) {
+            sendOfflineSignal(peerId);
+        }
+    }
+    
+    /**
+     * Broadcast OFFLINE signal to specific peer by ID
+     * Sends directly to specified IP and port
+     */
+    public void broadcastOfflineToPeer(Long peerId, String ipAddress, int udpPort) {
+        try {
+            // Create OFFLINE packet: [STATUS_OFFLINE][userId]
+            ByteBuffer buffer = ByteBuffer.allocate(9);
+            buffer.put(STATUS_OFFLINE);
+            buffer.putLong(myUserId);
+            
+            byte[] data = buffer.array();
+            InetSocketAddress address = new InetSocketAddress(ipAddress, udpPort);
+            DatagramPacket packet = new DatagramPacket(data, data.length, address);
+            
+            udpSocket.send(packet);
+            
+            System.out.println("[UDPHeartbeat] 🔴 Sent OFFLINE signal to peer: " + peerId + " at " + ipAddress + ":" + udpPort);
+            
+        } catch (IOException e) {
+            System.err.println("[UDPHeartbeat] ❌ Error broadcasting OFFLINE to peer " + peerId + ": " + e.getMessage());
+        }
+    }
+    
+    /**
      * Shutdown heartbeat service
      */
     public void shutdown() {
@@ -224,6 +354,27 @@ public class UDPHeartbeatService {
                     if (listener != null) {
                         listener.onHeartbeatReceived(senderId);
                     }
+                    
+                } else if (type == STATUS_ONLINE) {
+                    // Received ONLINE signal - instant status update
+                    System.out.println("[UDPHeartbeat] 🟢 Received ONLINE signal from peer: " + senderId);
+                    
+                    // Update last heartbeat timestamp
+                    lastHeartbeatReceived.put(senderId, System.currentTimeMillis());
+                    
+                    // Notify listener
+                    if (listener != null) {
+                        listener.onPeerOnline(senderId);
+                    }
+                    
+                } else if (type == STATUS_OFFLINE) {
+                    // Received OFFLINE signal - instant status update
+                    System.out.println("[UDPHeartbeat] 🔴 Received OFFLINE signal from peer: " + senderId);
+                    
+                    // Notify listener
+                    if (listener != null) {
+                        listener.onPeerOffline(senderId);
+                    }
                 }
                 
             } catch (SocketException e) {
@@ -259,5 +410,9 @@ public class UDPHeartbeatService {
     public interface HeartbeatListener {
         void onHeartbeatReceived(Long peerId);
         void onPeerTimeout(Long peerId);
+        
+        // Instant status update callbacks
+        void onPeerOnline(Long peerId);
+        void onPeerOffline(Long peerId);
     }
 }
