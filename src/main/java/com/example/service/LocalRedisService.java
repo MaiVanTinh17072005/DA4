@@ -40,7 +40,8 @@ public class LocalRedisService {
             config.setTestOnBorrow(true);
             
             // Connect to local Redis (Docker container on localhost:6379)
-            jedisPool = new JedisPool(config, "localhost", 6379);
+//            jedisPool = new JedisPool(config, "localhost", 6379);
+            jedisPool = new JedisPool(config, "192.168.111.107", 6379);
             
             // Test connection
             try (Jedis jedis = jedisPool.getResource()) {
