@@ -14,14 +14,14 @@ import java.util.Base64;
  * Handles E2E encryption using AES (symmetric) and RSA (asymmetric)
  */
 public class P2PEncryption {
-    
+
     private static final String AES_ALGORITHM = "AES";
     private static final String RSA_ALGORITHM = "RSA";
     private static final int AES_KEY_SIZE = 256;
     private static final int RSA_KEY_SIZE = 2048;
-    
+
     // ===== AES Encryption (for message content) =====
-    
+
     /**
      * Generate a random AES session key
      */
@@ -30,7 +30,7 @@ public class P2PEncryption {
         keyGen.init(AES_KEY_SIZE);
         return keyGen.generateKey();
     }
-    
+
     /**
      * Encrypt content with AES
      */
@@ -39,7 +39,7 @@ public class P2PEncryption {
         cipher.init(Cipher.ENCRYPT_MODE, key);
         return cipher.doFinal(content.getBytes("UTF-8"));
     }
-    
+
     /**
      * Decrypt content with AES
      */
@@ -49,23 +49,74 @@ public class P2PEncryption {
         byte[] decrypted = cipher.doFinal(encrypted);
         return new String(decrypted, "UTF-8");
     }
-    
+
     /**
      * Convert SecretKey to byte array
      */
     public static byte[] keyToBytes(SecretKey key) {
         return key.getEncoded();
     }
-    
+
     /**
      * Convert byte array to SecretKey
      */
     public static SecretKey bytesToKey(byte[] keyBytes) {
         return new SecretKeySpec(keyBytes, AES_ALGORITHM);
     }
-    
+
+    /**
+     * Derive a shared AES session key from two RSA public keys
+     * Uses deterministic key derivation to ensure both peers get the same key
+     * 
+     * @param myPublicKey   My RSA public key
+     * @param peerPublicKey Peer's RSA public key
+     * @return Shared AES session key
+     */
+    public static SecretKey deriveSharedAESKey(PublicKey myPublicKey, PublicKey peerPublicKey) throws Exception {
+        // Get encoded bytes of both public keys
+        byte[] myKeyBytes = myPublicKey.getEncoded();
+        byte[] peerKeyBytes = peerPublicKey.getEncoded();
+
+        // Sort keys to ensure deterministic order (same result regardless of who calls
+        // first)
+        byte[] key1, key2;
+        if (compareByteArrays(myKeyBytes, peerKeyBytes) < 0) {
+            key1 = myKeyBytes;
+            key2 = peerKeyBytes;
+        } else {
+            key1 = peerKeyBytes;
+            key2 = myKeyBytes;
+        }
+
+        // Combine both keys
+        byte[] combined = new byte[key1.length + key2.length];
+        System.arraycopy(key1, 0, combined, 0, key1.length);
+        System.arraycopy(key2, 0, combined, key1.length, key2.length);
+
+        // Hash combined data with SHA-256 to get 256-bit key
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(combined);
+
+        // Create AES key from hash
+        return new SecretKeySpec(hash, AES_ALGORITHM);
+    }
+
+    /**
+     * Compare two byte arrays lexicographically
+     */
+    private static int compareByteArrays(byte[] a, byte[] b) {
+        int minLength = Math.min(a.length, b.length);
+        for (int i = 0; i < minLength; i++) {
+            int cmp = Byte.compare(a[i], b[i]);
+            if (cmp != 0) {
+                return cmp;
+            }
+        }
+        return Integer.compare(a.length, b.length);
+    }
+
     // ===== RSA Encryption (for key exchange) =====
-    
+
     /**
      * Generate RSA key pair
      */
@@ -74,7 +125,7 @@ public class P2PEncryption {
         keyGen.initialize(RSA_KEY_SIZE);
         return keyGen.generateKeyPair();
     }
-    
+
     /**
      * Encrypt AES key with RSA public key
      */
@@ -83,7 +134,7 @@ public class P2PEncryption {
         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
         return cipher.doFinal(data);
     }
-    
+
     /**
      * Decrypt AES key with RSA private key
      */
@@ -92,14 +143,14 @@ public class P2PEncryption {
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         return cipher.doFinal(encrypted);
     }
-    
+
     /**
      * Convert PublicKey to Base64 string
      */
     public static String publicKeyToString(PublicKey publicKey) {
         return Base64.getEncoder().encodeToString(publicKey.getEncoded());
     }
-    
+
     /**
      * Convert Base64 string to PublicKey
      */
@@ -109,14 +160,14 @@ public class P2PEncryption {
         KeyFactory keyFactory = KeyFactory.getInstance(RSA_ALGORITHM);
         return keyFactory.generatePublic(spec);
     }
-    
+
     /**
      * Convert PrivateKey to Base64 string
      */
     public static String privateKeyToString(PrivateKey privateKey) {
         return Base64.getEncoder().encodeToString(privateKey.getEncoded());
     }
-    
+
     /**
      * Convert Base64 string to PrivateKey
      */
@@ -126,9 +177,9 @@ public class P2PEncryption {
         KeyFactory keyFactory = KeyFactory.getInstance(RSA_ALGORITHM);
         return keyFactory.generatePrivate(spec);
     }
-    
+
     // ===== Message Signing (for integrity) =====
-    
+
     /**
      * Sign message with private key
      */
@@ -138,7 +189,7 @@ public class P2PEncryption {
         signature.update(message.getBytes("UTF-8"));
         return signature.sign();
     }
-    
+
     /**
      * Verify message signature with public key
      */
@@ -148,16 +199,16 @@ public class P2PEncryption {
         signature.update(message.getBytes("UTF-8"));
         return signature.verify(signatureBytes);
     }
-    
+
     // ===== Utility Methods =====
-    
+
     /**
      * Generate random session ID
      */
     public static String generateSessionId() {
         return java.util.UUID.randomUUID().toString();
     }
-    
+
     /**
      * Hash password with SHA-256
      */

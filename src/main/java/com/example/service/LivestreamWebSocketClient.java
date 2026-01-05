@@ -28,7 +28,8 @@ public class LivestreamWebSocketClient {
      * Connect as broadcaster (sends video frames)
      */
     public CompletableFuture<Void> connectAsBroadcaster(Long streamId) {
-        String wsUrl = "ws://localhost:8080/ws/livestream/" + streamId + "?role=broadcaster";
+//        String wsUrl = "ws://localhost:8080/ws/livestream/" + streamId + "?role=broadcaster";
+        String wsUrl = "ws://192.168.240.58:8080/ws/livestream/" + streamId + "?role=viewer";
         return connect(wsUrl, "broadcaster");
     }
     
