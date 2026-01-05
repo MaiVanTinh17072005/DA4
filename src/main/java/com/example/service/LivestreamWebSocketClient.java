@@ -29,7 +29,7 @@ public class LivestreamWebSocketClient {
      */
     public CompletableFuture<Void> connectAsBroadcaster(Long streamId) {
 //        String wsUrl = "ws://localhost:8080/ws/livestream/" + streamId + "?role=broadcaster";
-        String wsUrl = "ws://192.168.111.107:8080/ws/livestream/" + streamId + "?role=viewer";
+        String wsUrl = "ws://192.168.240.58:8080/ws/livestream/" + streamId + "?role=viewer";
         return connect(wsUrl, "broadcaster");
     }
     

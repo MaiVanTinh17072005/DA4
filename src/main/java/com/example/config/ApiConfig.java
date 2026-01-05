@@ -8,7 +8,7 @@ public class ApiConfig {
     
     // Base URL của server (có thể thay đổi theo môi trường)
 //    public static final String BASE_URL = "http://localhost:8080";
-    public static final String BASE_URL = "http://192.168.111.107:8080";
+    public static final String BASE_URL = "http://192.168.240.58:8080";
     
     // API Version
     public static final String API_VERSION = "/api/v1";
