@@ -132,6 +132,21 @@ public class ChatScene implements P2PMessageListener, P2PManager.StatusChangeLis
         initFilters();
         selectDefaultConversation();
         typingStatusLabel.setText("Sẵn sàng chat. Tin nhắn sẽ tự động gửi lại khi server online.");
+        
+        // ✅ Add Enter key handler for message input
+        // Enter = Send, Shift+Enter = New line
+        messageInput.setOnKeyPressed(event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                if (event.isShiftDown()) {
+                    // Shift+Enter: Allow new line (default behavior)
+                    // Do nothing, let TextArea handle it
+                } else {
+                    // Enter alone: Send message
+                    event.consume(); // Prevent new line
+                    handleSendMessage();
+                }
+            }
+        });
     }
 
     private void initE2EE() {
@@ -1522,6 +1537,7 @@ public class ChatScene implements P2PMessageListener, P2PManager.StatusChangeLis
         // TODO: Implement P2P multicast to all online group members
         // This requires getting list of group members and sending to each via P2P
     }
+
 
     /**
      * Cleanup when scene is closed

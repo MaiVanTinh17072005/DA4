@@ -1,6 +1,9 @@
 package com.example.ui;
 
 import com.example.api.dto.UserDTO;
+import com.example.network.P2PManager;
+import com.example.network.model.P2PMessage;
+import com.example.network.P2PMessageListener;
 import com.example.service.FriendService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -23,8 +26,9 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * Controller for Create Group Dialog
+ * Implements StatusChangeListener for real-time friend status updates
  */
-public class CreateGroupDialog {
+public class CreateGroupDialog implements P2PManager.StatusChangeListener, P2PMessageListener {
     
     @FXML private TextField groupNameField;
     @FXML private TextArea descriptionField;
@@ -48,6 +52,13 @@ public class CreateGroupDialog {
         setupSearchFilter();
         setupValidation();
         loadFriends();
+        
+        // ✅ Register as status change listener for real-time updates
+        P2PManager p2pManager = P2PManager.getInstance();
+        if (p2pManager != null) {
+            p2pManager.setMessageListener(this);
+            System.out.println("[CreateGroupDialog] Registered for real-time status updates");
+        }
     }
     
     private void setupFriendsList() {
@@ -85,14 +96,18 @@ public class CreateGroupDialog {
                 Platform.runLater(() -> {
                     if (friends != null && !friends.isEmpty()) {
                         for (UserDTO friend : friends) {
+                            // ✅ Get actual online status from friend data
+                            boolean isOnline = "online".equalsIgnoreCase(friend.getStatus());
+                            
                             allFriends.add(new FriendListItem(
                                 friend.getId(),
                                 friend.getUsername(),
                                 friend.getEmail(),
                                 friend.getAvatarUrl(),
-                                true // TODO: Get actual online status
+                                isOnline
                             ));
                         }
+                        System.out.println("[CreateGroupDialog] Loaded " + friends.size() + " friends with real status");
                     }
                 });
             } catch (Exception e) {
@@ -184,7 +199,82 @@ public class CreateGroupDialog {
         return resultMemberIds;
     }
     
-    // Friend List Item
+    // ===== StatusChangeListener Implementation =====
+    
+    @Override
+    public void onUserOnline(Long userId) {
+        System.out.println("[CreateGroupDialog] 🟢 User came online: " + userId);
+        updateFriendStatus(userId, true);
+    }
+    
+    @Override
+    public void onUserOffline(Long userId) {
+        System.out.println("[CreateGroupDialog] 🔴 User went offline: " + userId);
+        updateFriendStatus(userId, false);
+    }
+    
+    // ===== P2PMessageListener Stub Implementation =====
+    // CreateGroupDialog only cares about status changes, not messages
+    
+    @Override
+    public void onMessageReceived(P2PMessage message) {
+        // Not needed for group creation dialog
+    }
+    
+    @Override
+    public void onPeerConnected(Long peerId, String peerUsername) {
+        // Not needed for group creation dialog
+    }
+    
+    @Override
+    public void onPeerDisconnected(Long peerId) {
+        // Not needed for group creation dialog
+    }
+    
+    @Override
+    public void onConnectionError(Long peerId, Exception e) {
+        // Not needed for group creation dialog
+    }
+    
+    @Override
+    public void onTypingIndicator(Long peerId, boolean isTyping) {
+        // Not needed for group creation dialog
+    }
+    
+    @Override
+    public void onMessageAcknowledged(String messageId) {
+        // Not needed for group creation dialog
+    }
+    
+    /**
+     * Update friend status in the list and refresh UI
+     */
+    private void updateFriendStatus(Long userId, boolean online) {
+        Platform.runLater(() -> {
+            for (int i = 0; i < allFriends.size(); i++) {
+                FriendListItem item = allFriends.get(i);
+                if (item.userId.equals(userId)) {
+                    // Replace with updated item
+                    FriendListItem updated = new FriendListItem(
+                        item.userId,
+                        item.username,
+                        item.email,
+                        item.avatarUrl,
+                        online
+                    );
+                    allFriends.set(i, updated);
+                    
+                    // Refresh the list view
+                    friendsListView.refresh();
+                    
+                    System.out.println("[CreateGroupDialog] Updated status for " + item.username + ": " + (online ? "ONLINE" : "OFFLINE"));
+                    break;
+                }
+            }
+        });
+    }
+    
+    // Friend List Item (immutable, replaced on status change)
     private static class FriendListItem {
         final Long userId;
         final String username;
